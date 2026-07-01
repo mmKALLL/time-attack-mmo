@@ -313,6 +313,7 @@ export type Skill = {
   name: string;
   shape: Offset[]; // cells hit, relative to caster's cell
   power: number; // multiplier on atk
+  triggerMs?: number; // auto-cast interval; multiple of STEP_MS (250), default 1500
   uses?: number; // limited uses before cooldown; omitted = unlimited
   cooldownMs: number;
   cooldownType: CooldownType;
@@ -429,8 +430,9 @@ export const DESIGN_H = 1080;
 export const CELL_PX = 64;
 
 // ---------- Timing ----------
-export const SIM_TICK_MS = 50; // fixed simulation step
-export const COMBAT_TICK_MS = 1500; // auto-cast interval
+export const SIM_TICK_MS = 50; // fixed simulation step (divides STEP_MS evenly)
+export const STEP_MS = 250; // skill trigger rates are authored in these steps
+export const COMBAT_TICK_MS = 1500; // default per-skill trigger interval (6 * STEP_MS)
 export const ANIM_FRAME_MS = 400; // renderer animation cadence
 export const ANIM_FRAMES = 3;
 
@@ -2073,8 +2075,10 @@ task against the already-forward-compatible types. Sequence roughly as listed.
 - **P2-F — Telegraphed enemy AI.** Enemies announce AoE `telegraphRounds` (1–3) ahead and fire
   on the target area; default to attacking the first-engaged / nearest player within 8-adjacency;
   verify players can dodge by moving between ticks.
-- **P2-G — MP costs & per-entity attack speed.** Spend `mpCost` from `maxMp`; modulate the per-
-  entity cast interval by a derived `attackSpeed` (hunter fast / sniper slow) instead of a flat 1.5s.
+- **P2-G — Per-skill trigger rates, MP & attack speed.** Give each skill its own `triggerMs`
+  accumulator (multiples of `STEP_MS` = 250; default 1500) so skills fire on independent
+  cadences; the square timer tracks the player's active skill. Spend `mpCost` from `maxMp`;
+  scale each skill's effective interval by a derived `attackSpeed` (hunter fast / sniper slow).
 - **P2-H — Healing/buff skills & the "high" tier.** `healing`/`targetsAllies` skills for
   Paladin/Druid/Ranger; add the tier-3 "high" variations via the same generative pattern.
 

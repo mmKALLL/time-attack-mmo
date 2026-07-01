@@ -93,9 +93,10 @@ The engine is a **pure reducer**: `tick(state: WorldState, inputs: Input[], dt: 
 - Other players/allies join a fight by moving into the group.
 
 ### Combat tick
-- A fixed accumulator fires every **`COMBAT_TICK_MS` (1500ms)**; each member auto-casts its active skill.
+- **Per-skill trigger rates.** Each skill auto-casts on its own interval (`triggerMs`). Rates are arbitrary but authored in **250ms steps** (`STEP_MS`), defaulting to **1500ms** (`COMBAT_TICK_MS`). Later, a derived `attackSpeed` scales this (Hunter fast / Sniper slow). `SIM_TICK_MS` (50) divides `STEP_MS` evenly so every rate lands on a tick boundary.
 - A skill's `shape: Offset[]` is resolved against the group's layout to select targets; `config.ts` damage formula applies.
-- The on-screen **square timer** is a visualization of that accumulator (0 → 1).
+- The on-screen **square timer** visualizes the player's **active-skill** countdown (0 → 1).
+- *Skeleton simplification:* the walking skeleton runs a single group-level 1.5s cadence (all `triggerMs` default to 1500, so behavior is identical); per-skill timers arrive in Phase 2.
 
 ### Skills
 ```ts
@@ -103,6 +104,7 @@ type Skill = {
   id: SkillId; name: string;
   shape: Offset[];                 // cells hit, relative to caster
   power: number;                   // multiplier on atk
+  triggerMs?: number;              // auto-cast interval; 250ms steps, default 1500
   uses?: number;                   // limited uses before cooldown
   cooldownMs: number;
   cooldownType: 'passive' | 'active'; // passive ticks always; active only while selected
