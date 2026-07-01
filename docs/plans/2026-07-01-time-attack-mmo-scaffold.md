@@ -296,7 +296,15 @@ export type JobId = string;
 export type GroupId = string;
 
 // ---------- Stats ----------
+// Skeleton ships `Stats` as placeholder DERIVED stats. Phase 2 replaces the
+// generator with deriveStats(primaries, level); `Primaries` is defined now so
+// the shape is forward-compatible (see design §"Stat system").
 export type Stats = { maxHp: number; atk: number; def: number };
+export type Primaries = { str: number; dex: number; int: number; vit: number };
+
+// ---------- Status effects (Phase 2 systems; type present now) ----------
+export type StatusKind = 'poison' | 'stun' | 'slow' | 'atkUp' | 'atkDown' | 'defDown';
+export type StatusEffect = { kind: StatusKind; potency: number; roundsLeft: number };
 
 // ---------- Skills ----------
 export type CooldownType = 'passive' | 'active';
@@ -308,6 +316,17 @@ export type Skill = {
   uses?: number; // limited uses before cooldown; omitted = unlimited
   cooldownMs: number;
   cooldownType: CooldownType;
+  // --- optional metadata (drives Phase 2 systems; skeleton ignores) ---
+  category?: 'point' | 'adjacent' | 'line' | 'area';
+  directional?: boolean; // shape rotates to face the engaged side
+  maxTargets?: number;
+  accuracy?: number; // hit chance (hunter low / sniper high)
+  critChance?: number;
+  appliesStatus?: { kind: StatusKind; potency: number; rounds: number };
+  telegraphRounds?: number; // enemy AoE warning (1–3 rounds)
+  mpCost?: number;
+  healing?: number; // heals allies instead of damaging foes
+  targetsAllies?: boolean;
 };
 export type SkillRuntime = {
   skillId: SkillId;
@@ -336,10 +355,13 @@ export type Entity = {
   level: number;
   jobId: JobId;
   attainedJobs: JobId[];
-  stats: Stats;
+  stats: Stats; // placeholder derived stats (Phase 2: computed from `primaries`)
+  primaries?: Primaries; // populated once the primary-stat system lands
   hp: number;
   skills: SkillRuntime[];
   activeSkillIndex: number; // hotkey slot 0..8
+  statuses: StatusEffect[]; // active DoTs/buffs/debuffs (empty in skeleton)
+  attacksPerRound: number; // 1 normally; rogues stack 2–3 (Phase 2)
 };
 
 // ---------- Combat groups (sticky blocks) ----------
@@ -516,14 +538,34 @@ export const SKILLS: Record<string, Skill> = {
   },
 };
 
-// ---------- Jobs (a DAG; 2+ parents = mixing) ----------
+// ---------- Jobs ----------
+// FLAT PLACEHOLDER DAG for the skeleton: real class names, `requires` encodes the
+// tiers, and `flameRanger` demonstrates mixing. Phase 2 replaces this with the
+// generative BASE_CLASSES / SECOND_CLASSES / PAIR_SKILLS model (design §4b);
+// `growth` here stands in for the per-class primary bias until then.
 export const JOBS: Record<string, JobNode> = {
+  // Tier 0
   beginner: { id: 'beginner', name: 'Beginner', requires: [], growth: 1.0, grantsSkills: ['strike'] },
+  // Tier 1 — base classes
+  swordsman: { id: 'swordsman', name: 'Swordsman', requires: ['beginner'], growth: 1.05, grantsSkills: ['strike'] },
   archer: { id: 'archer', name: 'Archer', requires: ['beginner'], growth: 1.05, grantsSkills: ['rowCleave'] },
   magician: { id: 'magician', name: 'Magician', requires: ['beginner'], growth: 1.05, grantsSkills: ['fireball'] },
-  ranger: { id: 'ranger', name: 'Ranger', requires: ['archer'], growth: 1.1, grantsSkills: [] },
-  fireWizard: { id: 'fireWizard', name: 'Fire Wizard', requires: ['magician'], growth: 1.1, grantsSkills: [] },
-  flameRanger: { id: 'flameRanger', name: 'Flame Ranger', requires: ['ranger', 'fireWizard'], growth: 1.2, grantsSkills: [] },
+  rogue: { id: 'rogue', name: 'Rogue', requires: ['beginner'], growth: 1.05, grantsSkills: ['strike'] },
+  // Tier 2 — second classes (3 per base)
+  knight: { id: 'knight', name: 'Knight', requires: ['swordsman'], growth: 1.12, grantsSkills: [] },
+  paladin: { id: 'paladin', name: 'Paladin', requires: ['swordsman'], growth: 1.12, grantsSkills: [] },
+  duelist: { id: 'duelist', name: 'Duelist', requires: ['swordsman'], growth: 1.12, grantsSkills: [] },
+  hunter: { id: 'hunter', name: 'Hunter', requires: ['archer'], growth: 1.12, grantsSkills: ['rowCleave'] },
+  sniper: { id: 'sniper', name: 'Sniper', requires: ['archer'], growth: 1.12, grantsSkills: [] },
+  ranger: { id: 'ranger', name: 'Ranger', requires: ['archer'], growth: 1.12, grantsSkills: [] },
+  arcaneMage: { id: 'arcaneMage', name: 'Arcane Mage', requires: ['magician'], growth: 1.12, grantsSkills: [] },
+  fireWizard: { id: 'fireWizard', name: 'Fire Wizard', requires: ['magician'], growth: 1.12, grantsSkills: ['fireball'] },
+  druid: { id: 'druid', name: 'Druid', requires: ['magician'], growth: 1.12, grantsSkills: [] },
+  assassin: { id: 'assassin', name: 'Assassin', requires: ['rogue'], growth: 1.12, grantsSkills: [] },
+  shadower: { id: 'shadower', name: 'Shadower', requires: ['rogue'], growth: 1.12, grantsSkills: [] },
+  ninja: { id: 'ninja', name: 'Ninja', requires: ['rogue'], growth: 1.12, grantsSkills: [] },
+  // Merged (example of mixing any two second classes)
+  flameRanger: { id: 'flameRanger', name: 'Flame Ranger', requires: ['ranger', 'fireWizard'], growth: 1.25, grantsSkills: [] },
 };
 
 // ---------- Enemies ----------
@@ -743,6 +785,8 @@ export function makeEntity(params: {
     hp: stats.maxHp,
     skills,
     activeSkillIndex: 0,
+    statuses: [], // Phase 2 populates DoTs/buffs
+    attacksPerRound: 1, // Phase 2: rogues raise this to 2–3
   };
 }
 
@@ -797,9 +841,12 @@ describe('job DAG unlocking', () => {
   });
   it('lists newly-available (not-yet-attained) jobs', () => {
     const avail = availableJobs(['beginner']);
-    expect(avail).toEqual(expect.arrayContaining(['archer', 'magician']));
+    expect(avail).toEqual(expect.arrayContaining(['swordsman', 'archer', 'magician', 'rogue']));
     expect(avail).not.toContain('beginner'); // already attained
-    expect(avail).not.toContain('ranger'); // parent not yet attained
+    expect(avail).not.toContain('ranger'); // parent (archer) not yet attained
+  });
+  it('surfaces a merged class only once both second classes are attained', () => {
+    expect(availableJobs(['ranger', 'fireWizard'])).toContain('flameRanger');
   });
 });
 ```
@@ -2000,7 +2047,48 @@ git commit -m "feat(app): scene router, screen stubs, and run docs"
 - One playable dungeon slice and six navigable screen stubs ready for Claude Design's layouts.
 - The import-boundary rule keeping the engine framework-agnostic, so the MMO extraction later is: move `engine/` + `types/config/data` into a shared package and run `tick` server-authoritatively.
 
-## Suggested follow-ups (out of scope here)
+## Phase 2 — full class & combat systems (separate plan, after the skeleton)
+
+These implement the depth captured in design **§4b/§4c**. Each is an independent, TDD-able
+task against the already-forward-compatible types. Sequence roughly as listed.
+
+- **P2-A — Primary stat system.** Replace the `statsFor(level, growth)` placeholder with
+  `deriveStats(primaries, level)` in `config.ts` (STR/DEX/INT/VIT → maxHp, maxMp, atk, def,
+  accuracy, critChance, dodgeChance; every derived stat blends several primaries with
+  class-specific but non-zero weights). Add `pointsForLevel(level)` + per-class auto-allocation
+  for enemies so symmetry holds. Populate `Entity.primaries`; wire the Skill/Attribute screen to
+  allocate points. Unit-test that a same-level player and enemy of an archetype stay ~50/50.
+- **P2-B — Generative merged classes.** Replace the flat `JOBS` placeholder with
+  `BASE_CLASSES` / `SECOND_CLASSES` / `PAIR_SKILLS` in `data.ts`; add `mergedSkills(a,b)` and
+  `mergedName(a,b)` to `jobs.ts`; derive the unlock DAG from tiers. Author the 12 second classes'
+  guaranteed skills and pair-specialized skills incrementally (66 pairs).
+- **P2-C — Status effects.** Tick `entity.statuses` each combat round (poison = 10% maxHp;
+  stun/slow/buffs/debuffs); scale a target's incoming crit rate with `statuses.length`; let
+  skills apply statuses via `appliesStatus`.
+- **P2-D — Ranged "invisible slots".** Give closing enemies `slotDistance`; decrement one
+  slot/round along a wall-collided (enemy-permeable) lane; gate melee to `slotDistance 0`; let
+  ranged skills hit at range. This is the trickiest sticky-block integration — spike it first.
+- **P2-E — Rogue attack stacking.** Resolve `attacksPerRound` (2 base / 3 second+) stacked
+  skills per tick, honoring per-skill uses/cooldowns.
+- **P2-F — Telegraphed enemy AI.** Enemies announce AoE `telegraphRounds` (1–3) ahead and fire
+  on the target area; default to attacking the first-engaged / nearest player within 8-adjacency;
+  verify players can dodge by moving between ticks.
+- **P2-G — MP costs & per-entity attack speed.** Spend `mpCost` from `maxMp`; modulate the per-
+  entity cast interval by a derived `attackSpeed` (hunter fast / sniper slow) instead of a flat 1.5s.
+- **P2-H — Healing/buff skills & the "high" tier.** `healing`/`targetsAllies` skills for
+  Paladin/Druid/Ranger; add the tier-3 "high" variations via the same generative pattern.
+
+## Done — what the skeleton gives you
+- A pure, unit-tested engine (`tick(state, inputs, dt) -> state`) with grid movement, sticky-block
+  combat, shape-based skill targeting, use/cooldown rules, and a job DAG with class mixing.
+- Forward-compatible types (`Primaries`, `StatusEffect`, `Skill` metadata, `Entity.statuses` /
+  `attacksPerRound`) so Phase 2 adds behavior without reshaping data.
+- A PixiJS world renderer + React HUD at a scaled 1920×1080, with emoji placeholders.
+- One playable dungeon slice and six navigable screen stubs ready for Claude Design's layouts.
+- The import-boundary rule keeping the engine framework-agnostic, so the MMO extraction later is:
+  move `engine/` + `types/config/data` into a shared package and run `tick` server-authoritatively.
+
+## Other follow-ups
 - Replace emoji with Claude Design sprite sheets (swap `WorldRenderer` glyph drawing).
 - Flesh out the six stub screens against Claude Design mockups.
 - Add facing-based shape rotation for directional attacks.

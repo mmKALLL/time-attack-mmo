@@ -101,21 +101,91 @@ The engine is a **pure reducer**: `tick(state: WorldState, inputs: Input[], dt: 
 ```ts
 type Skill = {
   id: SkillId; name: string;
-  shape: Offset[];            // relative cells hit (e.g. 3×1 row)
-  power: number;
-  uses?: number;              // limited uses before cooldown
+  shape: Offset[];                 // cells hit, relative to caster
+  power: number;                   // multiplier on atk
+  uses?: number;                   // limited uses before cooldown
   cooldownMs: number;
   cooldownType: 'passive' | 'active'; // passive ticks always; active only while selected
+  // --- optional metadata (drives the deeper systems; skeleton ignores) ---
+  category?: 'point' | 'adjacent' | 'line' | 'area';
+  directional?: boolean;           // shape rotates to face the engaged side
+  maxTargets?: number;
+  accuracy?: number;               // hit chance (hunter low / sniper high)
+  critChance?: number;
+  appliesStatus?: { kind: StatusKind; potency: number; rounds: number };
+  telegraphRounds?: number;        // enemy AoE warning (1–3 rounds)
+  mpCost?: number;
+  healing?: number;                // heals allies instead of damaging foes
+  targetsAllies?: boolean;
 };
 ```
-- Hotkeys **1–9** set the active skill.
+- Hotkeys **1–9** set the active skill. Full attack-shape conventions per class are in **§4b**.
 
 ### Jobs / classes
-- A **DAG** of job nodes. Each node has `requires: JobId[]` — "mixing" is a node with two parents (e.g. *flame ranger* requires *ranger* **and** *fire wizard*).
-- Character tracks attained jobs + current job; stats derive from job growth + level + allocations.
+- A **DAG** of job nodes progressing Beginner → base → second → merged → high; "mixing" is a node requiring two second classes (e.g. *flame ranger* requires *ranger* **and** *fire wizard*). The full multi-tier model, roster, and generative merged-class scheme are in **§4b**.
 
-### Symmetric stats
-- One shared formula `stat(level, jobGrowth)` in `config.ts`, used for **both** players and enemies, so a same-level 1v1 is ~50/50 by construction; hunting ~5 levels down is the intended fun grind.
+### Stat system (primaries → derived)
+- **Primary stats (allocatable): STR, DEX, INT, VIT.** Players distribute points on the Skill/Attribute screen; enemies auto-distribute by level and class archetype so a same-level enemy mirrors a player.
+- **Derived stats:** `maxHp`, `maxMp`, `atk` (attack power), `def`, `accuracy` (vs miss), `critChance`, `dodgeChance` (and later `attackSpeed`).
+- **Every stat matters for every class:** each derived stat is a weighted blend of *several* primaries, with class-specific but **never-zero** weights — no dump stats. E.g. `atk = a·STR + b·DEX + c·INT + …`; VIT and DEX always contribute (VIT → maxHp/def, **DEX → accuracy/crit/dodge** plus a trickle to everything — LUK's old role is folded into DEX).
+- **Symmetry preserved:** enemies run the *same* `deriveStats(primaries, level)`; their primaries come from a per-class auto-allocation of `pointsForLevel(level)`. So a level-N enemy ≈ a level-N player of that archetype → ~50/50, and hunting ~5 levels down is the intended fun grind.
+- `config.ts` owns the weights and `deriveStats`. The **skeleton ships a simplified placeholder** (`statsFor(level, growth)` → `{maxHp, atk, def}`) until the full primary system lands (plan **Phase 2**).
+
+---
+
+## 4b. Class system (expanded)
+
+### Tiers
+- **Tier 0 — Beginner (root).** Everyone starts here. Character creation sets appearance/name; at a set level the Beginner advances into one of the four base classes.
+- **Tier 1 — Base classes (4):** Swordsman, Archer, Magician, Rogue — broad flavors.
+- **Tier 2 — Second classes (12; 3 per base):** each shifts the base into a distinct MMO role and grants **2–3 guaranteed skills**.
+- **Merged classes (any pair):** *any* two second classes combine (unordered; **same-base pairs allowed** → **66** merges). Kit = A.guaranteed ∪ B.guaranteed ∪ **2–3 pair-specialized skills** ⇒ **6–9 skills**.
+- **Tier 3 — "High" variations (later):** each merged class gets a "high" upgrade via the same generative pattern.
+
+### Roster
+| Base (flavor) | Second classes (role) |
+| --- | --- |
+| **Swordsman** — tanky, easy melee; 1v1 + adjacent 4/8-tile hits | **Knight** (tank) · **Paladin** (mild heals + more area) · **Duelist** (stronger 1v1 DPS, weak ranged/debuff) |
+| **Archer** — nimble 1v1; ranged start; straight-line attacks only | **Hunter** (fast attack speed, high miss) · **Sniper** (slow, accurate crits) · **Ranger** (nature/buffs/arcane, lower DPS) |
+| **Magician** — slow mob attacker; large directional hitboxes; many cooldowns | **Arcane Mage** (buff/debuff, Gandalf/D&D) · **Fire Wizard** (fire DPS) · **Druid** (huge slow attacks + heal + buff, Diablo 2 feel) |
+| **Rogue** — glass cannon; close+far; stacks thief attacks | **Assassin** (crit, poison, debilitation; strong vs status-afflicted) · **Shadower** (very high dodge, melee, strong solo) · **Ninja** (throwing stars/ranged, traps) |
+
+### Generative data model
+- `BASE_CLASSES: Record<BaseId, { name; flavor; secondClassIds }>`
+- `SECOND_CLASSES: Record<SecondId, { name; baseId; role; guaranteedSkills: SkillId[] }>`
+- `PAIR_SKILLS: Record<PairKey, SkillId[]>` where `PairKey = [a, b].sort().join('+')`
+- Derived: `mergedSkills(a, b) = unique([...gA, ...gB, ...PAIR_SKILLS[key(a,b)]])`; `mergedName(a, b)` from an optional bespoke-name map (e.g. "Flame Ranger") with a composed fallback until names are authored.
+- The unlock DAG is derived from tiers: Beginner → base (requires Beginner) → second (requires base) → merged (requires both seconds) → high (requires merged).
+- **Content backlog:** the 12 second classes' guaranteed skills, the 66 pairs' specialized skills, and bespoke merged names are authored incrementally — the schema above makes that additive.
+
+### Attack-shape conventions
+- **Swordsman:** point (1v1) and adjacent 4-/8-tile clusters.
+- **Archer:** **straight lines only** — never diagonal, never large areas; may fire in multiple cardinal directions; longer reach.
+- **Magician:** **large directional hitboxes** (wide/deep cones or rectangles).
+- **Rogue:** point (close) + short line (far), resolved as **stacked** multi-attacks per round.
+
+## 4c. Combat depth (expanded)
+
+### Status effects
+- Intentionally **very debilitating**. **Poison = 10% max HP/round.** Extensible `StatusKind` (poison, stun, slow, atk/def buffs & debuffs…).
+- A target's **incoming critical-hit rate rises with the number of status effects on it** — stacking statuses makes a target increasingly fragile (core Assassin synergy).
+- Model: `StatusEffect { kind; potency; roundsLeft }` on `entity.statuses`, ticked each combat round (DoT + expiry) alongside skill resolution.
+
+### Ranged engagement — "invisible slots" (Archer opener)
+- An archer opens combat at range. Between the engaged enemy and the player sit **invisible slots**: cells that **collide with walls but not with other enemies** (multiple enemies close through the same lane).
+- A ranged-engaged enemy joins the combat group with `slotDistance > 0` and spends the first rounds **closing in** (one slot/round along the lane, blocked only by walls) until `slotDistance = 0`, then melees.
+- Ranged attackers can strike members at range; melee only at `slotDistance 0`. The block still moves as a rigid unit; closing enemies trail at their slot offsets. *(Trickiest integration with the sticky-block; scheduled after the skeleton.)*
+
+### Attack stacking (Rogue)
+- A rogue resolves **multiple** attacks per combat round: **2** at base (first) class, **3** from second class onward. Modeled as `attacksPerRound` on the entity; that many stacked skills resolve per 1.5s tick.
+
+### Enemy AI
+- **Telegraphed AoE:** enemy area attacks are announced **1–3 rounds ahead** (target area shown); entities still standing in it when it fires take the hit.
+- **Default behavior:** otherwise an enemy attacks the **player that first engaged it / nearest player in range**, hitting within its **8-adjacent** cells.
+- **Free dodging:** player movement is **not** gated to combat rounds, so players step out of telegraphs and re-position between ticks — a skilled player dodges well **unless overwhelmed** by too many stuck enemies. Symmetric stats mean challenge scales with how many foes you take at once.
+
+### Scaffold scope for §4b/§4c
+The walking skeleton keeps its **simple** sticky combat (placeholder `statsFor` stats, a few basic skills, one attack/round, no statuses/ranged/telegraphs). The **types and data schema** for all the above are added up front so nothing is reworked, but the deep systems are built in the plan's **Phase 2**.
 
 ---
 
