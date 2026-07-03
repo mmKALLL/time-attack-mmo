@@ -1,14 +1,14 @@
-import type { Cell, Entity, EntityId, Faction, JobId, SkillId, SkillRuntime } from '../types';
-import { JOBS, SKILLS } from '../data';
+import type { Cell, Entity, EntityId, Faction, JobId, Skill, SkillRuntime } from '../types';
+import { JOBS } from '../data';
 import { statsFor } from '../config';
+import { kitOf } from './jobs';
 
-export function skillRuntime(skillId: string): SkillRuntime {
-  const s = SKILLS[skillId];
-  return { skillId, usesLeft: s?.uses ?? -1, cooldownLeftMs: 0 };
+export function skillRuntime(skill: Skill): SkillRuntime {
+  return { skillId: skill.id, usesLeft: skill.uses ?? -1, cooldownLeftMs: 0 };
 }
 
-// Flexible factory: heroes pass a `jobId` (looked up in JOBS for growth + kit);
-// monsters pass explicit `growth` + `skillIds` and a non-JOBS `jobId` string.
+// Heroes derive their kit from the job DAG (kitOf); monsters pass an explicit
+// `skills` list (+ growth) since they aren't part of the player class tree.
 export function makeEntity(params: {
   id: EntityId;
   faction: Faction;
@@ -17,7 +17,7 @@ export function makeEntity(params: {
   cell: Cell;
   level: number;
   jobId: JobId;
-  skillIds?: SkillId[];
+  skills?: Skill[];
   growth?: number;
   attainedJobs?: JobId[];
   elite?: boolean;
@@ -25,7 +25,7 @@ export function makeEntity(params: {
   const job = JOBS[params.jobId];
   const growth = params.growth ?? job?.growth ?? 1;
   const stats = statsFor(params.level, growth);
-  const skillIds = params.skillIds ?? job?.grantsSkills ?? [];
+  const kit = params.skills ?? kitOf(params.jobId);
   return {
     id: params.id,
     faction: params.faction,
@@ -39,7 +39,7 @@ export function makeEntity(params: {
     stats,
     hp: stats.maxHp,
     mp: stats.maxMp,
-    skills: skillIds.map(skillRuntime),
+    skills: kit.map(skillRuntime),
     activeSkillIndex: 0,
     statuses: [],
     attacksPerRound: 1,

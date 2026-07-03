@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Entity, Offset } from '../../types';
-import { JOBS, SKILLS } from '../../data';
+import { JOBS, getSkill } from '../../data';
 import { COMBAT_TICK_MS } from '../../config';
 import { useGame } from '../../state/store';
 import { Sprites } from '../sprites';
@@ -105,7 +105,7 @@ function Hotbar() {
   return (
     <div className="panel hotbar">
       {player.skills.map((rt, i) => {
-        const skill = SKILLS[rt.skillId];
+        const skill = getSkill(rt.skillId);
         const active = i === player.activeSkillIndex;
         const cooling = rt.cooldownLeftMs > 0;
         return (

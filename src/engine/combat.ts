@@ -1,6 +1,6 @@
 import type { Cell, CombatGroup, Direction, Entity, EntityId, WorldState } from '../types';
 import { DIRECTIONS, isWall, equals, key } from './grid';
-import { SKILLS } from '../data';
+import { getSkill } from '../data';
 import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns } from './skills';
 import { damage, COMBAT_TICK_MS } from '../config';
@@ -83,7 +83,7 @@ function fireSkills(s: WorldState, g: CombatGroup): void {
     if (!isAlive(caster)) continue;
     const rt = caster.skills[caster.activeSkillIndex];
     if (!rt || !canCast(rt)) continue;
-    const skill = SKILLS[rt.skillId];
+    const skill = getSkill(rt.skillId);
     const living = membersOf(s, g).filter(isAlive);
     for (const t of skillTargets(caster, skill, living)) {
       if (skill.healing) {

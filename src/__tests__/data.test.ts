@@ -1,25 +1,29 @@
 import { describe, it, expect } from 'vitest';
-import { JOBS, SKILLS, MONSTERS, PARTY_SPAWN, ENEMY_SPAWN, demoMap } from '../data';
+import type { Skill } from '../types';
+import { JOBS, SKILLS, SKILL_INDEX, MONSTERS, PARTY_SPAWN, ENEMY_SPAWN, demoMap } from '../data';
+
+const groups = SKILLS as Record<string, Skill[]>;
 
 describe('content data', () => {
   it('models class mixing: flameRanger requires two second classes', () => {
     expect(JOBS.flameRanger.requires).toEqual(expect.arrayContaining(['fireWizard', 'ranger']));
   });
-  it('every job grants only skills that exist', () => {
-    for (const job of Object.values(JOBS))
-      for (const s of job.grantsSkills) expect(SKILLS[s], `${job.id} -> ${s}`).toBeDefined();
+  it('names the sword base class Fighter; its seconds require it', () => {
+    expect(JOBS.fighter?.name).toBe('Fighter');
+    expect(JOBS.knight.requires).toContain('fighter');
   });
-  it('flame ranger carries a 9-skill core', () => {
-    expect(JOBS.flameRanger.grantsSkills).toHaveLength(9);
+  it('indexes every grouped skill by id', () => {
+    for (const [job, list] of Object.entries(SKILLS))
+      for (const s of list) expect(SKILL_INDEX[s.id], `${job} -> ${s.id}`).toBe(s);
   });
-  it('the 12 second classes each grant 3 guaranteed skills', () => {
+  it('the 12 second classes each define 3 guaranteed skills', () => {
     const seconds = Object.values(JOBS).filter((j) => j.role && j.requires.length === 1);
     expect(seconds).toHaveLength(12);
-    for (const j of seconds) expect(j.grantsSkills.length).toBeGreaterThanOrEqual(3);
+    for (const j of seconds) expect(groups[j.id]).toHaveLength(3);
   });
-  it('monsters reference existing skills and stay out of the player DAG', () => {
+  it('monsters reference indexed skills and stay out of the player DAG', () => {
     for (const m of Object.values(MONSTERS)) {
-      for (const s of m.skills) expect(SKILLS[s]).toBeDefined();
+      for (const s of m.skills) expect(SKILL_INDEX[s.id]).toBeDefined();
       expect(JOBS[m.id]).toBeUndefined();
     }
   });

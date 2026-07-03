@@ -28,7 +28,7 @@ export function createDemoWorld(): WorldState {
       level: spec.level,
       jobId: m.id,
       growth: m.growth,
-      skillIds: m.skills,
+      skills: m.skills,
       elite: m.elite,
     });
   });

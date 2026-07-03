@@ -59,7 +59,8 @@ export type JobNode = {
   name: string;
   requires: JobId[]; // all must be attained (empty = starter); 2+ parents = "mixing"
   growth: number; // placeholder per-job stat growth (Phase 2: per-class primary bias)
-  grantsSkills: SkillId[];
+  // Skills are grouped under the job in data.SKILLS and derived via kitOf() —
+  // no bare skill-id lists on the node.
   role?: Role; // display: role chip
   accent?: string; // display: class-accent hex (party frames, hotbar labels)
 };

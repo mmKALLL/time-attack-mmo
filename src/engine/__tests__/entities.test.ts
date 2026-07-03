@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeEntity, isAlive, areEnemies } from '../entities';
+import { SKILLS } from '../../data';
 
 const hero = makeEntity({ id: 'p1', faction: 'player', name: 'Hero', sprite: 'ranger', cell: { x: 1, y: 1 }, level: 25, jobId: 'beginner' });
 const rat = makeEntity({ id: 'e1', faction: 'enemy', name: 'Rat', sprite: 'slime', cell: { x: 2, y: 1 }, level: 25, jobId: 'beginner' });
@@ -27,7 +28,7 @@ describe('entities', () => {
     expect(areEnemies(hero, ally)).toBe(false);
   });
   it('monster factory takes explicit growth + skills without a JOBS entry', () => {
-    const golem = makeEntity({ id: 'g', faction: 'enemy', name: 'Golem', sprite: 'golem', cell: { x: 5, y: 5 }, level: 25, jobId: 'golem', growth: 1.3, skillIds: ['boulderSmash'], elite: true });
+    const golem = makeEntity({ id: 'g', faction: 'enemy', name: 'Golem', sprite: 'golem', cell: { x: 5, y: 5 }, level: 25, jobId: 'golem', growth: 1.3, skills: SKILLS.golem, elite: true });
     expect(golem.skills[0].skillId).toBe('boulderSmash');
     expect(golem.elite).toBe(true);
     expect(golem.stats.maxHp).toBeGreaterThan(hero.stats.maxHp); // higher growth

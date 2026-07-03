@@ -1,6 +1,6 @@
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import type { CombatGroup, Entity, WorldState } from '../types';
-import { SKILLS } from '../data';
+import { getSkill } from '../data';
 import {
   ANIM_FRAME_MS,
   CELL_PX,
@@ -187,7 +187,7 @@ export class WorldRenderer {
     const group = Object.values(world.groups).find((gr) => gr.memberIds.includes(world.playerId));
     if (!player || !group) return;
     const rt = player.skills[player.activeSkillIndex];
-    const skill = rt && SKILLS[rt.skillId];
+    const skill = rt && getSkill(rt.skillId);
     if (!skill) return;
     const frac = group.timerMs / COMBAT_TICK_MS;
     const pulse = 0.14 + 0.18 * frac + 0.05 * Math.sin(elapsedMs / 120);

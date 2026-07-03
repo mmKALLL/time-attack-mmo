@@ -1,11 +1,11 @@
 import type { Entity, Skill, SkillRuntime } from '../types';
-import { SKILLS } from '../data';
+import { getSkill } from '../data';
 import { areEnemies } from './entities';
 import { key } from './grid';
 
 export function activeSkillOf(e: Entity): Skill | undefined {
   const rt = e.skills[e.activeSkillIndex];
-  return rt ? SKILLS[rt.skillId] : undefined;
+  return rt ? getSkill(rt.skillId) : undefined;
 }
 
 // Targets = members whose offset from the caster matches the skill shape.
@@ -40,7 +40,7 @@ export function afterCast(rt: SkillRuntime, skill: Skill): SkillRuntime {
 export function tickCooldowns(e: Entity, dt: number): SkillRuntime[] {
   return e.skills.map((rt, i) => {
     if (rt.cooldownLeftMs <= 0) return rt;
-    const skill = SKILLS[rt.skillId];
+    const skill = getSkill(rt.skillId);
     const shouldTick = skill.cooldownType === 'passive' || i === e.activeSkillIndex;
     if (!shouldTick) return rt;
     return { ...rt, cooldownLeftMs: Math.max(0, rt.cooldownLeftMs - dt) };
