@@ -1,0 +1,81 @@
+"Class / Field","Skill 1","Skill 2","Skill 3"
+
+"Fighter","1st","Tanky melee","","",""
+"Skills","Slash","Cleave","Bracing Guard"
+"Descriptions","Strike one adjacent foe for {dmg} damage.","Sweep all {tiles} tiles in front for {dmg} damage.","Raise defense by {pct}% for {dur}s."
+"Flags","attack | melee | steel","attack | adjacent-arc | steel","buff | self | steel"
+
+"Knight","2nd","Tank","","",""
+"Skills","Aegis Bastion","Undying Provocation","Earthshatter Bash"
+"Descriptions","Shield the block, absorbing {dmg} for {dur}s.","Force {targets} foes to target you for {dur}s.","Smash {tiles} tiles for {dmg}, stunning for {dur}s."
+"Flags","buff | block | guardian","debuff | area | guardian","attack | adjacent-arc | guardian"
+
+"Paladin","2nd","Healer","","",""
+"Skills","Radiant Smite","Hand of Dawn","Hallowed Ground"
+"Descriptions","Holy strike across {tiles} tiles for {dmg}.","Heal the lowest ally for {heal}.","Bless {tiles} tiles: allies on them heal {heal}/round for {dur}s."
+"Flags","attack | area | holy","heal | ally | holy","buff | area | holy"
+
+"Duelist","2nd","DPS","","",""
+"Skills","Mirror Riposte","Viper's Lunge","Crimson Disarm"
+"Descriptions","Counter the next hit and retaliate for {dmg}.","Dash to a foe and strike for {dmg}.","Wound a foe for {dmg} and cut its damage {pct}% for {dur}s."
+"Flags","attack | melee (reactive) | blade","attack | melee-dash | blade","debuff | melee | blade"
+
+"Archer","1st","Nimble ranged","","",""
+"Skills","Arrow Shot","Double Nock","Nimble Step"
+"Descriptions","Fire a bolt in a straight line for {dmg} damage.","Loose {hits} arrows at one target for {dmg} each.","Gain {pct}% dodge for {dur}s."
+"Flags","attack | line | precision","attack | ranged | precision","buff | self | precision"
+
+"Hunter","2nd","DPS (fast, higher miss)","","",""
+"Skills","Tempest Volley","Hobbling Shot","Relentless Barrage"
+"Descriptions","Rain {hits} fast arrows down a line for {dmg} each.","Cripple a foe, slowing it {pct}% for {dur}s.","Fire until {uses} charges are spent, {dmg} per shot."
+"Flags","attack | line | volley","debuff | ranged | volley","attack | ranged | volley"
+
+"Sniper","2nd","DPS (slow, accurate crits)","","",""
+"Skills","Deadeye Mark","Heaven-Piercer","Killshot"
+"Descriptions","Mark a foe; your crits on it deal +{pct}%.","A slow shot piercing an entire line for {dmg}.","Massive shot for {dmg}; +{pct}% versus low-HP foes."
+"Flags","debuff | ranged | precision","attack | line | precision","attack | ranged | precision"
+
+"Ranger","2nd","Support","","",""
+"Skills","Ward of the Wild","Quarry's Mark","Grasping Thorns"
+"Descriptions","Shield the party for {dmg} over {dur}s.","Mark a foe; it takes +{pct}% crit for {dur}s.","Root every foe on {tiles} tiles for {dur}s."
+"Flags","buff | party | nature","debuff | ranged | nature","debuff | area | nature"
+
+"Magician","1st","Slow mobber","","",""
+"Skills","Energy Bolt","Frostbite","Mana Shield"
+"Descriptions","Blast a line of tiles for {dmg} damage.","Chill the target, slowing it {pct}% for {dur}s.","Absorb the next {dmg} damage using MP."
+"Flags","attack | line | arcane","debuff | ranged | arcane","buff | self | arcane"
+
+"Arcane Mage","2nd","Control","","",""
+"Skills","Arcane Cataclysm","Sundering Silence","Chronostasis"
+"Descriptions","Detonate {tiles} tiles for {dmg} after {delay}s.","Silence {targets} foes for {dur}s.","Freeze a foe's cast timer for {dur}s."
+"Flags","attack | area | arcane","debuff | area | arcane","debuff | single | arcane"
+
+"Fire Wizard","2nd","DPS","","",""
+"Skills","Cinderstorm","Ember Lance","Immolation"
+"Descriptions","Burn {tiles} tiles for {dmg} and apply Ignite.","Spear a line of foes for {dmg}.","Ignite a foe for {pct}% max HP/round over {dur}s."
+"Flags","attack | area | fire","attack | line | fire","debuff (DoT) | single | fire"
+
+"Druid","2nd","Healer","","",""
+"Skills","Verdant Wellspring","Avalanche","Ironbark Aegis"
+"Descriptions","Heal all allies on {tiles} tiles for {heal}.","Crush {tiles} tiles for {dmg} after {delay}s.","Grant an ally +{pct}% defense for {dur}s."
+"Flags","heal | area | primal","attack | area | primal","buff | ally | primal"
+
+"Rogue","1st","Glass cannon","","",""
+"Skills","Twin Fang","Flung Dagger","Vanish Step"
+"Descriptions","Hit one foe {hits} times for {dmg} each.","Throw a blade down a line for {dmg} damage.","Gain {pct}% evasion and reposition for {dur}s."
+"Flags","attack | melee | guile","attack | line | guile","buff | self | guile"
+
+"Assassin","2nd","DPS","","",""
+"Skills","Venom Kiss","Mortal Ambush","Exposing Rupture"
+"Descriptions","Poison a foe for {pct}% max HP/round over {dur}s.","Strike for {dmg}; +{pct}% versus afflicted foes.","Rupture a foe, raising damage it takes {pct}% for {dur}s."
+"Flags","debuff (DoT) | melee | poison","attack | melee | poison","debuff | melee | poison"
+
+"Shadower","2nd","Bruiser","","",""
+"Skills","Nightshroud","Umbral Flurry","Ghostwalk"
+"Descriptions","Gain {pct}% dodge and cloak for {dur}s.","Land {hits} shadow strikes for {dmg} each.","Blink through foes and reset threat on you."
+"Flags","buff | self | shadow","attack | melee | shadow","buff | self | shadow"
+
+"Ninja","2nd","Control","","",""
+"Skills","Thousand Stars","Ensnaring Web","Blinding Ash"
+"Descriptions","Scatter stars over {tiles} tiles for {dmg}.","Snare {tiles} tiles, slowing foes {pct}% for {dur}s.","Blind {targets} foes, {pct}% miss chance for {dur}s."
+"Flags","attack | area | trap","debuff | area | trap","debuff | area | trap"

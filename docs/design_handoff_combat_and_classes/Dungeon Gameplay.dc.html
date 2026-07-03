@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="sprites.js"></script>
+<style>
+  .badge{display:inline-block;font-family:'Cinzel',serif;font-weight:700;font-size:15px;letter-spacing:1px;color:#0c0d11;background:#e6c583;border-radius:4px;padding:3px 11px;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+  .frame{border:2px solid #2a3140;border-radius:8px;box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 0 0 1px #0a0d12;overflow:hidden;background:#07080b;width:1920px;height:1080px;}
+</style>
+</helmet>
+<div id="doc" style="background:radial-gradient(1200px 600px at 50% -10%, #14161d, #0a0b0f 60%);padding:64px 80px 120px;font-family:'Spectral',serif;color:#e9ddc4;min-width:max-content;">
+
+  <header style="margin-bottom:44px;max-width:1400px;">
+    <div style="font-family:'Cinzel',serif;letter-spacing:3px;font-size:13px;color:#b89a63;">RPG DESIGN DRAFT · TURN 1</div>
+    <h1 style="font-family:'Cinzel',serif;font-weight:700;font-size:46px;margin:8px 0 12px;color:#f2e8d2;text-shadow:0 3px 14px rgba(0,0,0,.5);">Dungeon Combat — three visual directions</h1>
+    <p style="font-size:18px;line-height:1.55;color:#b3a888;max-width:1180px;margin:0;">A live look at the signature <b style="color:#e0b07a;">stuck-combat</b> mechanic: the party touched a Cave Slime and the fight snowballed into an irregular <b style="color:#e0b07a;">9-unit block</b> — players and enemies locked together, both sides auto-casting every <b style="color:#e0b07a;">1.5&nbsp;s</b> (square timers), with attack-shape highlights (ember 3×1, violet 2×2) and floating damage. Same scene, three renderings of the sprite / lighting style. Reference an option in chat by its badge — <b style="color:#e6c583;">1a</b>, <b style="color:#e6c583;">1b</b>, <b style="color:#e6c583;">1c</b>.</p>
+  </header>
+
+  <div style="display:flex;gap:64px;align-items:flex-start;">
+
+    <section id="1a" style="width:1920px;flex:none;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <span class="badge">1a</span>
+        <h2 style="font-family:'Cinzel',serif;font-size:26px;margin:0;color:#f0d9a8;">Emberdeep</h2>
+        <span style="font-size:16px;color:#9c927a;">warm · crisp · classic</span>
+      </div>
+      <p style="font-size:16px;color:#9c927a;max-width:1000px;margin:0 0 16px;line-height:1.5;">Warm torch-lit stone, saturated colors, sharp 1&nbsp;px outlines. The cozy Ragnarok-dungeon warmth — inviting for long grind sessions.</p>
+      <div class="frame"><dc-import name="CombatScreen" direction="A" hint-size="1920px,1080px"></dc-import></div>
+    </section>
+
+    <section id="1b" style="width:1920px;flex:none;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <span class="badge">1b</span>
+        <h2 style="font-family:'Cinzel',serif;font-size:26px;margin:0;color:#f0d9a8;">Brightsteel</h2>
+        <span style="font-size:16px;color:#9c927a;">bright · chunky · punchy</span>
+      </div>
+      <p style="font-size:16px;color:#9c927a;max-width:1000px;margin:0 0 16px;line-height:1.5;">Higher exposure, bold 2&nbsp;px outlines, extra saturation. Sprites read clearest at small size — the MapleStory-leaning, arcade-legible pick.</p>
+      <div class="frame"><dc-import name="CombatScreen" direction="B" hint-size="1920px,1080px"></dc-import></div>
+    </section>
+
+    <section id="1c" style="width:1920px;flex:none;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <span class="badge">1c</span>
+        <h2 style="font-family:'Cinzel',serif;font-size:26px;margin:0;color:#f0d9a8;">Gloomlight</h2>
+        <span style="font-size:16px;color:#9c927a;">moody · desaturated · dark</span>
+      </div>
+      <p style="font-size:16px;color:#9c927a;max-width:1000px;margin:0 0 16px;line-height:1.5;">Desaturated palette, heavy vignette, cool violet ambient. The truest "dark-mode default" — atmospheric and tense.</p>
+      <div class="frame"><dc-import name="CombatScreen" direction="C" hint-size="1920px,1080px"></dc-import></div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

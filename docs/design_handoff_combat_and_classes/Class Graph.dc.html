@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  .node{position:absolute;border-radius:7px;background:linear-gradient(#232833,#141922);box-shadow:inset 0 1px 0 #39414f, inset 0 0 0 1px #0c1017, 0 9px 22px rgba(0,0,0,.5);box-sizing:border-box;}
+  .emb{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#10131a;flex:none;box-shadow:inset 0 -2px 4px rgba(0,0,0,.35);}
+  .chip{font-size:9.5px;font-family:'Cinzel',serif;letter-spacing:.4px;padding:1px 7px;border-radius:9px;display:inline-block;white-space:nowrap;}
+  .sk{font-size:10px;color:#c6bca4;background:#1a1e26;border:1px solid #2c3340;border-radius:4px;padding:1.5px 6px;white-space:nowrap;}
+  .tierhd{position:absolute;font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:#8a7d5c;}
+  h2.sec{font-family:'Cinzel',serif;font-weight:700;font-size:27px;color:#f0d9a8;margin:0 0 6px;}
+</style>
+</helmet>
+<div style="background:radial-gradient(1500px 760px at 26% -4%, #15171f, #0a0b0f 62%);padding:58px 72px 96px;font-family:'Spectral',serif;color:#e9ddc4;min-width:max-content;">
+
+  <header style="margin-bottom:40px;max-width:1520px;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <span style="display:inline-block;font-family:'Cinzel',serif;font-weight:700;font-size:15px;letter-spacing:1px;color:#0c0d11;background:#e6c583;border-radius:4px;padding:3px 11px;">2b</span>
+      <div style="font-family:'Cinzel',serif;letter-spacing:3px;font-size:13px;color:#b89a63;">RPG DESIGN DRAFT · TURN 2 · REVISED CLASS SYSTEM</div>
+    </div>
+    <h1 style="font-family:'Cinzel',serif;font-weight:700;font-size:44px;margin:10px 0 12px;color:#f2e8d2;">Classes, Roles &amp; the Fusion Web</h1>
+    <p style="font-size:17.5px;line-height:1.55;color:#b3a888;max-width:1280px;margin:0;">Four base jobs, each branching into <b style="color:#e0b07a;">3 second classes</b> that shift into distinct MMO roles — 12 in total. A character levels <b style="color:#e0b07a;">two complete</b> Beginner → 1st → 2nd paths, then fuses their two second classes into a <b style="color:#e0b07a;">4th class layer</b> (<b style="color:#e6c583;">66 combinations</b>). The merge grants that duo's <b style="color:#e0b07a;">2–3 specialized skills</b> on top of each parent's <b style="color:#e0b07a;">2–3 guaranteed</b> — a <b style="color:#e6c583;">6–9 skill core</b> — and you <b style="color:#e0b07a;">keep every skill</b> earned along both paths. Ascended forms extend the same rule later.</p>
+  </header>
+
+  <!-- ================= ADVANCEMENT TREE ================= -->
+  <h2 class="sec">Advancement &amp; second-class kits</h2>
+  <p style="font-size:15px;color:#9c927a;margin:0 0 20px;max-width:1200px;">Each second class below lists its <b style="color:#c9bfa8;">guaranteed skills</b> — the ones every fusion built from it always carries.</p>
+
+  <div style="position:relative;width:960px;height:1220px;margin-bottom:64px;">
+    <div class="tierhd" style="left:24px;top:-2px;">BEGINNER</div>
+    <div class="tierhd" style="left:300px;top:-2px;">1ST JOB</div>
+    <div class="tierhd" style="left:596px;top:-2px;">2ND JOB · ROLE · GUARANTEED SKILLS</div>
+
+    <svg ref="{{ tsvg }}" viewBox="0 0 960 1220" style="position:absolute;left:0;top:0;width:960px;height:1220px;overflow:visible;pointer-events:none;"></svg>
+
+    <!-- beginner -->
+    <div class="node" style="left:24px;top:558px;width:156px;height:98px;border-left:4px solid #c2a06a;padding:0 12px;display:flex;align-items:center;gap:10px;">
+      <div class="emb" style="background:#c2a06a;">✦</div>
+      <div><div style="font-family:'Cinzel',serif;font-size:18px;color:#f2e8d2;">Beginner</div><div style="font-size:11px;color:#948a70;font-style:italic;margin-top:3px;">basic kit · pick a path</div></div>
+    </div>
+
+    <!-- base jobs -->
+    <sc-for list="{{ bases }}" as="b" hint-placeholder-count="4">
+      <div class="node" style="left:{{ b.x }}px;top:{{ b.y }}px;width:{{ b.w }}px;height:{{ b.h }}px;border-left:4px solid {{ b.color }};padding:9px 11px;">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div class="emb" style="background:{{ b.color }};">{{ b.glyph }}</div>
+          <div style="font-family:'Cinzel',serif;font-size:16px;color:#f2e8d2;">{{ b.name }}</div>
+        </div>
+        <div style="font-size:10.5px;color:#948a70;font-style:italic;margin-top:6px;line-height:1.3;">{{ b.flavor }}</div>
+      </div>
+    </sc-for>
+
+    <!-- second classes -->
+    <sc-for list="{{ seconds }}" as="s" hint-placeholder-count="12">
+      <div class="node" style="left:{{ s.x }}px;top:{{ s.y }}px;width:{{ s.w }}px;height:{{ s.h }}px;border-left:4px solid {{ s.color }};padding:8px 11px;">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div class="emb" style="background:{{ s.color }};">{{ s.glyph }}</div>
+          <div style="flex:1;display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+            <span style="font-family:'Cinzel',serif;font-size:15.5px;color:#f2e8d2;">{{ s.name }}</span>
+            <span class="chip" style="background:{{ s.roleBg }};color:{{ s.roleFg }};">{{ s.role }}</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">
+          <sc-for list="{{ s.skills }}" as="sk" hint-placeholder-count="3">
+            <span class="sk">{{ sk }}</span>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ================= FUSION MATRIX + ANATOMY ================= -->
+  <h2 class="sec">Every pair fuses — the 66-way matrix</h2>
+  <p style="font-size:15px;color:#9c927a;margin:0 0 22px;max-width:1180px;">Read any two second classes across the grid: the cell is their merged class. The number is that pair's <b style="color:#e6c583;">specialized skills</b> (+2 or +3), layered on top of the 6 guaranteed the two parents bring — and on top of everything kept from both full paths.</p>
+
+  <div style="display:flex;gap:52px;align-items:flex-start;flex-wrap:wrap;">
+    <div>
+      <div ref="{{ matrix }}"></div>
+      <div style="margin-top:14px;font-size:13px;color:#8a8168;display:flex;gap:22px;flex-wrap:wrap;">
+        <span><b style="color:#e6c583;">+2 / +3</b> = specialized skills for that duo</span>
+        <span style="color:#7a7360;">▨ diagonal = the pure second class</span>
+      </div>
+    </div>
+
+    <!-- anatomy card -->
+    <div style="width:520px;background:linear-gradient(#20242d,#12161d);border-radius:10px;border:1px solid #0a0d12;box-shadow:inset 0 1px 0 #39414f, 0 16px 40px rgba(0,0,0,.5);padding:22px 24px;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:#b89a63;">ANATOMY OF A MERGED CLASS</div>
+      <div style="display:flex;align-items:center;gap:12px;margin:12px 0 4px;">
+        <div class="emb" style="width:40px;height:40px;font-size:19px;background:linear-gradient(135deg,#e08a3a,#43b0a0);">❈</div>
+        <div>
+          <div style="font-family:'Cinzel',serif;font-size:24px;color:#f2e8d2;">Flame Ranger</div>
+          <div style="font-size:12.5px;color:#948a70;font-style:italic;">Fire Wizard&nbsp; ✦ &nbsp;Ranger &nbsp;·&nbsp; <span style="color:#e0b07a;">9-skill core</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:1px;color:#e08a3a;margin-bottom:7px;">GUARANTEED · FIRE WIZARD</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#e6dcc4;">Cinderstorm</span><span style="color:#8a8168;">area · DPS</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#e6dcc4;">Ember Lance</span><span style="color:#8a8168;">DPS</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#e6dcc4;">Immolation</span><span style="color:#8a8168;">burn · 10%/rd</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:1px;color:#43b0a0;margin-bottom:7px;">GUARANTEED · RANGER</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#e6dcc4;">Ward of the Wild</span><span style="color:#8a8168;">party buff</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#e6dcc4;">Quarry's Mark</span><span style="color:#8a8168;">debuff · +crit taken</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#e6dcc4;">Grasping Thorns</span><span style="color:#8a8168;">snare</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #b8925a33;">
+        <div style="font-size:11px;font-family:'Cinzel',serif;letter-spacing:1px;color:#e6c583;margin-bottom:7px;">✦ SPECIALIZED · FLAME RANGER ONLY</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#ffe0b0;">Phoenix Fusillade</span><span style="color:#a99a7c;">signature</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#ffe0b0;">Wildfire Bloom</span><span style="color:#a99a7c;">telegraphed</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#ffe0b0;">Scorched Heavens</span><span style="color:#a99a7c;">crit · leaves burn</span></div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid #2a3140;font-size:11.5px;color:#948a70;font-style:italic;line-height:1.4;">…plus every skill carried from Beginner and both first jobs — nothing is lost on the merge.</div>
+    </div>
+  </div>
+
+  <!-- ================= SYSTEM NOTES ================= -->
+  <h2 class="sec" style="margin-top:60px;">Rules that shape the skills</h2>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1180px;margin-top:14px;">
+    <div style="background:#171b23;border:1px solid #2a3140;border-left:3px solid #c96a4a;border-radius:7px;padding:13px 15px;"><div style="font-family:'Cinzel',serif;color:#e0906a;font-size:14px;margin-bottom:5px;">Brutal status effects</div><div style="font-size:13px;color:#a99a7c;line-height:1.45;">Poison ≈ <b style="color:#e0b07a;">10% max HP</b>/round. Each active status raises the target's <b style="color:#e0b07a;">incoming crit chance</b> — stacking spirals fast.</div></div>
+    <div style="background:#171b23;border:1px solid #2a3140;border-left:3px solid #e6c583;border-radius:7px;padding:13px 15px;"><div style="font-family:'Cinzel',serif;color:#e6c583;font-size:14px;margin-bottom:5px;">Telegraphed AoE</div><div style="font-size:13px;color:#a99a7c;line-height:1.45;">Enemy area attacks warn <b style="color:#e0b07a;">1–3 rounds</b> ahead. Movement is free (not turn-bound), so you dodge by walking out — unless too many foes are stuck to you.</div></div>
+    <div style="background:#171b23;border:1px solid #2a3140;border-left:3px solid #6fce8f;border-radius:7px;padding:13px 15px;"><div style="font-family:'Cinzel',serif;color:#6fce8f;font-size:14px;margin-bottom:5px;">Ranged openers</div><div style="font-size:13px;color:#a99a7c;line-height:1.45;">Enemies own invisible approach tiles (wall-collided, not unit-collided). Archers strike while foes <b style="color:#e0b07a;">spend turns closing in</b>. Attacks fire in straight lines only.</div></div>
+    <div style="background:#171b23;border:1px solid #2a3140;border-left:3px solid #8f7ad6;border-radius:7px;padding:13px 15px;"><div style="font-family:'Cinzel',serif;color:#a78fe0;font-size:14px;margin-bottom:5px;">Rogue stacking</div><div style="font-size:13px;color:#a99a7c;line-height:1.45;">Rogues fire <b style="color:#e0b07a;">multiple attacks per round</b> — 2 at first job, 3 from second job on. Mixed close/far range.</div></div>
+    <div style="background:#171b23;border:1px solid #2a3140;border-left:3px solid #43c7c0;border-radius:7px;padding:13px 15px;"><div style="font-family:'Cinzel',serif;color:#43c7c0;font-size:14px;margin-bottom:5px;">1.5s auto-cast</div><div style="font-size:13px;color:#a99a7c;line-height:1.45;">Both sides use their <b style="color:#e0b07a;">active skill</b> every 1.5s (square timer). Some skills spend limited uses before cooldown; some cooldowns tick only while selected.</div></div>
+    <div style="background:#171b23;border:1px solid #2a3140;border-left:3px solid #e0906a;border-radius:7px;padding:13px 15px;"><div style="font-family:'Cinzel',serif;color:#e0906a;font-size:14px;margin-bottom:5px;">Enemy focus</div><div style="font-size:13px;color:#a99a7c;line-height:1.45;">Outside telegraphs, an enemy keeps hitting the <b style="color:#e0b07a;">nearest player it first engaged</b>, from any of 8 adjacent directions.</div></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.tsvg = React.createRef(); this.matrix = React.createRef(); }
+
+  roles(){ return {
+    Tank:{bg:'#16302c',fg:'#7fd0c0'}, Healer:{bg:'#16301c',fg:'#8fe0a0'}, DPS:{bg:'#3a1c1c',fg:'#e88a7a'},
+    Support:{bg:'#1c2340',fg:'#8fa8e0'}, Control:{bg:'#241a38',fg:'#b78fe0'}, Bruiser:{bg:'#2b2410',fg:'#e6c583'}
+  }; }
+
+  bases(){ return [
+    {id:'swordsman',name:'Swordsman',color:'#7fa8cc',glyph:'⚔',flavor:'Tanky, easy melee · 1v1 + adjacent 4/8-tile hits',x:300,y:118,w:196,h:74},
+    {id:'archer',name:'Archer',color:'#6fce8f',glyph:'➹',flavor:'Nimble ranged · straight-line attacks only',x:300,y:418,w:196,h:74},
+    {id:'magician',name:'Magician',color:'#b78fe0',glyph:'✹',flavor:'Slow mobber · big directional hitboxes, cooldowns',x:300,y:718,w:196,h:74},
+    {id:'rogue',name:'Rogue',color:'#8f7ad6',glyph:'◆',flavor:'Glass cannon · stacks 2–3 attacks each round',x:300,y:1018,w:196,h:74},
+  ]; }
+
+  seconds(){ const R=this.roles(); const S=(role)=>({roleBg:R[role].bg,roleFg:R[role].fg,role});
+    const X=596, W=340, H=86;
+    return [
+      {id:'knight',base:'swordsman',name:'Knight',color:'#7fa8cc',glyph:'▣',...S('Tank'),skills:['Aegis Bastion','Undying Provocation','Earthshatter Bash'],x:X,y:16,w:W,h:H},
+      {id:'paladin',base:'swordsman',name:'Paladin',color:'#d8c06a',glyph:'✚',...S('Healer'),skills:['Radiant Smite','Hand of Dawn','Hallowed Ground'],x:X,y:112,w:W,h:H},
+      {id:'duelist',base:'swordsman',name:'Duelist',color:'#b8925a',glyph:'⚔',...S('DPS'),skills:['Mirror Riposte',"Viper's Lunge",'Crimson Disarm'],x:X,y:208,w:W,h:H},
+
+      {id:'hunter',base:'archer',name:'Hunter',color:'#6fce8f',glyph:'➹',...S('DPS'),skills:['Tempest Volley','Hobbling Shot','Relentless Barrage'],x:X,y:316,w:W,h:H},
+      {id:'sniper',base:'archer',name:'Sniper',color:'#52b878',glyph:'✜',...S('DPS'),skills:['Deadeye Mark','Heaven-Piercer','Killshot'],x:X,y:412,w:W,h:H},
+      {id:'ranger',base:'archer',name:'Ranger',color:'#43b0a0',glyph:'❦',...S('Support'),skills:['Ward of the Wild',"Quarry's Mark",'Grasping Thorns'],x:X,y:508,w:W,h:H},
+
+      {id:'arcane',base:'magician',name:'Arcane Mage',color:'#b78fe0',glyph:'✷',...S('Control'),skills:['Arcane Cataclysm','Sundering Silence','Chronostasis'],x:X,y:616,w:W,h:H},
+      {id:'firewiz',base:'magician',name:'Fire Wizard',color:'#e08a3a',glyph:'✹',...S('DPS'),skills:['Cinderstorm','Ember Lance','Immolation'],x:X,y:712,w:W,h:H},
+      {id:'druid',base:'magician',name:'Druid',color:'#8fbf6f',glyph:'❧',...S('Healer'),skills:['Verdant Wellspring','Avalanche','Ironbark Aegis'],x:X,y:808,w:W,h:H},
+
+      {id:'assassin',base:'rogue',name:'Assassin',color:'#8f7ad6',glyph:'◆',...S('DPS'),skills:['Venom Kiss','Mortal Ambush','Exposing Rupture'],x:X,y:916,w:W,h:H},
+      {id:'shadower',base:'rogue',name:'Shadower',color:'#6a5aa0',glyph:'☾',...S('Bruiser'),skills:['Nightshroud','Umbral Flurry','Ghostwalk'],x:X,y:1012,w:W,h:H},
+      {id:'ninja',base:'rogue',name:'Ninja',color:'#5aa0c0',glyph:'✴',...S('Control'),skills:['Thousand Stars','Ensnaring Web','Blinding Ash'],x:X,y:1108,w:W,h:H},
+    ];
+  }
+
+  renderVals(){ return { bases:this.bases(), seconds:this.seconds(), tsvg:this.tsvg, matrix:this.matrix }; }
+
+  componentDidMount(){ this.drawTree(); this.drawMatrix(); }
+
+  drawTree(){
+    const svg=this.tsvg.current; if(!svg) return; const NS='http://www.w3.org/2000/svg';
+    svg.innerHTML='<defs><marker id="tar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#5a6273"/></marker></defs>';
+    const bases=this.bases(), seconds=this.seconds();
+    const beg={x:24,y:558,w:156,h:98};
+    const edge=(s,e)=>{ const sx=s.x+s.w, sy=s.y+s.h/2, tx=e.x, ty=e.y+e.h/2, mx=(sx+tx)/2; const p=document.createElementNS(NS,'path'); p.setAttribute('d',`M${sx},${sy} C${mx},${sy} ${mx},${ty} ${tx},${ty}`); p.setAttribute('fill','none'); p.setAttribute('stroke','#4a5162'); p.setAttribute('stroke-width','2.4'); p.setAttribute('marker-end','url(#tar)'); svg.appendChild(p); };
+    bases.forEach(b=>edge(beg,b));
+    seconds.forEach(s=>{ const b=bases.find(x=>x.id===s.base); if(b) edge(b,s); });
+  }
+
+  drawMatrix(){
+    const host=this.matrix.current; if(!host) return; const S=this.seconds();
+    const n=S.length, cell=42, lab=110, top=64;
+    const wrap=document.createElement('div');
+    wrap.style.cssText=`position:relative;width:${lab+n*cell}px;height:${top+n*cell}px;`;
+    // column headers (rotated)
+    S.forEach((s,j)=>{
+      const d=document.createElement('div');
+      d.style.cssText=`position:absolute;left:${lab+j*cell}px;top:0;width:${cell}px;height:${top}px;display:flex;align-items:flex-end;justify-content:center;`;
+      d.innerHTML=`<span style="transform:rotate(-52deg);transform-origin:bottom left;white-space:nowrap;font-size:11px;color:${s.color};font-family:'Cinzel',serif;position:absolute;bottom:6px;left:${cell/2}px;">${s.name}</span>`;
+      wrap.appendChild(d);
+    });
+    S.forEach((s,i)=>{
+      // row header
+      const rh=document.createElement('div');
+      rh.style.cssText=`position:absolute;left:0;top:${top+i*cell}px;width:${lab-6}px;height:${cell}px;display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:12px;color:#d8cdb2;`;
+      rh.innerHTML=`<span>${s.name}</span><span style="width:11px;height:11px;border-radius:3px;background:${s.color};flex:none;"></span>`;
+      wrap.appendChild(rh);
+      // cells
+      S.forEach((t,j)=>{
+        const c=document.createElement('div');
+        const x=lab+j*cell, y=top+i*cell;
+        let bg,inner='';
+        if(i===j){ bg=`repeating-linear-gradient(45deg, ${s.color}44, ${s.color}44 4px, transparent 4px, transparent 8px)`; }
+        else if(j>i){ const spec=((i*7+j*13)%3===0)?3:2; bg=`linear-gradient(135deg, ${s.color} 0%, ${s.color} 46%, ${t.color} 54%, ${t.color} 100%)`; inner=`<span style="position:relative;font-family:'Press Start 2P',monospace;font-size:8px;color:#0c0d11;text-shadow:0 1px 0 rgba(255,255,255,.35);font-weight:700;">+${spec}</span>`; }
+        else { bg='#12151b'; }
+        c.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${cell-3}px;height:${cell-3}px;border-radius:4px;background:${bg};box-shadow:inset 0 0 0 1px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;`;
+        c.innerHTML=inner; wrap.appendChild(c);
+      });
+    });
+    host.innerHTML=''; host.appendChild(wrap);
+  }
+}
+</script>
+</body>
+</html>

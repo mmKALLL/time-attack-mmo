@@ -1,0 +1,62 @@
+/*
+ * Design tokens from the combat-screen handoff (Direction A "Emberdeep").
+ * UI chrome + combat-world palette, typography, geometry — used by the HUD.
+ */
+:root {
+  /* Typography */
+  --font-header: 'Cinzel', serif;
+  --font-body: 'Spectral', Georgia, serif;
+  --font-pixel: 'Press Start 2P', monospace;
+
+  /* UI chrome */
+  --panel-top: #232833;
+  --panel-bottom: #151a22;
+  --panel-edge: #0a0d12;
+  --bevel-hi: #3d4757;
+  --bevel-hi-2: #39414f;
+  --gold-trim: rgba(184, 146, 90, 0.32);
+  --gold-stud: #c2a06a;
+  --gold-bright: #e6c583;
+  --gold: #cca96b;
+  --gold-dim: #b89a63;
+  --ink: #e9ddc4;
+  --ink-dim: #a99a7c;
+  --ink-dim-2: #8a8168;
+
+  /* Bars */
+  --hp-from: #d8524a;
+  --hp-to: #8f2b26;
+  --hp-enemy: #c9463c;
+  --mp-from: #4a8fe0;
+  --mp-to: #2a5aa0;
+
+  /* Combat world (Emberdeep) */
+  --stage-bg: #07080b;
+  --floor: #4a4640;
+  --floor-2: #524d45;
+  --grid-line: #2e2b27;
+  --wall-top: #6b5f50;
+  --wall-bottom: #463d31;
+  --void: #16130f;
+  --attack-current-fill: rgba(232, 124, 44, 0.28);
+  --attack-current-border: #f4922e;
+  --attack-preview: rgba(240, 150, 70, 0.55);
+  --block-outline: rgba(226, 231, 240, 0.47);
+  --ember: #e08a3a;
+  --ember-2: #f0873a;
+  --ember-hi: #ffce6b;
+
+  /* Role chips (bg / text) */
+  --role-tank-bg: #16302c;
+  --role-tank-fg: #7fd0c0;
+  --role-healer-bg: #16301c;
+  --role-healer-fg: #8fe0a0;
+  --role-dps-bg: #3a1c1c;
+  --role-dps-fg: #e88a7a;
+  --role-support-bg: #1c2340;
+  --role-support-fg: #8fa8e0;
+  --role-control-bg: #241a38;
+  --role-control-fg: #b78fe0;
+  --role-bruiser-bg: #2b2410;
+  --role-bruiser-fg: #e6c583;
+}

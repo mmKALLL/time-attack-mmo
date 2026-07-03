@@ -1,0 +1,62 @@
+
+Greetings!
+
+I want to make a single-player desktop RPG in an old-school MMO style, with the following features:
+
+- resolution 1080p
+- possibility to extend into an MMO later
+- grid map with 64x64 2d sprites; enemies can never overlap but players can pass each other
+- there are many layers of classes, which can be "mixed" into each other (e.g. you can advance beginner -> archer -> ranger + beginner -> magician -> fire wizard => flame ranger -> high flame ranger, or beginner -> swordsman -> crusader (tank) + beginner -> thief -> shadower => nimble knight -> high nimble knight)
+- characters generally have 2 or 3 frame animations
+- movement happens with the arrow keys, you always move 1 cell whenever a key is pressed; there is no speed limit
+- whenever you touch an enemy combat starts (without a screen transition). In combat, the enemy is "stuck" to the character, so if you touch an enemy on the left, you become a 2x1 block and move the enemy with you. You can stick even more enemies to the block, creating fights of arbitrary size and shape
+- while in combat, both sides use their active skill automatically every 1.5 seconds, with a square-shaped timer counting down to the next skill use
+- some skills have a number of uses before they go on cooldown; some cooldowns are passive and others require the skill to be actively selected
+- some skills have different attack shapes; e.g. you can have a 3x1 attack that hits enemies that are stuck to you in a row
+- other players (and allies) can attack the same enemies by choosing to stick into your combat as well
+- you can press a skill hotkey (default 1-9 keys) to change the active skill
+- the stat distribution of the enemies should be symmetric to players; a level 25 player fighting a level 25 enemy should have a roughly equal chance of win and loss, leading to challenging roguelite-like gameplay. However, the focus is on making grinding and questing very fun; typically a player would hunt enemies roughly 5 levels below them
+
+I am asking Claude Code for help with designing the rough framework.
+
+Screen ideas:
+
+- world map
+- dungeon gameplay with 3 players in the party
+- shop
+- skill / attribute allocation
+- character creation
+- hotkey configuration
+- NPC chat with quest
+
+I'd like to make a TS+React frontend-only game prototype of this. Could you set up a scaffold that we can use to set things up once Claude Design finishes its work?
+
+----
+
+On the second job layer, each base class should have 3 second classes with different MMO roles. Each second class can combine with any other second class; each of the second classes have 2-3 guaranteed skills and each pair of second classes have 2-3 specialized skills. So every merged class has 6-9 skills total. Similar effect for the "high" variation, which will maybe be added later. The base classes have in general these flavors, but the second classes tend to shift into different MMO roles.
+
+Swordsman - tanky and easy-to-play melee fighter; has 1v1 and adjacent 4/8 tile attacks. Second classes: Knight (easy tank), Paladin (mild healing and more area/cooldown attacks), Duelist (more technical, stronger 1v1 DPS, some weaker ranged/debuffing attacks)
+
+Archer - nimble 1v1 attacker; can start fights at range (enemies have "invisible" slots inbetween themselves and the player that are collision-detected against walls but not against other enemies; they need to spend initial turns closing in). Two archetypes: hunter: fast attack speed with high miss rate, sniper: slow attack speed with accurate critical hits. Mixed "ranger" second class that is more complex and suited to nature/buffs/arcane than DPS. Attacks are almost always in a straight line: never diagonally, in multiple directions, or in large areas
+
+Magician - slow mob attacker; large directional hitboxes, lots of cooldowns to manage. Second classes are arcane mage (like Gandalf / D&D wizard, buffers / debuffers), fire wizard, druid (Diablo 2 feeling huge slow attacks + healer + buffs)
+
+Rogue - very technical glass cannon type character; mixture of close and far range attacks. Can stack multiple thief attacks each round: 2 in first class and 3 from second class onwards. Second classes: assassin (a bit less technical with improved critical hits, poison, strong against enemies with status effects); shadower (very high dodge, melee class with good solo ability); ninja (throwing stars and other ranged weapons, traps, debilitation, etc)
+
+----
+
+Status effects should in general be very debilitating, e.g. poison dealing 10% max hp damage each round. Characters with multiple status effects have an increasing incoming critical hit rate.
+
+Enemy AoE attacks should be telegraphed 1-3 attack rounds ahead of time. Otherwise enemies always attack the initially attacked nearest player in range (from up to 8 adjacent directions). However, player movement is not limited to the attack rounds, so they can dodge quite well - as long as they don't have too many enemies with them.
+
+----
+
+Stat attributes should probably be something like STR / DEX / VIT / INT, with some derived stats like HP, MP, attack power, defense, critical hit chance, dodge chance, etc. However, each class should be able to get meaningful value from all of the stats.
+
+----
+
+Players full heal after the completion of a dungeon's main objective and subsequent exiting. This allows limited MP to be used strategically without conservation; generally MP is not regenerated during a dungeon. Need to have some kind of penalty for exiting and re-entering, maybe dungeons have 10 min timers after entering before they can be re-entered?
+
+----
+
+
