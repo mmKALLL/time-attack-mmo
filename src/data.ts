@@ -5,17 +5,47 @@ import type { JobNode, Skill, TileKind, TileMap } from './types';
 // ============================================================================
 const P = {
   point: [{ dx: 1, dy: 0 }],
-  adj4: [{ dx: -1, dy: 0 }, { dx: 1, dy: 0 }, { dx: 0, dy: -1 }, { dx: 0, dy: 1 }],
-  adj8: [
-    { dx: -1, dy: 0 }, { dx: 1, dy: 0 }, { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
-    { dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: 1, dy: 1 },
+  adj4: [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
   ],
-  row3: [{ dx: -1, dy: 0 }, { dx: 1, dy: 0 }, { dx: 2, dy: 0 }], // straight line (archer)
-  line4: [{ dx: 1, dy: 0 }, { dx: 2, dy: 0 }, { dx: 3, dy: 0 }, { dx: 4, dy: 0 }],
-  block2x2: [{ dx: 1, dy: 0 }, { dx: 2, dy: 0 }, { dx: 1, dy: 1 }, { dx: 2, dy: 1 }],
+  adj8: [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 },
+    { dx: -1, dy: -1 },
+    { dx: 1, dy: -1 },
+    { dx: -1, dy: 1 },
+    { dx: 1, dy: 1 },
+  ],
+  row3: [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 2, dy: 0 },
+  ], // straight line (archer)
+  line4: [
+    { dx: 1, dy: 0 },
+    { dx: 2, dy: 0 },
+    { dx: 3, dy: 0 },
+    { dx: 4, dy: 0 },
+  ],
+  block2x2: [
+    { dx: 1, dy: 0 },
+    { dx: 2, dy: 0 },
+    { dx: 1, dy: 1 },
+    { dx: 2, dy: 1 },
+  ],
   cone: [
-    { dx: 1, dy: 0 }, { dx: 2, dy: 0 }, { dx: 1, dy: -1 }, { dx: 1, dy: 1 },
-    { dx: 2, dy: -1 }, { dx: 2, dy: 1 }, { dx: 3, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 2, dy: 0 },
+    { dx: 1, dy: -1 },
+    { dx: 1, dy: 1 },
+    { dx: 2, dy: -1 },
+    { dx: 2, dy: 1 },
+    { dx: 3, dy: 0 },
   ],
 } as const;
 
@@ -29,9 +59,9 @@ function mk(id: string, name: string, shape: readonly { dx: number; dy: number }
 // handoff; mechanics are tunable placeholders. A fusion's group holds only its
 // *specialized* skills — its full kit is derived (see kitOf() in engine/jobs).
 // ============================================================================
-export const SKILLS = {
+export const SKILLS: Record<string, Skill[]> = {
   // --- Tier 0 / base-class basics ---
-  beginner: [mk('strike', 'Strike', P.adj4, 1.0, { category: 'adjacent' })],
+  beginner: [mk('strike', 'Strike', P.point, 1.0, { category: 'adjacent' })],
   fighter: [mk('slash', 'Slash', P.adj4, 1.05, { category: 'adjacent' })],
   archer: [mk('quickShot', 'Quick Shot', P.row3, 0.9, { category: 'line', triggerMs: 1250 })],
   magician: [mk('magicBolt', 'Magic Bolt', P.row3, 1.1, { category: 'line' })],
@@ -115,10 +145,7 @@ export const SKILLS = {
     mk('phantomBulwark', 'Phantom Bulwark', P.adj4, 0.8, { category: 'adjacent', cooldownMs: 5000 }),
     mk('evasiveBastion', 'Evasive Bastion', [{ dx: 0, dy: 0 }], 0, { targetsAllies: true, appliesStatus: { kind: 'defDown', potency: -0.3, rounds: 3 }, cooldownMs: 6000, cooldownType: 'active' }),
   ],
-  cinderSage: [
-    mk('embermind', 'Embermind', P.cone, 1.5, { category: 'area', triggerMs: 1750 }),
-    mk('cataclysmKindling', 'Cataclysm Kindling', P.block2x2, 1.6, { category: 'area', telegraphRounds: 1, cooldownMs: 5000 }),
-  ],
+  cinderSage: [mk('embermind', 'Embermind', P.cone, 1.5, { category: 'area', triggerMs: 1750 }), mk('cataclysmKindling', 'Cataclysm Kindling', P.block2x2, 1.6, { category: 'area', telegraphRounds: 1, cooldownMs: 5000 })],
 
   // --- Enemy skills ---
   slime: [mk('dissolve', 'Dissolve', P.point, 1.0, { category: 'point' })],
@@ -132,7 +159,9 @@ export type JobKey = keyof typeof SKILLS;
 
 // Flat id -> Skill lookup for the engine (runtime stores skill ids, not objects).
 export const SKILL_INDEX: Record<string, Skill> = Object.fromEntries(
-  Object.values(SKILLS).flat().map((s) => [s.id, s]),
+  Object.values(SKILLS)
+    .flat()
+    .map((s) => [s.id, s]),
 );
 export function getSkill(id: string): Skill {
   const s = SKILL_INDEX[id];
@@ -155,7 +184,7 @@ export const JOBS: Record<string, JobNode> = {
   // Tier 2 — second classes (base → 3 each)
   knight: { id: 'knight', name: 'Knight', requires: ['fighter'], growth: 1.12, role: 'Tank', accent: '#7fa8cc' },
   paladin: { id: 'paladin', name: 'Paladin', requires: ['fighter'], growth: 1.12, role: 'Healer', accent: '#d8c06a' },
-  duelist: { id: 'duelist', name: 'Duelist', requires: ['fighter'], growth: 1.12, role: 'DPS', accent: '#b8925a' },
+  duelist: { id: 'duelist', name: 'Duelist', requires: ['fighter'], growth: 1.12, role: 'Bruiser', accent: '#b8925a' },
   hunter: { id: 'hunter', name: 'Hunter', requires: ['archer'], growth: 1.12, role: 'DPS', accent: '#6fce8f' },
   sniper: { id: 'sniper', name: 'Sniper', requires: ['archer'], growth: 1.12, role: 'DPS', accent: '#52b878' },
   ranger: { id: 'ranger', name: 'Ranger', requires: ['archer'], growth: 1.12, role: 'Support', accent: '#43b0a0' },
@@ -221,7 +250,11 @@ export function demoMap(width = 30, height = 17): TileMap {
   const wall = (x: number, y: number) => {
     tiles[y * width + x] = 'wall';
   };
-  wall(10, 3); wall(10, 4); wall(11, 3);
-  wall(22, 12); wall(23, 12); wall(23, 13);
+  wall(10, 3);
+  wall(10, 4);
+  wall(11, 3);
+  wall(22, 12);
+  wall(23, 12);
+  wall(23, 13);
   return { width, height, tiles };
 }
