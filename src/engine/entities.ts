@@ -1,10 +1,10 @@
 import type { Cell, Entity, EntityId, Faction, JobId, Skill, SkillRuntime } from '../types';
 import { JOBS } from '../data';
-import { statsFor } from '../config';
+import { statsFor, START_SKILL_LEVEL } from '../config';
 import { kitOf } from './jobs';
 
 export function skillRuntime(skill: Skill): SkillRuntime {
-  return { skillId: skill.id, usesLeft: skill.uses ?? -1, cooldownLeftMs: 0 };
+  return { skillId: skill.id, level: START_SKILL_LEVEL, usesLeft: skill.uses ?? -1, cooldownLeftMs: 0 };
 }
 
 // Heroes derive their kit from the job DAG (kitOf); monsters pass an explicit

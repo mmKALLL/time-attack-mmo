@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { Entity, Offset } from '../../types';
-import { JOBS, getSkill } from '../../data';
+import { JOBS, getSkill, describeSkill } from '../../data';
 import { COMBAT_TICK_MS } from '../../config';
+import { shapeFor } from '../../engine/shapes';
 import { useGame } from '../../state/store';
 import { Sprites } from '../sprites';
 import './hud.css';
@@ -109,10 +110,15 @@ function Hotbar() {
         const active = i === player.activeSkillIndex;
         const cooling = rt.cooldownLeftMs > 0;
         return (
-          <div key={rt.skillId + i} className={`slot${active ? ' active' : ''}${cooling ? ' cooling' : ''}`}>
+          <div
+            key={rt.skillId + i}
+            className={`slot${active ? ' active' : ''}${cooling ? ' cooling' : ''}`}
+            title={`${skill.name} (Lv${rt.level})\n${describeSkill(skill, rt.level, player.stats.atk)}`}
+          >
             <span className="digit">{i + 1}</span>
+            <span className="lvl">L{rt.level}</span>
             {cooling && <span className="cd">{Math.ceil(rt.cooldownLeftMs / 1000)}</span>}
-            <ShapeGrid shape={skill.shape} />
+            <ShapeGrid shape={shapeFor(skill, rt.level)} />
             <span className="lbl">{skill.name}</span>
             {rt.usesLeft >= 0 && skill.uses ? (
               <div className="pips">

@@ -1,5 +1,9 @@
 import type { Stats } from './types';
 
+// ---------- Debug ----------
+export const DEBUG = true; // dev: start all skills at level 3 (else 1)
+export const START_SKILL_LEVEL = DEBUG ? 3 : 1;
+
 // ---------- Display / geometry ----------
 export const DESIGN_W = 1920;
 export const DESIGN_H = 1080;

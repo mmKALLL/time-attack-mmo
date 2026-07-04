@@ -2,7 +2,7 @@ import type { Cell, CombatGroup, Direction, Entity, EntityId, WorldState } from 
 import { DIRECTIONS, isWall, equals, key } from './grid';
 import { getSkill } from '../data';
 import { areEnemies, isAlive } from './entities';
-import { skillTargets, canCast, afterCast, tickCooldowns } from './skills';
+import { skillTargets, canCast, afterCast, tickCooldowns, magnitude } from './skills';
 import { damage, COMBAT_TICK_MS } from '../config';
 
 // ---------- Queries (never mutate) ----------
@@ -85,11 +85,13 @@ function fireSkills(s: WorldState, g: CombatGroup): void {
     if (!rt || !canCast(rt)) continue;
     const skill = getSkill(rt.skillId);
     const living = membersOf(s, g).filter(isAlive);
-    for (const t of skillTargets(caster, skill, living)) {
-      if (skill.healing) {
-        t.hp = Math.min(t.stats.maxHp, t.hp + skill.healing);
-      } else {
-        t.hp = Math.max(0, t.hp - damage(caster.stats.atk, skill.power, t.stats.def));
+    const mag = magnitude(skill, rt.level);
+    for (const t of skillTargets(caster, skill, living, rt.level)) {
+      if (skill.kind === 'heal') {
+        if (mag > 0) t.hp = Math.min(t.stats.maxHp, t.hp + Math.round(caster.stats.atk * mag));
+      } else if (skill.params.dmg) {
+        // attack + damaging debuffs; pure buffs/debuffs/DoTs are inert until Phase 2.
+        t.hp = Math.max(0, t.hp - damage(caster.stats.atk, mag, t.stats.def));
       }
     }
     caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));

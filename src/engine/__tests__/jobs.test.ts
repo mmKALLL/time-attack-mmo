@@ -10,8 +10,8 @@ describe('job DAG unlocking', () => {
     expect(canUnlock('knight', ['fighter'])).toBe(true);
   });
   it('mixing requires BOTH parents', () => {
-    expect(canUnlock('flameRanger', ['fireWizard'])).toBe(false);
-    expect(canUnlock('flameRanger', ['fireWizard', 'ranger'])).toBe(true);
+    expect(canUnlock('flameRanger', ['wizard'])).toBe(false);
+    expect(canUnlock('flameRanger', ['wizard', 'ranger'])).toBe(true);
   });
   it('lists the four base classes from beginner', () => {
     const avail = availableJobs(['beginner']);
@@ -20,17 +20,17 @@ describe('job DAG unlocking', () => {
     expect(avail).not.toContain('knight'); // parent (fighter) not yet attained
   });
   it('surfaces a fusion only once both second classes are attained', () => {
-    expect(availableJobs(['fireWizard', 'ranger'])).toContain('flameRanger');
+    expect(availableJobs(['wizard', 'ranger'])).toContain('flameRanger');
   });
 });
 
 describe('kitOf', () => {
   it('grants a base/second class its own grouped skills', () => {
-    expect(kitOf('knight').map((s) => s.id)).toEqual(['aegisBastion', 'undyingProvocation', 'earthshatterBash']);
+    expect(kitOf('knight').map((s) => s.id)).toEqual(['aegisBastion', 'provocation', 'earthsmash']);
   });
-  it('derives a fusion kit from both parents plus its specialized skills', () => {
+  it('derives a fusion kit from both parents (6 skills; specialized added later)', () => {
     const kit = kitOf('flameRanger').map((s) => s.id);
-    expect(kit).toHaveLength(9); // fireWizard 3 + ranger 3 + specialized 3
-    expect(kit).toEqual(expect.arrayContaining(['cinderstorm', 'graspingThorns', 'phoenixFusillade']));
+    expect(kit).toHaveLength(6); // wizard 3 + ranger 3
+    expect(kit).toEqual(expect.arrayContaining(['cinderstorm', 'graspingThorns']));
   });
 });

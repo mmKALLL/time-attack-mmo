@@ -23,31 +23,39 @@ export type StatusKind = 'poison' | 'stun' | 'slow' | 'atkUp' | 'atkDown' | 'def
 export type StatusEffect = { kind: StatusKind; potency: number; roundsLeft: number };
 
 // ---------- Skills ----------
+export const MAX_SKILL_LEVEL = 5;
 export type CooldownType = 'passive' | 'active';
-export type SkillCategory = 'point' | 'adjacent' | 'line' | 'area';
+
+// Each {param} in a description has its own per-level formula. For dmg/heal the
+// returned number is a MULTIPLIER on the character's normal damage calc; other
+// params (pct/dur/tiles/...) return their literal per-level value.
+export type SkillParamFunction = (level: number) => number;
+export type ParamName = 'dmg' | 'heal' | 'pct' | 'dur' | 'tiles' | 'hits' | 'uses' | 'targets' | 'delay';
+export type SkillParams = Partial<Record<ParamName, SkillParamFunction>>;
+
+export type SkillKind = 'attack' | 'heal' | 'buff' | 'debuff' | 'dot';
+export type SkillElement =
+  | 'neutral' | 'steel' | 'guardian' | 'holy' | 'blade' | 'precision' | 'volley'
+  | 'nature' | 'arcane' | 'fire' | 'primal' | 'guile' | 'poison' | 'shadow' | 'trap';
+export type ShapeKind = 'self' | 'melee' | 'point' | 'line' | 'arc' | 'area' | 'cross' | 'party';
+
 export type Skill = {
   id: SkillId;
   name: string;
-  shape: Offset[]; // cells hit, relative to caster's cell
-  power: number; // multiplier on atk
+  description: string; // template with {param} placeholders
+  kind: SkillKind; // first tag: attack | heal | buff | debuff | dot
+  target: string; // middle tag, display only (e.g. 'melee', 'adjacent-arc', 'area (cross)')
+  element: SkillElement; // third tag
+  shapeKind: ShapeKind;
+  params: SkillParams;
   triggerMs?: number; // auto-cast interval; multiple of STEP_MS (250), default 1500
-  uses?: number; // limited uses before cooldown; omitted = unlimited
+  uses?: number; // cooldown charges (distinct from the {uses}/{hits} display params)
   cooldownMs: number;
   cooldownType: CooldownType;
-  // --- optional metadata (drives Phase 2 systems / HUD; skeleton mostly ignores) ---
-  category?: SkillCategory;
-  directional?: boolean; // shape rotates to face the engaged side
-  maxTargets?: number;
-  accuracy?: number; // hit chance (hunter low / sniper high)
-  critChance?: number;
-  appliesStatus?: { kind: StatusKind; potency: number; rounds: number };
-  telegraphRounds?: number; // enemy AoE warning (1–3 rounds)
-  mpCost?: number;
-  healing?: number; // heals allies instead of damaging foes
-  targetsAllies?: boolean;
 };
 export type SkillRuntime = {
   skillId: SkillId;
+  level: number; // 1..MAX_SKILL_LEVEL
   usesLeft: number; // -1 = unlimited
   cooldownLeftMs: number;
 };

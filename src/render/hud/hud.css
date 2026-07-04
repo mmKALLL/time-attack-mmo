@@ -200,6 +200,14 @@
   font-size: 9px;
   color: #e88a7a;
 }
+.slot .lvl {
+  position: absolute;
+  bottom: 2px;
+  left: 3px;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--ink-dim);
+}
 .slot .lbl {
   font-family: var(--font-header);
   font-size: 9px;

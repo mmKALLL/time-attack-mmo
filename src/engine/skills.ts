@@ -2,19 +2,29 @@ import type { Entity, Skill, SkillRuntime } from '../types';
 import { getSkill } from '../data';
 import { areEnemies } from './entities';
 import { key } from './grid';
+import { shapeFor } from './shapes';
 
 export function activeSkillOf(e: Entity): Skill | undefined {
   const rt = e.skills[e.activeSkillIndex];
   return rt ? getSkill(rt.skillId) : undefined;
 }
 
-// Targets = members whose offset from the caster matches the skill shape.
-// Healing/ally skills target allies; everything else targets enemies.
-export function skillTargets(caster: Entity, skill: Skill, members: Entity[]): Entity[] {
-  const shape = new Set(skill.shape.map((o) => `${o.dx},${o.dy}`));
-  const wantAlly = skill.targetsAllies === true;
+// Heal/buff skills target allies; attack/debuff/dot target enemies.
+export function targetsAllies(skill: Skill): boolean {
+  return skill.kind === 'heal' || skill.kind === 'buff';
+}
+
+// The dmg/heal multiplier applied on top of the caster's normal damage calc.
+export function magnitude(skill: Skill, level: number): number {
+  return (skill.params.dmg ?? skill.params.heal)?.(level) ?? 0;
+}
+
+// Targets = members whose offset from the caster matches the (level-scaled) shape.
+export function skillTargets(caster: Entity, skill: Skill, members: Entity[], level: number): Entity[] {
+  const shape = new Set(shapeFor(skill, level).map((o) => `${o.dx},${o.dy}`));
+  const wantAlly = targetsAllies(skill);
   return members.filter((m) => {
-    if (m.id === caster.id) return skill.shape.some((o) => o.dx === 0 && o.dy === 0) && wantAlly;
+    if (m.id === caster.id) return wantAlly && shape.has('0,0');
     const friendly = !areEnemies(caster, m);
     if (wantAlly !== friendly) return false;
     return shape.has(key({ x: m.cell.x - caster.cell.x, y: m.cell.y - caster.cell.y }));

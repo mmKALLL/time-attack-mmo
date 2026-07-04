@@ -1,6 +1,7 @@
 import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import type { CombatGroup, Entity, WorldState } from '../types';
 import { getSkill } from '../data';
+import { shapeFor } from '../engine/shapes';
 import {
   ANIM_FRAME_MS,
   CELL_PX,
@@ -192,7 +193,7 @@ export class WorldRenderer {
     const frac = group.timerMs / COMBAT_TICK_MS;
     const pulse = 0.14 + 0.18 * frac + 0.05 * Math.sin(elapsedMs / 120);
     const g = new Graphics();
-    for (const o of skill.shape) {
+    for (const o of shapeFor(skill, rt.level)) {
       const cx = (player.cell.x + o.dx) * CELL_PX;
       const cy = (player.cell.y + o.dy) * CELL_PX;
       g.rect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2).fill({ color: COLORS.attackCurrentFill, alpha: pulse });

@@ -6,7 +6,7 @@ const groups = SKILLS as Record<string, Skill[]>;
 
 describe('content data', () => {
   it('models class mixing: flameRanger requires two second classes', () => {
-    expect(JOBS.flameRanger.requires).toEqual(expect.arrayContaining(['fireWizard', 'ranger']));
+    expect(JOBS.flameRanger.requires).toEqual(expect.arrayContaining(['wizard', 'ranger']));
   });
   it('names the sword base class Fighter; its seconds require it', () => {
     expect(JOBS.fighter?.name).toBe('Fighter');
