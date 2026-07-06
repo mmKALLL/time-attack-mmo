@@ -22,6 +22,14 @@ describe('world reducer', () => {
     expect(tick(s0, [{ type: 'selectSkill', slot: 2 }], 50).entities.p1.activeSkillIndex).toBe(2);
     expect(tick(s0, [{ type: 'selectSkill', slot: 20 }], 50).entities.p1.activeSkillIndex).toBe(0);
   });
+  it('ignores player actions while dead (until respawn)', () => {
+    const s0 = createDemoWorld();
+    s0.entities[s0.playerId].hp = 0;
+    const start = s0.entities[s0.playerId].cell;
+    const s1 = tick(s0, [{ type: 'move', dir: 'right' }, { type: 'selectSkill', slot: 2 }], 50);
+    expect(s1.entities[s1.playerId].cell).toEqual(start);
+    expect(s1.entities[s1.playerId].activeSkillIndex).toBe(0);
+  });
   it('demo world has a 3-hero party and enemies', () => {
     const s = createDemoWorld();
     const facts = Object.values(s.entities).map((e) => e.faction);

@@ -21,7 +21,7 @@ export function magnitude(skill: Skill, level: number): number {
 
 // Targets = members whose offset from the caster matches the (level-scaled) shape.
 export function skillTargets(caster: Entity, skill: Skill, members: Entity[], level: number): Entity[] {
-  const shape = new Set(shapeFor(skill, level).map((o) => `${o.dx},${o.dy}`));
+  const shape = new Set(shapeFor(skill, level, caster.facing).map((o) => `${o.dx},${o.dy}`));
   const wantAlly = targetsAllies(skill);
   return members.filter((m) => {
     if (m.id === caster.id) return wantAlly && shape.has('0,0');

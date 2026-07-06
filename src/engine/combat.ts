@@ -64,9 +64,39 @@ export function moveOrStick(s: WorldState, id: EntityId, dir: Direction): void {
   for (const m of members) m.cell = { x: m.cell.x + off.dx, y: m.cell.y + off.dy };
 }
 
+function dirFromDelta(dx: number, dy: number): Direction {
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 'right' : 'left';
+  return dy >= 0 ? 'down' : 'up';
+}
+
+// AI combatants (allies + enemies) face their nearest foe so directional attacks
+// connect. The controlled player is exempt — they aim by their last move direction.
+function orientCombatants(s: WorldState): void {
+  for (const g of Object.values(s.groups)) {
+    const members = membersOf(s, g).filter(isAlive);
+    for (const m of members) {
+      if (m.id === s.playerId) continue;
+      let best: { dx: number; dy: number } | undefined;
+      let bestDist = Infinity;
+      for (const o of members) {
+        if (!areEnemies(m, o)) continue;
+        const dx = o.cell.x - m.cell.x;
+        const dy = o.cell.y - m.cell.y;
+        const dist = Math.abs(dx) + Math.abs(dy);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = { dx, dy };
+        }
+      }
+      if (best) m.facing = dirFromDelta(best.dx, best.dy);
+    }
+  }
+}
+
 // Advance combat clocks + resolve auto-casts for every group.
 export function advanceCombat(s: WorldState, dt: number): void {
   for (const e of Object.values(s.entities)) e.skills = tickCooldowns(e, dt);
+  orientCombatants(s);
 
   for (const g of Object.values(s.groups)) {
     g.timerMs += dt;

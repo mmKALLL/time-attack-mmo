@@ -30,6 +30,15 @@ describe('skill targeting by shape', () => {
     expect(ids).toContain('h');
     expect(ids).not.toContain('e');
   });
+  it('directional skills hit foes in the facing direction only', () => {
+    const caster = at('p', 'player', { x: 5, y: 5 });
+    caster.facing = 'right';
+    const ahead = at('e1', 'enemy', { x: 6, y: 5 }); // (1,0) — ahead
+    const beside = at('e2', 'enemy', { x: 5, y: 6 }); // (0,1) — not ahead
+    const ids = skillTargets(caster, getSkill('emberLance'), [caster, ahead, beside], 1).map((t) => t.id);
+    expect(ids).toContain('e1');
+    expect(ids).not.toContain('e2');
+  });
   it('classifies ally- vs enemy-targeting by kind', () => {
     expect(targetsAllies(getSkill('recover'))).toBe(true); // heal
     expect(targetsAllies(getSkill('bracingGuard'))).toBe(true); // buff

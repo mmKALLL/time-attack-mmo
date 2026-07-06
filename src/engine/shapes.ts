@@ -1,4 +1,19 @@
-import type { Offset, Skill, ShapeKind } from '../types';
+import type { Direction, Offset, Skill, ShapeKind } from '../types';
+
+// Rotate an offset authored for facing 'right' (+x) to the given facing.
+const z = (n: number) => n + 0; // normalize -0 to 0
+export function rotate(o: Offset, facing: Direction): Offset {
+  switch (facing) {
+    case 'right':
+      return { dx: o.dx, dy: o.dy };
+    case 'left':
+      return { dx: z(-o.dx), dy: z(-o.dy) };
+    case 'down':
+      return { dx: z(-o.dy), dy: o.dx };
+    case 'up':
+      return { dx: o.dy, dy: z(-o.dx) };
+  }
+}
 
 // Default tile counts when a skill has no {tiles} param.
 const DEFAULT_TILES: Record<ShapeKind, number> = {
@@ -67,11 +82,16 @@ function party(): Offset[] {
   ];
 }
 
-// The footprint a skill hits at a given level. AoE footprints grow with the
-// skill's {tiles} param (see design §"shapes scale with tiles").
-export function shapeFor(skill: Skill, level: number): Offset[] {
+// The footprint a skill hits at a given level, rotated to the caster's facing.
+// AoE footprints grow with the skill's {tiles} param (design §"shapes scale").
+export function shapeFor(skill: Skill, level: number, facing: Direction = 'right'): Offset[] {
   const tiles = Math.max(1, Math.round(skill.params.tiles?.(level) ?? DEFAULT_TILES[skill.shapeKind]));
-  switch (skill.shapeKind) {
+  const base = baseShape(skill.shapeKind, tiles);
+  return base.map((o) => rotate(o, facing));
+}
+
+function baseShape(shapeKind: ShapeKind, tiles: number): Offset[] {
+  switch (shapeKind) {
     case 'self':
       return [{ dx: 0, dy: 0 }];
     case 'party':

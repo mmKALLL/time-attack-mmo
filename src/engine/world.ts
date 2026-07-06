@@ -2,11 +2,12 @@ import type { Input, WorldState } from '../types';
 import { moveOrStick, advanceCombat } from './combat';
 
 export function applyInput(s: WorldState, input: Input): void {
+  const player = s.entities[s.playerId];
+  if (!player || player.hp <= 0) return; // dead players take no actions until respawn
   if (input.type === 'move') {
     moveOrStick(s, s.playerId, input.dir);
   } else if (input.type === 'selectSkill') {
-    const p = s.entities[s.playerId];
-    if (p && input.slot >= 0 && input.slot < p.skills.length) p.activeSkillIndex = input.slot;
+    if (input.slot >= 0 && input.slot < player.skills.length) player.activeSkillIndex = input.slot;
   }
 }
 

@@ -4,14 +4,19 @@ import { getSkill } from '../data';
 import { shapeFor } from '../engine/shapes';
 import {
   ANIM_FRAME_MS,
+  CAMERA_ZOOM_PCT,
   CELL_PX,
   COLORS,
   COMBAT_TICK_MS,
   DAMAGE_FLOAT_MS,
+  DESIGN_H,
+  DESIGN_W,
+  FLOOR_CHECKER_SIZE,
 } from '../config';
 import { Sprites } from './sprites';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
+const FACING: Record<string, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 type Float = { text: Text; born: number; x: number; y: number };
 
@@ -44,13 +49,16 @@ export class WorldRenderer {
     return t;
   }
 
-  private fit(world: WorldState) {
-    const pxW = world.map.width * CELL_PX;
-    const pxH = world.map.height * CELL_PX;
-    const scale = Math.min(this.app.screen.width / pxW, this.app.screen.height / pxH, 1);
+  // Follow camera: fixed zoom (CAMERA_ZOOM_PCT), always centered on the player.
+  // No edge clamp — space outside the map shows the black stage background.
+  private camera(world: WorldState) {
+    const scale = CAMERA_ZOOM_PCT / 100;
+    const p = world.entities[world.playerId];
+    const cx = (p ? p.cell.x * CELL_PX + CELL_PX / 2 : (world.map.width * CELL_PX) / 2) * scale;
+    const cy = (p ? p.cell.y * CELL_PX + CELL_PX / 2 : (world.map.height * CELL_PX) / 2) * scale;
     this.root.scale.set(scale);
-    this.root.x = (this.app.screen.width - pxW * scale) / 2;
-    this.root.y = (this.app.screen.height - pxH * scale) / 2;
+    this.root.x = DESIGN_W / 2 - cx;
+    this.root.y = DESIGN_H / 2 - cy;
   }
 
   private buildBg(world: WorldState) {
@@ -66,20 +74,22 @@ export class WorldRenderer {
           g.rect(px, py, CELL_PX, CELL_PX).fill(COLORS.wallBottom);
           g.rect(px, py, CELL_PX, CELL_PX * 0.55).fill(COLORS.wallTop);
         } else {
-          g.rect(px, py, CELL_PX, CELL_PX).fill((x + y) % 2 ? COLORS.floor : COLORS.floorAlt);
+          const checker = (Math.floor(x / FLOOR_CHECKER_SIZE) + Math.floor(y / FLOOR_CHECKER_SIZE)) % 2;
+          g.rect(px, py, CELL_PX, CELL_PX).fill(checker ? COLORS.floor : COLORS.floorAlt);
           g.rect(px, py, CELL_PX, CELL_PX).stroke({ width: 1, color: COLORS.gridLine, alpha: 0.8 });
         }
       }
     }
     this.bg.addChild(g);
 
-    // Vignette + warm tint overlay (Emberdeep): built once as a canvas texture.
+    // Vignette + warm tint overlay (Emberdeep): screen-anchored (added to the
+    // app stage, not the world root) so it stays put as the camera scrolls.
     const cv = document.createElement('canvas');
-    cv.width = width * CELL_PX;
-    cv.height = height * CELL_PX;
+    cv.width = DESIGN_W;
+    cv.height = DESIGN_H;
     const ctx = cv.getContext('2d')!;
     const grad = ctx.createRadialGradient(
-      cv.width / 2, cv.height / 2, Math.min(cv.width, cv.height) * 0.25,
+      cv.width / 2, cv.height / 2, Math.min(cv.width, cv.height) * 0.3,
       cv.width / 2, cv.height / 2, Math.max(cv.width, cv.height) * 0.62,
     );
     grad.addColorStop(0, 'rgba(0,0,0,0)');
@@ -90,13 +100,13 @@ export class WorldRenderer {
     ctx.fillRect(0, 0, cv.width, cv.height);
     this.vignette = new Sprite(Texture.from(cv));
     this.vignette.eventMode = 'none';
-    this.root.addChild(this.vignette); // on top of actors/fx
+    this.app.stage.addChild(this.vignette); // screen-space, above the world root
     this.builtBg = true;
-    this.fit(world);
   }
 
   render(world: WorldState, elapsedMs: number) {
     this.buildBg(world);
+    this.camera(world);
     this.fx.removeChildren();
     this.actors.removeChildren();
     const frame = Math.floor(elapsedMs / ANIM_FRAME_MS) % 2;
@@ -133,9 +143,28 @@ export class WorldRenderer {
     sp.position.set(px, py + bob);
     this.actors.addChild(sp);
 
+    this.drawFacing(e, px, py);
     const inFight = Object.values(world.groups).some((g) => g.memberIds.includes(e.id));
     if (e.faction === 'enemy') this.drawHpPip(px, py, e);
     if (inFight) this.drawSquareTimer(world, e, px, py);
+  }
+
+  // Small yellow arrowhead near the character showing its facing direction.
+  private drawFacing(e: Entity, px: number, py: number) {
+    const [dx, dy] = FACING[e.facing];
+    const cx = px + CELL_PX / 2 + dx * 24;
+    const cy = py + CELL_PX / 2 + dy * 24;
+    const perpx = -dy;
+    const perpy = dx;
+    this.actors.addChild(
+      new Graphics()
+        .poly([
+          cx + dx * 6, cy + dy * 6,
+          cx - dx * 3 + perpx * 5, cy - dy * 3 + perpy * 5,
+          cx - dx * 3 - perpx * 5, cy - dy * 3 - perpy * 5,
+        ])
+        .fill(0xffd24a),
+    );
   }
 
   private drawHpPip(px: number, py: number, e: Entity) {
@@ -193,7 +222,7 @@ export class WorldRenderer {
     const frac = group.timerMs / COMBAT_TICK_MS;
     const pulse = 0.14 + 0.18 * frac + 0.05 * Math.sin(elapsedMs / 120);
     const g = new Graphics();
-    for (const o of shapeFor(skill, rt.level)) {
+    for (const o of shapeFor(skill, rt.level, player.facing)) {
       const cx = (player.cell.x + o.dx) * CELL_PX;
       const cy = (player.cell.y + o.dy) * CELL_PX;
       g.rect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2).fill({ color: COLORS.attackCurrentFill, alpha: pulse });

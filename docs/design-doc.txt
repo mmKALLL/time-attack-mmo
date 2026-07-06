@@ -51,7 +51,31 @@ Enemy AoE attacks should be telegraphed 1-3 attack rounds ahead of time. Otherwi
 
 ----
 
-Stat attributes should probably be something like STR / DEX / VIT / INT, with some derived stats like HP, MP, attack power, defense, critical hit chance, dodge chance, etc. However, each class should be able to get meaningful value from all of the stats.
+Stat attributes should probably be something like STR / DEX / VIT / INT, with some derived stats like HP, MP, min/max damage, defense, critical hit chance, dodge chance, etc. However, each class should be able to get meaningful value from all of the stats.
+
+Attacks and skills have a physical component and a magical component. The phys-mag ratio between these components is based on class: 
+
+Fighter: 80% physical, 20% magical
+Archer: 40% physical, 60% magical
+Magician: 20% physical, 80% magical
+Rogue: 60% physical, 40% magical
+
+Maximum damage is calculated with:
+
+Physical = Str * 4 + Dex * 2 + Vit * 1
+Magical = Int * 4 + Dex * 2 + Vit * 1
+
+Minimum damage is 60% of maximum, except for rogues who have 40% of maximum.
+
+HP = Vit * 30 + Str * 5 + Level * 5
+MP = Int * 10 + Dex * 2 + Level * 2
+Def = Vit * 2 + Str * 1
+Crit = (Dex * 2 + Int * 1) ^ 0.7 until (Dex * 2 + Int * 1) < 300, then ^0.6 for the exceeding part (as if the function transitioned to a different shape; don't simply sum them)
+Accuracy = (Dex * 2 + Vit * 1 + Int * 1)
+Dodge = (Dex * 2 + Vit * 1 + Int * 1) * 0.25
+Hit rate: 1.2 - opponent dodge / accuracy (= having 5x the accuracy of the dodge gives guaranteed hit rate)
+
+
 
 ----
 
@@ -59,4 +83,27 @@ Players full heal after the completion of a dungeon's main objective and subsequ
 
 ----
 
+The world map should be based on Finland.
 
+The democracy of Finland has been plunged into chaos...
+You must take up your weapons and save the land from monsters of myth and legend.
+
+Savonlinna / Kuopio / Jyväskylä / Varkaus - small warrior / archer / magician / thief towns (1st job adv)
+Turku / Tampere / Helsinki / Oulu - large warrior / archer / magician / thief cities (2nd job adv)
+
+Other points of interest:
+
+Kokkola
+Mäntyharju
+Lahti
+Seinäjoki
+Lappajärvi
+Kuopio
+Rovaniemi
+Pori
+Kotka
+Ruka
+Lieksa
+Kajaani
+Sodankylä
+Utsjoki

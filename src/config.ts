@@ -1,14 +1,16 @@
 import type { Stats } from './types';
 
 // ---------- Debug ----------
-export const DEBUG = true; // dev: start all skills at level 3 (else 1)
-export const START_SKILL_LEVEL = DEBUG ? 3 : 1;
+export const DEBUG = true; // dev: start all skills at level 3 (else 0)
+export const START_SKILL_LEVEL = DEBUG ? 3 : 0;
 
 // ---------- Display / geometry ----------
 export const DESIGN_W = 1920;
 export const DESIGN_H = 1080;
 export const CELL_PX = 64; // tile size; 30 x 16.875 grid
 export const SPRITE_SRC = 32; // sprites authored at 32x32, drawn at 2x
+export const CAMERA_ZOOM_PCT = 130; // follow-camera zoom (100% = sprites at native 2x/64px)
+export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
 
 // ---------- Timing ----------
 export const SIM_TICK_MS = 50; // fixed simulation step (divides STEP_MS evenly)
