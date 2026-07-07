@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { Entity, Offset } from '../../types';
 import { JOBS, getSkill, describeSkill } from '../../data';
-import { COMBAT_TICK_MS } from '../../config';
+import { COMBAT_TICK_MS, xpToNext } from '../../config';
 import { shapeFor } from '../../engine/shapes';
 import { useGame } from '../../state/store';
 import { Sprites } from '../sprites';
@@ -17,14 +17,12 @@ function SpriteCanvas({ name, size }: { name: string; size: number }) {
   return <canvas ref={ref} width={size} height={size} style={{ imageRendering: 'pixelated' }} />;
 }
 
-function Bar({ kind, cur, max }: { kind: 'hp' | 'mp'; cur: number; max: number }) {
+function Bar({ kind, cur, max, label }: { kind: 'hp' | 'mp' | 'xp'; cur: number; max: number; label?: string }) {
   const pct = Math.max(0, Math.min(1, cur / max));
   return (
     <div className={`bar ${kind}`}>
       <span style={{ transform: `scaleX(${pct})` }} />
-      <span className="label">
-        {Math.round(cur)} / {max}
-      </span>
+      <span className="label">{label ?? `${Math.round(cur)} / ${max}`}</span>
     </div>
   );
 }
@@ -91,6 +89,7 @@ function PartyFrames() {
               </div>
               <Bar kind="hp" cur={e.hp} max={e.stats.maxHp} />
               <Bar kind="mp" cur={e.mp} max={e.stats.maxMp} />
+              <Bar kind="xp" cur={e.xp} max={xpToNext(e.level)} label={`XP ${Math.round((e.xp / xpToNext(e.level)) * 100)}%`} />
             </div>
           </div>
         );

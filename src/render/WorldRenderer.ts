@@ -30,6 +30,7 @@ export class WorldRenderer {
   private vignette: Sprite | null = null;
   private texCache = new Map<string, Texture>();
   private prevHp = new Map<string, number>();
+  private prevLevel = new Map<string, number>();
   private floats: Float[] = [];
   private builtBg = false;
 
@@ -121,11 +122,35 @@ export class WorldRenderer {
     for (const e of Object.values(world.entities)) {
       this.drawEntity(world, e, frame, bob);
       this.spawnFloatIfDamaged(e, elapsedMs);
+      this.spawnLevelUpIfLeveled(e, elapsedMs);
     }
-    // reap prevHp for entities that no longer exist
+    // reap tracking maps for entities that no longer exist
     for (const id of [...this.prevHp.keys()]) if (!world.entities[id]) this.prevHp.delete(id);
+    for (const id of [...this.prevLevel.keys()]) if (!world.entities[id]) this.prevLevel.delete(id);
 
     this.updateFloats(elapsedMs);
+  }
+
+  private spawnLevelUpIfLeveled(e: Entity, elapsedMs: number) {
+    const prev = this.prevLevel.get(e.id);
+    if (prev !== undefined && e.level > prev) {
+      const t = new Text({
+        text: 'LEVEL UP!',
+        style: {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: 13,
+          fill: COLORS.emberHi,
+          stroke: { color: 0x000000, width: 4 },
+        },
+      });
+      t.anchor.set(0.5);
+      const x = e.cell.x * CELL_PX + CELL_PX / 2;
+      const y = e.cell.y * CELL_PX - 10;
+      t.position.set(x, y);
+      this.floatLayer.addChild(t);
+      this.floats.push({ text: t, born: elapsedMs, x, y });
+    }
+    this.prevLevel.set(e.id, e.level);
   }
 
   private drawEntity(world: WorldState, e: Entity, frame: number, bob: number) {

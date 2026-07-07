@@ -34,6 +34,7 @@ export function makeEntity(params: {
     cell: params.cell,
     facing: 'down',
     level: params.level,
+    xp: 0,
     jobId: params.jobId,
     attainedJobs: params.attainedJobs ?? [params.jobId],
     stats,

@@ -83,6 +83,7 @@ export type Entity = {
   cell: Cell;
   facing: Direction;
   level: number;
+  xp: number; // progress toward the next level (heroes)
   jobId: JobId;
   attainedJobs: JobId[];
   stats: Stats; // placeholder derived stats (Phase 2: computed from `primaries`)

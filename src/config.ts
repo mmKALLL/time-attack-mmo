@@ -19,6 +19,8 @@ export const COMBAT_TICK_MS = 1500; // default per-skill trigger interval (6 * S
 export const ANIM_FRAME_MS = 420; // renderer 2-frame idle cadence
 export const ANIM_FRAMES = 2; // handoff sprites have 2 animation frames
 export const DAMAGE_FLOAT_MS = 1150;
+export const MOVE_REPEAT_DELAY_MS = 600; // delay after the first step before auto-repeat kicks in
+export const MOVE_REPEAT_MS = 250; // held-key auto-repeat cadence for movement
 
 // ---------- Symmetric stat model (used for BOTH players and enemies) ----------
 // Placeholder for Phase 2's deriveStats(primaries, level).
@@ -37,6 +39,16 @@ export function statsFor(level: number, growth: number): Stats {
 // ---------- Damage ----------
 export function damage(attackerAtk: number, skillPower: number, defenderDef: number): number {
   return Math.max(1, Math.round(attackerAtk * skillPower - defenderDef));
+}
+
+// ---------- Progression ----------
+// XP needed to advance from `level` to `level + 1`.
+export function xpToNext(level: number): number {
+  return Math.round(60 * Math.pow(1.18, level - 1));
+}
+// XP granted for defeating an enemy of the given level.
+export function xpReward(enemyLevel: number): number {
+  return Math.round(12 * Math.pow(1.15, enemyLevel - 1));
 }
 
 // ---------- Combat world palette (Direction A "Emberdeep") ----------

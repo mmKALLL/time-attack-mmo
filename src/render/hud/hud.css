@@ -105,6 +105,16 @@
 .bar.mp > span:not(.label) {
   background: linear-gradient(var(--mp-from), var(--mp-to));
 }
+.bar.xp {
+  height: 7px;
+}
+.bar.xp > span:not(.label) {
+  background: linear-gradient(var(--gold-bright), var(--gold-dim));
+}
+.bar.xp .label {
+  font-size: 8px;
+  color: #1a140a;
+}
 
 /* ---- Party frames ---- */
 .party {

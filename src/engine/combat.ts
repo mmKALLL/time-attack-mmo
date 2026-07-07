@@ -1,9 +1,9 @@
 import type { Cell, CombatGroup, Direction, Entity, EntityId, WorldState } from '../types';
 import { DIRECTIONS, isWall, equals, key } from './grid';
-import { getSkill } from '../data';
+import { JOBS, getSkill } from '../data';
 import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude } from './skills';
-import { damage, COMBAT_TICK_MS } from '../config';
+import { damage, statsFor, xpReward, xpToNext, COMBAT_TICK_MS } from '../config';
 
 // ---------- Queries (never mutate) ----------
 export function groupOf(s: WorldState, id: EntityId): CombatGroup | undefined {
@@ -128,6 +128,28 @@ function fireSkills(s: WorldState, g: CombatGroup): void {
   }
 }
 
+// Level up a hero: bump level, regrow stats, refill hp/mp (carry surplus XP).
+function levelUp(e: Entity): void {
+  const growth = JOBS[e.jobId]?.growth ?? 1;
+  while (e.xp >= xpToNext(e.level)) {
+    e.xp -= xpToNext(e.level);
+    e.level += 1;
+    e.stats = statsFor(e.level, growth);
+    e.hp = e.stats.maxHp;
+    e.mp = e.stats.maxMp;
+  }
+}
+
+// Award XP for a defeated enemy to every living hero (player + allies).
+function awardXp(s: WorldState, amount: number): void {
+  for (const e of Object.values(s.entities)) {
+    if (e.faction !== 'enemy' && isAlive(e)) {
+      e.xp += amount;
+      levelUp(e);
+    }
+  }
+}
+
 function cleanupDead(s: WorldState): void {
   for (const g of Object.values(s.groups)) {
     g.memberIds = g.memberIds.filter((id) => s.entities[id] && isAlive(s.entities[id]));
@@ -137,7 +159,10 @@ function cleanupDead(s: WorldState): void {
     if (!hasEnemy || !hasHero || g.memberIds.length < 2) delete s.groups[g.id];
   }
   for (const e of Object.values(s.entities)) {
-    if (e.faction === 'enemy' && !isAlive(e)) delete s.entities[e.id];
+    if (e.faction === 'enemy' && !isAlive(e)) {
+      awardXp(s, xpReward(e.level));
+      delete s.entities[e.id];
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { statsFor, damage } from '../config';
+import { statsFor, damage, xpToNext, xpReward } from '../config';
 
 describe('symmetric stat model', () => {
   it('gives identical stats for the same level and growth', () => {
@@ -18,5 +18,12 @@ describe('damage', () => {
   it('is attack*power minus defense, floored at 1', () => {
     expect(damage(10, 1, 3)).toBe(7);
     expect(damage(2, 1, 100)).toBe(1);
+  });
+});
+
+describe('progression', () => {
+  it('xpToNext rises with level and xpReward is positive', () => {
+    expect(xpToNext(10)).toBeGreaterThan(xpToNext(1));
+    expect(xpReward(20)).toBeGreaterThan(0);
   });
 });

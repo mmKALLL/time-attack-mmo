@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { moveOrStick, advanceCombat, groupOf, enemyAt } from '../combat';
 import { makeEntity } from '../entities';
 import { demoMap } from '../../data';
+import { xpToNext } from '../../config';
 import type { Entity, WorldState } from '../../types';
 
 function world(entities: Entity[]): WorldState {
@@ -58,6 +59,28 @@ describe('combat tick resolution', () => {
     advanceCombat(s, 1500);
     expect(s.entities.e1).toBeUndefined();
     expect(groupOf(s, 'p1')).toBeUndefined();
+  });
+});
+
+describe('xp & level-ups', () => {
+  it('awards XP to heroes when an enemy dies', () => {
+    const s = world([hero({ x: 3, y: 3 }), rat('e1', { x: 4, y: 3 })]);
+    s.entities.e1.hp = 1;
+    moveOrStick(s, 'p1', 'right');
+    advanceCombat(s, 1500);
+    expect(s.entities.p1.xp).toBeGreaterThan(0);
+  });
+  it('levels up a hero when XP crosses the threshold, regrowing stats', () => {
+    const s = world([hero({ x: 3, y: 3 }), rat('e1', { x: 4, y: 3 })]);
+    const p = s.entities.p1;
+    const beforeLevel = p.level;
+    const beforeMaxHp = p.stats.maxHp;
+    p.xp = xpToNext(p.level) - 1; // one XP short of leveling
+    s.entities.e1.hp = 1;
+    moveOrStick(s, 'p1', 'right');
+    advanceCombat(s, 1500); // kill grants XP -> crosses the threshold
+    expect(p.level).toBe(beforeLevel + 1);
+    expect(p.stats.maxHp).toBeGreaterThan(beforeMaxHp);
   });
 });
 

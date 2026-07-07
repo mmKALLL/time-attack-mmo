@@ -75,7 +75,7 @@ Accuracy = (Dex * 2 + Vit * 1 + Int * 1)
 Dodge = (Dex * 2 + Vit * 1 + Int * 1) * 0.25
 Hit rate: 1.2 - opponent dodge / accuracy (= having 5x the accuracy of the dodge gives guaranteed hit rate)
 
-
+XP growth formula: 5 * (level + 5) ^ 2.25
 
 ----
 
