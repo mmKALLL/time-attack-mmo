@@ -17,9 +17,11 @@ const TOWN_H = 13;
 const opp: Record<Compass, Compass> = { n: 's', s: 'n', e: 'w', w: 'e', ne: 'sw', sw: 'ne', nw: 'se', se: 'nw' };
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
-// Level-appropriate spawn pool: every enemy whose fixed level sits in the band.
+// Level-appropriate spawn pool: enemies in [lo-1, hi]. The band never reaches
+// above `hi`, so a "Lv 1-2" map never spawns a Lv 3 enemy; the -1 slack only lets
+// in slightly-weaker foes for variety.
 function poolFor(lo: number, hi: number): string[] {
-  const inBand = Object.values(ENEMIES).filter((e) => e.level >= lo - 1 && e.level <= hi + 1);
+  const inBand = Object.values(ENEMIES).filter((e) => e.level >= lo - 1 && e.level <= hi);
   const pool = (inBand.length ? inBand : Object.values(ENEMIES).filter((e) => e.level <= hi + 3)).map((e) => e.id);
   return pool.slice(0, 8);
 }
