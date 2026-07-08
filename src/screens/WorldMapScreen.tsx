@@ -1,27 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useGame } from '../state/store';
-import { computeWorldMapLayout, type WorldNode } from '../engine';
+import { computeWorldMapLayout, DESIGN_W, DESIGN_H, type WorldNode } from '../engine';
 import './worldmap.css';
 
-// World Map screen — the "discovered zones" node-link graph. Towns are click-to-
-// travel (quick travel via the multi-map system); field/dungeon maps are shown for
-// context but not travelable in v1. The party's current map is highlighted even
-// when it's a field/dungeon between towns. The game loop only runs on the dungeon
-// scene, so this screen is off the sim clock and dispatches actions directly.
+// World Map screen — the Claude Design illustrated parchment map of Finland. The
+// hand-inked art already draws every location's icon and name, so the overlay adds
+// NO markers of its own — only invisible click targets on discovered towns (with a
+// hover glow + "Fast Travel" tooltip when travel is available) and a pulsing ring
+// on the party's current map. The map renders at full width inside a scrollable
+// stage (it's a large portrait chart) and opens pre-scrolled to the party's row.
+// The game loop only runs on the dungeon scene, so this screen is off the sim
+// clock and dispatches actions directly.
 
-// SVG drawing box. The layout is normalized 0..1; we map it into this box with a
-// margin so labels never clip the panel edge.
-const VIEW_W = 1180;
-const VIEW_H = 812;
-const PAD = 90;
+// The parchment background asset. Loaded the same way as the enemy/player sheets
+// (Vite serves assets/ URLs via import.meta.glob) so we follow one convention.
+const ASSET_URLS = import.meta.glob('../../assets/*.svg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const MAP_SVG_URL = Object.entries(ASSET_URLS).find(([k]) => k.endsWith('/world-map.svg'))?.[1];
 
-const TOWN_COLOR = '#e6c583'; // towns: warm gold diamonds
-const FIELD_COLOR = '#7fa06a'; // field/dungeon maps: mossy circles
-const HERE_COLOR = '#8fd0e0'; // current-location ring
-
-function nodeXY(n: WorldNode): { cx: number; cy: number } {
-  return { cx: PAD + n.x * (VIEW_W - 2 * PAD), cy: PAD + n.y * (VIEW_H - 2 * PAD) };
-}
+// Palette accents used inline (the rest of the palette lives in worldmap.css):
+// mid-ink for the "total" stat, ochre for the "discovered" stat.
+const MID_INK = '#6e563a';
+const OCHRE = '#a8552b';
 
 export function WorldMapScreen() {
   const setScene = useGame((s) => s.setScene);
@@ -29,182 +28,151 @@ export function WorldMapScreen() {
   const mapId = useGame((s) => s.world.mapId);
   const discovered = useGame((s) => s.world.discovered);
 
-  const [scale, setScale] = useState(1);
-  useEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, []);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
 
-  // The graph is static (derived from MAPS); compute once.
+  // The layout is static (derived from MAPS design coords); compute once.
   const layout = useMemo(() => computeWorldMapLayout(), []);
   const disc = useMemo(() => new Set(discovered), [discovered]);
-  const pos = useMemo(() => {
-    const m = new Map<string, { cx: number; cy: number }>();
-    for (const n of layout.nodes) m.set(n.id, nodeXY(n));
-    return m;
-  }, [layout]);
 
   // Quick-travel to a discovered town, then drop back into the dungeon view where
   // the sim loop runs. Only towns are travelable in v1.
   const travel = (n: WorldNode) => {
     if (!n.isTown || !disc.has(n.id)) return;
-    if (n.id === mapId) {
-      setScene('dungeon');
-      return;
-    }
-    dispatch({ type: 'travelToMap', mapId: n.id });
+    if (n.id !== mapId) dispatch({ type: 'travelToMap', mapId: n.id });
     setScene('dungeon');
   };
 
   const discoveredCount = layout.nodes.filter((n) => disc.has(n.id)).length;
+  const current = layout.nodes.find((n) => n.id === mapId);
+
+  // Open pre-scrolled to the party's vertical position — centred if there's room,
+  // otherwise clamped to the very bottom (the browser clamps scrollTop for us).
+  useEffect(() => {
+    const stage = stageRef.current, map = mapRef.current;
+    if (!stage || !map || !current) return;
+    stage.scrollTop = (current.y / DESIGN_H) * map.clientHeight - stage.clientHeight / 2;
+    stage.scrollLeft = (current.x / DESIGN_W) * map.clientWidth - stage.clientWidth / 2;
+  }, [current]);
+
+  // The "Fast Travel" tooltip shows only when the hovered node is a discovered town
+  // we can travel to (i.e. not the one we're already on).
+  const hoveredNode = hovered ? layout.nodes.find((n) => n.id === hovered) : undefined;
+  const showTip = !!hoveredNode && hoveredNode.isTown && disc.has(hoveredNode.id) && hoveredNode.id !== mapId;
 
   return (
     <div className="wm-fit">
-      <div className="wm-root" style={{ transform: `scale(${scale})` }}>
-        {/* HEADER */}
-        <div className="wm-panel" style={{ top: 22, left: 24, right: 24, height: 92, display: 'flex', alignItems: 'center', padding: '0 26px', gap: 20 }}>
-          <div className="wm-gold" />
-          <div className="wm-hd" style={{ fontSize: 26 }}>World Map</div>
-          <div style={{ fontSize: 14, color: '#8f8674', fontStyle: 'italic' }}>Discovered zones · click a town to travel</div>
-          <div style={{ flex: 1 }} />
-          <div style={{ textAlign: 'center' }}>
-            <div className="wm-px" style={{ fontSize: 20, color: '#8fe0a0' }}>{discoveredCount}</div>
-            <div style={{ fontSize: 10, color: '#8fa8cc', marginTop: 5, letterSpacing: 0.5 }}>DISCOVERED</div>
+      <div className="wm-root">
+        {/* HEADER (chrome bar above the scrollable map). */}
+        <div className="wm-header">
+          <div className="wm-title">Suomela · World Map</div>
+          <div className="wm-subtitle">Click a visited town to fast travel</div>
+          <div className="wm-spacer" />
+          <div className="wm-stat">
+            <div className="wm-stat-num" style={{ color: OCHRE }}>
+              {discoveredCount}
+            </div>
+            <div className="wm-stat-label">DISCOVERED</div>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <div className="wm-px" style={{ fontSize: 20, color: '#c2a06a' }}>{layout.nodes.length}</div>
-            <div style={{ fontSize: 10, color: '#a99a7c', marginTop: 5, letterSpacing: 0.5 }}>TOTAL</div>
+          <div className="wm-stat">
+            <div className="wm-stat-num" style={{ color: MID_INK }}>
+              {layout.nodes.length}
+            </div>
+            <div className="wm-stat-label">TOTAL</div>
           </div>
-          <div
-            className="wm-btn"
-            onClick={() => setScene('dungeon')}
-            style={{ marginLeft: 12, padding: '8px 26px', fontSize: 14, color: '#b3a888', background: '#1a1e26', border: '1px solid #3a4152' }}
-          >
+          <div className="wm-return" onClick={() => setScene('dungeon')}>
             Return
           </div>
         </div>
 
-        {/* MAP GRAPH */}
-        <div className="wm-panel" style={{ top: 130, left: 24, right: 336, bottom: 24, padding: 14 }}>
-          <div className="wm-gold" />
-          <div className="wm-map">
-            <svg className="wm-svg" viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="xMidYMid meet">
-              {/* edges */}
-              {layout.edges.map((e) => {
-                const a = pos.get(e.a)!;
-                const b = pos.get(e.b)!;
-                const known = disc.has(e.a) && disc.has(e.b);
-                return <line key={`${e.a}|${e.b}`} className={`wm-edge${known ? '' : ' dim'}`} x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy} />;
-              })}
+        {/* MAP: full-width parchment art + a coordinate-locked marker overlay,
+            inside a scrollable stage. */}
+        <div className="wm-stage" ref={stageRef}>
+          <div className="wm-map" ref={mapRef}>
+            {MAP_SVG_URL && <img className="wm-bg" src={MAP_SVG_URL} alt="World map of Suomela" draggable={false} />}
 
-              {/* nodes */}
+            {/* Overlay in the art's own design space — 1:1 with the painting. */}
+            <svg className="wm-overlay" viewBox={`0 0 ${DESIGN_W} ${DESIGN_H}`} preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <filter id="wmGlow" x="-60%" y="-60%" width="220%" height="220%">
+                  <feGaussianBlur stdDeviation="7" />
+                </filter>
+              </defs>
+
               {layout.nodes.map((n) => {
-                const { cx, cy } = pos.get(n.id)!;
                 const known = disc.has(n.id);
                 const here = n.id === mapId;
-                const color = n.isTown ? TOWN_COLOR : FIELD_COLOR;
-                const r = n.isTown ? 15 : 11;
-                const cls = `wm-node${n.isTown ? ' town' : ' field'}${known ? ' discovered' : ''}`;
+
+                // The parchment already shows every location, so we draw no marker —
+                // except the party's current map (a ring, so you can spot yourself
+                // even mid-chain). Only discovered towns get an invisible click
+                // target + hover glow.
+                if (!n.isTown || !known) {
+                  return here ? <HereRing key={n.id} x={n.x} y={n.y} r={20} /> : null;
+                }
 
                 return (
-                  <g key={n.id} className={cls} onClick={() => travel(n)}>
-                    {/* current-location marker (party): a pulsing ring around the node */}
-                    {here && (
-                      <circle cx={cx} cy={cy} r={r + 10} fill="none" stroke={HERE_COLOR} strokeWidth={3}>
-                        <animate attributeName="r" values={`${r + 7};${r + 13};${r + 7}`} dur="1.8s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0.9;0.35;0.9" dur="1.8s" repeatCount="indefinite" />
-                      </circle>
-                    )}
-
-                    {!known ? (
-                      // Undiscovered: a dim fogged silhouette, no name/level revealed.
-                      <>
-                        <circle cx={cx} cy={cy} r={r} fill="#1b1f18" stroke="#333a2c" strokeWidth={2} strokeDasharray="3 4" />
-                        <text className="wm-sublabel" x={cx} y={cy + 4} style={{ fontSize: 12, fill: '#4a5240' }}>
-                          ?
-                        </text>
-                      </>
-                    ) : n.isTown ? (
-                      // Town: gold diamond + name.
-                      <>
-                        <rect
-                          x={cx - r}
-                          y={cy - r}
-                          width={r * 2}
-                          height={r * 2}
-                          rx={3}
-                          transform={`rotate(45 ${cx} ${cy})`}
-                          fill={color}
-                          stroke="#12140c"
-                          strokeWidth={2}
-                        />
-                        <text className="wm-label" x={cx} y={cy - r - 12} style={{ fontSize: 20 }}>
-                          {n.name}
-                        </text>
-                        {here && (
-                          <text className="wm-sublabel" x={cx} y={cy + r + 24} style={{ fontSize: 9, fill: HERE_COLOR }}>
-                            YOU ARE HERE
-                          </text>
-                        )}
-                      </>
-                    ) : (
-                      // Field / dungeon map: mossy circle + name + recommended level band.
-                      <>
-                        <circle cx={cx} cy={cy} r={r} fill={color} stroke="#12140c" strokeWidth={2} opacity={here ? 1 : 0.9} />
-                        <text className="wm-label" x={cx} y={cy - r - 10} style={{ fontSize: 15 }}>
-                          {n.name}
-                        </text>
-                        <text className="wm-sublabel" x={cx} y={cy + r + 20} style={{ fontSize: 9 }}>
-                          {here ? 'YOU ARE HERE' : `LV ${n.recommended[0]}-${n.recommended[1]}`}
-                        </text>
-                      </>
-                    )}
+                  <g
+                    key={n.id}
+                    className="wm-town"
+                    onClick={() => travel(n)}
+                    onMouseEnter={() => setHovered(n.id)}
+                    onMouseLeave={() => setHovered((h) => (h === n.id ? null : h))}
+                  >
+                    {hovered === n.id && <circle className="wm-town-glow" cx={n.x} cy={n.y} r={24} />}
+                    {here && <HereRing x={n.x} y={n.y} r={22} />}
+                    <circle className="wm-town-hit" cx={n.x} cy={n.y} r={30} />
                   </g>
                 );
               })}
-              {/* TODO: quest markers — layout.questMarkers is an empty typed stub until a quest system exists. */}
+
+              {/* Fast-travel tooltip for the hovered, travelable town — drawn last
+                  so it sits above every marker. */}
+              {showTip && hoveredNode && <FastTravelTip node={hoveredNode} />}
+
+              {/* TODO: quest markers — layout.questMarkers is an empty typed stub
+                  until a quest system exists. */}
             </svg>
           </div>
         </div>
 
-        {/* LEGEND / SIDEBAR */}
-        <div className="wm-panel" style={{ top: 130, right: 24, width: 288, bottom: 24, padding: '20px 22px' }}>
-          <div className="wm-gold" />
-          <div className="wm-hd" style={{ fontSize: 14 }}>Legend</div>
-          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 13, fontSize: 14, color: '#cdc3aa' }}>
-            <div>
-              <span className="wm-swatch" style={{ background: TOWN_COLOR, transform: 'rotate(45deg)' }} /> Town — click to travel
-            </div>
-            <div>
-              <span className="wm-swatch" style={{ background: FIELD_COLOR, borderRadius: '50%' }} /> Field / dungeon map
-            </div>
-            <div>
-              <span className="wm-swatch" style={{ background: 'transparent', border: `2px solid ${HERE_COLOR}`, borderRadius: '50%' }} /> Your current location
-            </div>
-            <div>
-              <span className="wm-swatch" style={{ background: '#1b1f18', border: '2px dashed #333a2c', borderRadius: '50%' }} /> Undiscovered
-            </div>
-          </div>
-
-          <div style={{ height: 1, background: 'linear-gradient(90deg,transparent,#b8925a44,transparent)', margin: '20px 0 16px' }} />
-
-          <div className="wm-hd" style={{ fontSize: 12, color: '#b89a63' }}>Current</div>
-          <div style={{ marginTop: 10, fontSize: 15, color: '#f2e8d2' }}>{layout.nodes.find((n) => n.id === mapId)?.name ?? mapId}</div>
-          <div style={{ fontSize: 12, color: '#8f8674', marginTop: 4 }}>
-            {(() => {
-              const cur = layout.nodes.find((n) => n.id === mapId);
-              if (!cur) return null;
-              return cur.isTown ? 'Safe town' : `Recommended Lv ${cur.recommended[0]}-${cur.recommended[1]}`;
-            })()}
-          </div>
-
-          <div style={{ marginTop: 18, fontSize: 11.5, color: '#7a7360', fontStyle: 'italic', lineHeight: 1.5 }}>
-            Only towns are travelable for now. Walk field maps through their portals to discover the rest of the world.
-          </div>
+        {/* CURRENT-LOCATION readout (bottom-left chrome, floats over the map). */}
+        <div className="wm-footer">
+          <div className="wm-footer-label">Current location</div>
+          <div className="wm-footer-name">{current?.name ?? mapId}</div>
+          <div className="wm-footer-sub">{current ? (current.isTown ? 'Safe town' : `Recommended Lv ${current.recommended[0]}–${current.recommended[1]}`) : ''}</div>
+          <div className="wm-footer-note">Walk the fields and forests to uncover more of mysterious Suomela.</div>
         </div>
       </div>
     </div>
+  );
+}
+
+// A pulsing halo ring that marks the party's current map — reads even mid-chain.
+function HereRing({ x, y, r }: { x: number; y: number; r: number }) {
+  return (
+    <circle cx={x} cy={y} r={r} className="wm-here-ring" fill="none">
+      <animate attributeName="r" values={`${r - 3};${r + 3};${r - 3}`} dur="1.8s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.9;0.35;0.9" dur="1.8s" repeatCount="indefinite" />
+    </circle>
+  );
+}
+
+// "Fast Travel to / <Town>" bubble, drawn above the hovered town's icon.
+function FastTravelTip({ node }: { node: WorldNode }) {
+  const w = 240, h = 68;
+  const x = node.x;
+  const top = node.y - 44 - h; // float above the painted icon
+  return (
+    <g pointerEvents="none">
+      <rect className="wm-tip-box" x={x - w / 2} y={top} width={w} height={h} rx={7} />
+      <text className="wm-tip-line1" x={x} y={top + 27}>
+        Fast Travel to
+      </text>
+      <text className="wm-tip-line2" x={x} y={top + 54}>
+        {node.name}
+      </text>
+    </g>
   );
 }

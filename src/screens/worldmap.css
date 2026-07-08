@@ -1,117 +1,203 @@
-/* World Map screen — discovered zones, travel-to-town, party marker.
+/* World Map screen — the Claude Design illustrated parchment map of Finland.
    Same scale-to-fit pattern as skills.css: a 1920x1080 layer anchored top-left
-   and scaled to the viewport. The graph itself is drawn with SVG (crisp at any
-   zoom); everything here is chrome around it. */
+   and scaled to the viewport. The parchment art is a portrait SVG centred in that
+   layer (expect side margins); interactive markers are an SVG overlay locked to
+   the art's 1440×1860 design space. Palette from the handoff:
+   ink #493523, mid-ink #6e563a, halo #eee2c2, ochre #a8552b, water #cdd2bf. */
 .wm-fit {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: radial-gradient(1200px 700px at 30% -10%, #1a1e28, #0a0b0f 68%);
+  display: flex;
+  /* A dark surround so the lit parchment pops; warm, not blue, to match the art. */
+  background: radial-gradient(1200px 800px at 50% 30%, #2a241a, #100d08 70%);
 }
 .wm-root {
-  width: 1920px;
-  height: 1080px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: top left;
-  font-family: Spectral, Georgia, serif;
-  color: #e9ddc4;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: 'IM Fell English', Spectral, Georgia, serif;
+  color: #f2e8d2;
   user-select: none;
-}
-.wm-panel {
-  position: absolute;
-  box-sizing: border-box;
-  background: linear-gradient(#232833, #151a22);
-  border: 1px solid #0a0d12;
-  border-radius: 6px;
-  box-shadow: inset 0 1px 0 #3d4757, inset 0 0 0 1px #2a3140, 0 8px 22px rgba(0, 0, 0, 0.55);
-}
-.wm-gold {
-  position: absolute;
-  inset: 3px;
-  border: 1px solid rgba(184, 146, 90, 0.3);
-  border-radius: 3px;
-  pointer-events: none;
-}
-.wm-hd {
-  font-family: Cinzel, serif;
-  color: #cca96b;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-}
-.wm-px {
-  font-family: 'Press Start 2P', monospace;
-}
-.wm-btn {
-  font-family: Cinzel, serif;
-  letter-spacing: 1px;
-  border-radius: 5px;
-  cursor: pointer;
-  user-select: none;
-  text-align: center;
 }
 
-/* Parchment surface behind the graph. */
+/* Header chrome — a slim parchment-toned bar floating over the top of the map. */
+.wm-header {
+  flex: 0 0 auto;
+  margin: 20px 24px 10px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 0 26px;
+  box-sizing: border-box;
+  background: linear-gradient(#efe6c8, #e2d3ab);
+  border: 1px solid #b89a63;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(238, 226, 194, 0.6), 0 8px 22px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+.wm-title {
+  font-family: Cinzel, 'IM Fell English SC', serif;
+  font-size: 26px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #493523;
+}
+.wm-subtitle {
+  font-size: 15px;
+  color: #6e563a;
+  font-style: italic;
+}
+.wm-spacer {
+  flex: 1;
+}
+.wm-stat {
+  text-align: center;
+}
+.wm-stat-num {
+  font-family: 'IM Fell English SC', Cinzel, serif;
+  font-size: 22px;
+  line-height: 1;
+}
+.wm-stat-label {
+  font-size: 10px;
+  color: #9c8560;
+  margin-top: 5px;
+  letter-spacing: 1px;
+}
+.wm-return {
+  font-family: Cinzel, serif;
+  letter-spacing: 1px;
+  font-size: 14px;
+  padding: 9px 26px;
+  color: #f2e8d2;
+  background: #493523;
+  border: 1px solid #6e563a;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+}
+.wm-return:hover {
+  background: #6e563a;
+}
+
+/* Stage — a scrollable viewport below the header. The parchment renders at full
+   width (much larger than fit-to-height) and overflows, so the player scrolls to
+   pan across it. */
+.wm-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 24px 24px;
+}
+/* The map box: full available width at the art's portrait aspect (1440:1860), so
+   it's large and the background + overlay share exactly one coordinate frame. */
 .wm-map {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1440 / 1860;
+  margin: 0 auto;
+}
+.wm-bg,
+.wm-overlay {
   position: absolute;
   inset: 0;
-  border-radius: 4px;
-  overflow: hidden;
-  background: radial-gradient(1000px 620px at 42% 34%, #232a24, #12140f 74%);
-}
-.wm-svg {
   width: 100%;
   height: 100%;
   display: block;
 }
-
-/* Graph edges (roads between maps). */
-.wm-edge {
-  stroke: #4a5240;
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-.wm-edge.dim {
-  stroke: #2a2f26;
-  stroke-dasharray: 6 8;
+.wm-bg {
+  object-fit: contain;
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.55));
+  pointer-events: none;
 }
 
-/* Nodes. Towns get a diamond, field/dungeon maps a circle; the two are also
-   color-keyed. Discovered-town nodes are the only travel targets — they get the
-   pointer cursor and a hover lift. */
-.wm-node {
-  transition: filter 0.1s;
+/* Overlay markers. The parchment already draws every town's icon and name, so the
+   overlay adds no labels of its own — only invisible click targets on discovered
+   towns, a hover glow + "Fast Travel" tooltip, and a ring on the current location.
+   The overlay passes clicks through to the art except on those town targets. */
+.wm-overlay {
+  pointer-events: none;
 }
-.wm-node.town.discovered {
+.wm-town {
+  pointer-events: none;
+}
+.wm-town-hit {
+  pointer-events: all;
   cursor: pointer;
+  fill: transparent;
 }
-.wm-node.town.discovered:hover {
-  filter: brightness(1.3) drop-shadow(0 0 8px rgba(230, 197, 131, 0.55));
-}
-.wm-label {
-  font-family: Cinzel, serif;
-  fill: #e9ddc4;
-  text-anchor: middle;
-  paint-order: stroke;
-  stroke: #0b0d09;
-  stroke-width: 3px;
-}
-.wm-sublabel {
-  font-family: 'Press Start 2P', monospace;
-  fill: #b7a06a;
-  text-anchor: middle;
-  paint-order: stroke;
-  stroke: #0b0d09;
-  stroke-width: 3px;
+/* Hover glow — a soft ochre halo blurred over the town's painted icon. */
+.wm-town-glow {
+  fill: #a8552b;
+  opacity: 0.55;
+  filter: url(#wmGlow);
 }
 
-/* Legend swatches. */
-.wm-swatch {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  vertical-align: -2px;
-  margin-right: 8px;
+/* Fast-travel tooltip bubble (shown only when travel is available). */
+.wm-tip-box {
+  fill: #efe6c8;
+  stroke: #493523;
+  stroke-width: 1.5;
+}
+.wm-tip-line1 {
+  fill: #6e563a;
+  font-size: 17px;
+  font-style: italic;
+  text-anchor: middle;
+}
+.wm-tip-line2 {
+  fill: #493523;
+  font-size: 27px;
+  font-family: 'IM Fell English SC', Cinzel, serif;
+  text-anchor: middle;
+}
+
+/* Current location — a pulsing ochre halo ring over the party's map. */
+.wm-here-ring {
+  stroke: #a8552b;
+  stroke-width: 3;
+}
+
+/* Current-location readout, bottom-left over the parchment side margin. */
+.wm-footer {
+  position: absolute;
+  left: 40px;
+  bottom: 44px;
+  width: 300px;
+  padding: 16px 20px;
+  box-sizing: border-box;
+  background: linear-gradient(#efe6c8, #e2d3ab);
+  border: 1px solid #b89a63;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(238, 226, 194, 0.6), 0 8px 22px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+.wm-footer-label {
+  font-family: Cinzel, serif;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #9c8560;
+}
+.wm-footer-name {
+  font-family: 'IM Fell English SC', Cinzel, serif;
+  font-size: 20px;
+  color: #493523;
+  margin-top: 6px;
+}
+.wm-footer-sub {
+  font-size: 13px;
+  color: #6e563a;
+  margin-top: 3px;
+}
+.wm-footer-note {
+  margin-top: 14px;
+  font-size: 12px;
+  font-style: italic;
+  color: #8a7350;
+  line-height: 1.5;
 }
