@@ -27,13 +27,6 @@ const DEFAULT_TILES: Record<ShapeKind, number> = {
   party: 9,
 };
 
-const ADJ4: Offset[] = [
-  { dx: -1, dy: 0 },
-  { dx: 1, dy: 0 },
-  { dx: 0, dy: -1 },
-  { dx: 0, dy: 1 },
-];
-
 function line(n: number): Offset[] {
   const out: Offset[] = [];
   for (let x = 1; x <= n; x++) out.push({ dx: x, dy: 0 });
@@ -96,7 +89,7 @@ function baseShape(shapeKind: ShapeKind, tiles: number): Offset[] {
       return party();
     case 'melee':
     case 'point':
-      return ADJ4.map((o) => ({ ...o }));
+      return [{ dx: 1, dy: 0 }]; // the single tile the caster faces
     case 'line':
       return line(tiles);
     case 'arc':

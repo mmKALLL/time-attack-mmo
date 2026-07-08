@@ -9,11 +9,12 @@ function at(id: string, faction: Faction, cell: { x: number; y: number }): Entit
 }
 
 describe('skill targeting by shape', () => {
-  it('hits only opposing members whose offset matches the (melee) shape', () => {
+  it('hits only the opposing member on the faced (melee) tile', () => {
     const caster = at('p', 'player', { x: 5, y: 5 });
-    const right = at('e1', 'enemy', { x: 6, y: 5 }); // (1,0) — adjacent
-    const far = at('e2', 'enemy', { x: 8, y: 5 }); // (3,0) — not adjacent
-    const targets = skillTargets(caster, getSkill('strike'), [caster, right, far], 1);
+    caster.facing = 'right';
+    const ahead = at('e1', 'enemy', { x: 6, y: 5 }); // (1,0) — the faced tile
+    const beside = at('e2', 'enemy', { x: 5, y: 6 }); // (0,1) — adjacent but not faced
+    const targets = skillTargets(caster, getSkill('strike'), [caster, ahead, beside], 1);
     expect(targets.map((t) => t.id)).toEqual(['e1']);
   });
   it('never targets allies with a damage skill', () => {

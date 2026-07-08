@@ -16,8 +16,8 @@ describe('shapeFor', () => {
     const cells = shapeFor(getSkill('emberLance'), 3);
     expect(cells.every((c) => c.dy === 0 && c.dx > 0)).toBe(true);
   });
-  it('melee resolves to the four adjacent tiles', () => {
-    expect(shapeFor(getSkill('strike'), 1)).toHaveLength(4);
+  it('melee resolves to the single faced tile', () => {
+    expect(shapeFor(getSkill('strike'), 1)).toEqual([{ dx: 1, dy: 0 }]);
   });
 });
 
@@ -32,9 +32,8 @@ describe('facing rotation', () => {
     expect(shapeFor(getSkill('emberLance'), 3, 'down').every((c) => c.dx === 0 && c.dy > 0)).toBe(true);
     expect(shapeFor(getSkill('emberLance'), 3, 'left').every((c) => c.dy === 0 && c.dx < 0)).toBe(true);
   });
-  it('melee (adj4) is rotation-invariant', () => {
-    const r = shapeFor(getSkill('strike'), 1, 'right').map((c) => `${c.dx},${c.dy}`).sort();
-    const d = shapeFor(getSkill('strike'), 1, 'down').map((c) => `${c.dx},${c.dy}`).sort();
-    expect(d).toEqual(r);
+  it('melee rotates to the faced tile', () => {
+    expect(shapeFor(getSkill('strike'), 1, 'right')).toEqual([{ dx: 1, dy: 0 }]);
+    expect(shapeFor(getSkill('strike'), 1, 'down')).toEqual([{ dx: 0, dy: 1 }]);
   });
 });

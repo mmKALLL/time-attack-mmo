@@ -456,15 +456,26 @@ export class WorldRenderer {
     return this.glowTexture;
   }
 
-  private addGlow(cx: number, cy: number, cells: number, tint: number, alpha: number) {
+  private addGlow(layer: Container, cx: number, cy: number, wCells: number, tint: number, alpha: number, hCells = wCells) {
     const sp = new Sprite(this.glowTex());
     sp.anchor.set(0.5);
     sp.blendMode = 'add';
     sp.tint = tint;
     sp.alpha = alpha;
-    sp.setSize(CELL_PX * cells, CELL_PX * cells);
+    sp.setSize(CELL_PX * wCells, CELL_PX * hCells);
     sp.position.set(cx, cy);
-    this.lights.addChild(sp);
+    layer.addChild(sp);
+  }
+
+  // Faint red elliptical glow overlapping each enemy (taller than wide to hug a
+  // standing sprite). Drawn into fx so it sits behind the enemy sprite (actors).
+  private drawEnemyGlow(world: WorldState) {
+    for (const e of Object.values(world.entities)) {
+      if (e.faction !== 'enemy') continue;
+      const cx = e.cell.x * CELL_PX + CELL_PX / 2;
+      const cy = e.cell.y * CELL_PX + CELL_PX * 0.45; // over the sprite body
+      this.addGlow(this.fx, cx, cy, 1.2, 0xff5a5a, 0.28, 1.7);
+    }
   }
 
   // A gentle ambient dusk over the map, with additive glows: warm at each torch
@@ -477,16 +488,11 @@ export class WorldRenderer {
     for (const f of world.features) {
       if (f.kind !== 'torch') continue;
       const pulse = 0.85 + 0.15 * Math.sin(elapsedMs / 260 + (f.cell.x + f.cell.y));
-      this.addGlow(f.cell.x * CELL_PX + CELL_PX / 2, f.cell.y * CELL_PX + CELL_PX / 2, 3.4, 0xffc27a, pulse);
+      this.addGlow(this.lights, f.cell.x * CELL_PX + CELL_PX / 2, f.cell.y * CELL_PX + CELL_PX / 2, 3.4, 0xffc27a, pulse);
     }
     for (const ex of world.exits) {
       const pulse = 0.7 + 0.3 * Math.sin(elapsedMs / 360 + (ex.cell.x + ex.cell.y));
-      this.addGlow(ex.cell.x * CELL_PX + CELL_PX / 2, ex.cell.y * CELL_PX + CELL_PX / 2, 3.2, 0x7fe6dd, pulse);
-    }
-    // faint 1-tile red glow marking each enemy
-    for (const e of Object.values(world.entities)) {
-      if (e.faction !== 'enemy') continue;
-      this.addGlow(e.cell.x * CELL_PX + CELL_PX / 2, e.cell.y * CELL_PX + CELL_PX / 2, 1.5, 0xff5a5a, 0.22);
+      this.addGlow(this.lights, ex.cell.x * CELL_PX + CELL_PX / 2, ex.cell.y * CELL_PX + CELL_PX / 2, 3.2, 0x7fe6dd, pulse);
     }
   }
 
@@ -515,11 +521,10 @@ export class WorldRenderer {
     this.drawPortals(world, elapsedMs);
     this.drawFeatures(world);
     this.drawCollisionOverlay(); // above walls/obstacles, below actors
+    this.drawEnemyGlow(world); // elliptical red glow behind each enemy
     const playerGroup = Object.values(world.groups).find((g) => g.memberIds.includes(world.playerId));
-    if (playerGroup) {
-      this.drawBlockOutline(world, playerGroup);
-      this.drawAttackRadius(world, elapsedMs);
-    }
+    if (playerGroup) this.drawBlockOutline(world, playerGroup);
+    this.drawAttackRadius(world, elapsedMs); // always visible for the selected skill
 
     for (const e of Object.values(world.entities)) {
       this.drawEntity(world, e, frame, bob);
@@ -649,19 +654,26 @@ export class WorldRenderer {
 
   private drawAttackRadius(world: WorldState, elapsedMs: number) {
     const player = world.entities[world.playerId];
-    const group = Object.values(world.groups).find((gr) => gr.memberIds.includes(world.playerId));
-    if (!player || !group) return;
+    if (!player) return;
     const rt = player.skills[player.activeSkillIndex];
     const skill = rt && getSkill(rt.skillId);
     if (!skill) return;
-    const frac = group.timerMs / COMBAT_TICK_MS;
+    // Support skills (buffs blue, terrain/heals green) always show their footprint;
+    // attacks only while in combat. Pulse harder as a cast nears.
+    const group = Object.values(world.groups).find((gr) => gr.memberIds.includes(world.playerId));
+    const isBuff = skill.kind === 'buff';
+    const isTerrain = skill.kind === 'heal';
+    if (!group && !isBuff && !isTerrain) return; // attacks hidden out of combat
+    const fill = isBuff ? 0x4a8fe0 : isTerrain ? 0x54c56a : COLORS.attackCurrentFill;
+    const stroke = isBuff ? 0x86b6f2 : isTerrain ? 0x8fe0a0 : COLORS.attackCurrentBorder;
+    const frac = group ? group.timerMs / COMBAT_TICK_MS : 0;
     const pulse = 0.14 + 0.18 * frac + 0.05 * Math.sin(elapsedMs / 120);
     const g = new Graphics();
     for (const o of shapeFor(skill, rt.level, player.facing)) {
       const cx = (player.cell.x + o.dx) * CELL_PX;
       const cy = (player.cell.y + o.dy) * CELL_PX;
-      g.rect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2).fill({ color: COLORS.attackCurrentFill, alpha: pulse });
-      g.rect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2).stroke({ width: 2, color: COLORS.attackCurrentBorder, alpha: 0.85 });
+      g.rect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2).fill({ color: fill, alpha: pulse });
+      g.rect(cx + 1, cy + 1, CELL_PX - 2, CELL_PX - 2).stroke({ width: 2, color: stroke, alpha: 0.85 });
     }
     this.fx.addChild(g);
   }
