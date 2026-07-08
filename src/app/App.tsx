@@ -31,9 +31,13 @@ export default function App() {
   const scene = useGame((s) => s.scene);
   const setScene = useGame((s) => s.setScene);
   const Screen = SCREENS[scene];
+  // The full-screen character view owns its whole canvas (incl. the top-right),
+  // so hide the debug nav there — it has its own "← Dungeon" control.
+  const showNav = scene !== 'skills';
   return (
     <>
       <Screen />
+      {showNav && (
       <nav
         style={{
           position: 'fixed',
@@ -65,6 +69,7 @@ export default function App() {
           </button>
         ))}
       </nav>
+      )}
     </>
   );
 }
