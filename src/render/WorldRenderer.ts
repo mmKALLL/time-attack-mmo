@@ -59,7 +59,7 @@ function clearQuadrantCross(img: ImageData, half = 7) {
     }
   }
 }
-import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, ENEMY_GLOW, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA } from '../config';
+import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, CLASS_COMBAT, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, ENEMY_GLOW, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA } from '../config';
 import { Sprites } from './sprites';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
@@ -590,7 +590,7 @@ export class WorldRenderer {
     if (e.faction !== 'enemy') this.drawFacing(e, px, py); // enemies show no facing arrow
     const inFight = Object.values(world.groups).some((g) => g.memberIds.includes(e.id));
     if (e.faction === 'enemy') this.drawHpPip(px, py, e);
-    if (inFight) this.drawSquareTimer(world, e, px, py);
+    if (inFight) this.drawSquareTimer(e, px, py);
   }
 
   // Small yellow arrowhead near the character showing its facing direction.
@@ -617,10 +617,9 @@ export class WorldRenderer {
     this.actors.addChild(g);
   }
 
-  private drawSquareTimer(world: WorldState, e: Entity, px: number, py: number) {
-    const group = Object.values(world.groups).find((g) => g.memberIds.includes(e.id));
-    if (!group) return;
-    const frac = group.timerMs / COMBAT_TICK_MS; // 0 -> just cast, 1 -> about to cast
+  private drawSquareTimer(e: Entity, px: number, py: number) {
+    const interval = COMBAT_TICK_MS / (CLASS_COMBAT[e.combatClass]?.speed ?? 1);
+    const frac = Math.min(1, e.castTimerMs / interval); // 0 -> just cast, 1 -> about to cast
     const size = 12 * UI;
     const pad = 4 * UI;
     const bx = px + CELL_PX - size - pad;
@@ -672,7 +671,8 @@ export class WorldRenderer {
     if (!group && !isBuff && !isTerrain) return; // attacks hidden out of combat
     const fill = isBuff ? 0x4a8fe0 : isTerrain ? 0x54c56a : COLORS.attackCurrentFill;
     const stroke = isBuff ? 0x86b6f2 : isTerrain ? 0x8fe0a0 : COLORS.attackCurrentBorder;
-    const frac = group ? group.timerMs / COMBAT_TICK_MS : 0;
+    const interval = COMBAT_TICK_MS / (CLASS_COMBAT[player.combatClass]?.speed ?? 1);
+    const frac = group ? Math.min(1, player.castTimerMs / interval) : 0;
     const pulse = 0.14 + 0.18 * frac + 0.05 * Math.sin(elapsedMs / 120);
     const g = new Graphics();
     for (const o of shapeFor(skill, rt.level, player.facing)) {
@@ -713,7 +713,8 @@ export class WorldRenderer {
       const stack = this.floats.filter((f) => elapsedMs - f.born < 200 && Math.abs(f.x - x) < CELL_PX).length;
       const y = h.cell.y * CELL_PX + 12 * UI - stack * 2 * em;
       const away = h.from ? Math.sign(h.cell.x - h.from.x) : 0;
-      const driftX = (away || (stack % 2 ? 1 : -1)) * 26 * UI; // drift away from the attacker
+      // drift away from the attacker, a random amount between straight-up and full
+      const driftX = (away || (stack % 2 ? 1 : -1)) * 26 * UI * Math.random();
       t.position.set(x, y);
       this.floatLayer.addChild(t);
       this.floats.push({ text: t, born: elapsedMs, x, y, driftX });

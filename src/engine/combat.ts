@@ -3,7 +3,7 @@ import { DIRECTIONS, isWall, equals, key } from './grid';
 import { JOBS, getSkill, archetypeForJob, combatClassForJob } from '../data';
 import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude } from './skills';
-import { ARCHETYPE_WEIGHTS, CRIT_MULT, allocatePrimaries, deriveStats, hitChance, rawDamage, xpReward, xpToNext, COMBAT_TICK_MS } from '../config';
+import { ARCHETYPE_WEIGHTS, CLASS_COMBAT, CRIT_MULT, allocatePrimaries, deriveStats, hitChance, rawDamage, xpReward, xpToNext, COMBAT_TICK_MS } from '../config';
 import { nextRand } from './rng';
 
 // ---------- Queries (never mutate) ----------
@@ -23,7 +23,7 @@ export function stick(s: WorldState, byId: EntityId, enemyId: EntityId): void {
   let group = groupOf(s, byId);
   if (!group) {
     const id = 'g' + s.seq++;
-    group = { id, memberIds: [byId], timerMs: 0 };
+    group = { id, memberIds: [byId] };
     s.groups[id] = group;
   }
   const enemyGroup = groupOf(s, enemyId);
@@ -99,11 +99,17 @@ export function advanceCombat(s: WorldState, dt: number): void {
   for (const e of Object.values(s.entities)) e.skills = tickCooldowns(e, dt);
   orientCombatants(s);
 
+  // Each combatant casts on its own timer, so attack speed varies by class.
   for (const g of Object.values(s.groups)) {
-    g.timerMs += dt;
-    while (g.timerMs >= COMBAT_TICK_MS) {
-      g.timerMs -= COMBAT_TICK_MS;
-      fireSkills(s, g);
+    for (const m of membersOf(s, g)) {
+      if (!isAlive(m)) continue;
+      const interval = COMBAT_TICK_MS / (CLASS_COMBAT[m.combatClass]?.speed ?? 1);
+      m.castTimerMs += dt;
+      let guard = 0;
+      while (m.castTimerMs >= interval && guard++ < 8) {
+        m.castTimerMs -= interval;
+        castSkill(s, g, m);
+      }
     }
   }
   cleanupDead(s);
@@ -116,36 +122,35 @@ function resolveAttack(s: WorldState, caster: Entity, target: Entity, mult: numb
   if (nextRand(s) > hitChance(caster.stats.accuracy, target.stats.dodge)) return { amount: 0, crit: false, miss: true };
   const { minDmg, maxDmg } = caster.stats;
   const rolled = minDmg + nextRand(s) * Math.max(0, maxDmg - minDmg);
-  let amount = rawDamage(rolled, mult, target.stats.def);
+  const power = CLASS_COMBAT[caster.combatClass]?.power ?? 1; // slow classes (mages) hit harder
+  let amount = rawDamage(rolled, mult * power, target.stats.def);
   const crit = nextRand(s) < caster.stats.crit / 100;
   if (crit) amount = Math.round(amount * CRIT_MULT);
   return { amount, crit, miss: false };
 }
 
-function fireSkills(s: WorldState, g: CombatGroup): void {
-  for (const caster of membersOf(s, g)) {
-    if (!isAlive(caster)) continue;
-    const rt = caster.skills[caster.activeSkillIndex];
-    if (!rt || !canCast(rt)) continue;
-    const skill = getSkill(rt.skillId);
-    const living = membersOf(s, g).filter(isAlive);
-    const mag = magnitude(skill, rt.level);
-    for (const t of skillTargets(caster, skill, living, rt.level)) {
-      if (skill.kind === 'heal') {
-        if (mag > 0) {
-          const heal = Math.round(caster.stats.maxDmg * mag);
-          t.hp = Math.min(t.stats.maxHp, t.hp + heal);
-          s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: 'heal', amount: heal });
-        }
-      } else if (skill.params.dmg) {
-        // attack + damaging debuffs; pure buffs/debuffs/DoTs are inert until Phase 2.
-        const r = resolveAttack(s, caster, t, mag);
-        t.hp = Math.max(0, t.hp - r.amount);
-        s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
+// Fire one combatant's active skill (called on that combatant's own cast timer).
+function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
+  const rt = caster.skills[caster.activeSkillIndex];
+  if (!rt || !canCast(rt)) return;
+  const skill = getSkill(rt.skillId);
+  const living = membersOf(s, g).filter(isAlive);
+  const mag = magnitude(skill, rt.level);
+  for (const t of skillTargets(caster, skill, living, rt.level)) {
+    if (skill.kind === 'heal') {
+      if (mag > 0) {
+        const heal = Math.round(caster.stats.maxDmg * mag);
+        t.hp = Math.min(t.stats.maxHp, t.hp + heal);
+        s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: 'heal', amount: heal });
       }
+    } else if (skill.params.dmg) {
+      // attack + damaging debuffs; pure buffs/debuffs/DoTs are inert until Phase 2.
+      const r = resolveAttack(s, caster, t, mag);
+      t.hp = Math.max(0, t.hp - r.amount);
+      s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
     }
-    caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
   }
+  caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
 }
 
 // Level up a hero: bump level, re-allocate primaries for the new level, re-derive

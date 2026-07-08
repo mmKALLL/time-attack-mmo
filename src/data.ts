@@ -1,5 +1,5 @@
-import type { CooldownType, JobNode, ParamName, Skill, SkillElement, SkillKind, SkillParamFunction, SkillParams, ShapeKind } from './types';
-import type { Archetype, CombatClass } from './config';
+import type { CombatClass, CooldownType, JobNode, ParamName, Skill, SkillElement, SkillKind, SkillParamFunction, SkillParams, ShapeKind } from './types';
+import type { Archetype } from './config';
 
 // ============================================================================
 // Per-level param formulas. dmg/heal are MULTIPLIERS on the normal damage calc;

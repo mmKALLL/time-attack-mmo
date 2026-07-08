@@ -16,6 +16,9 @@ export type GroupId = string;
 // turns them into the derived stats combat reads (see config.deriveStats and
 // design-doc §"Stat system"). Every primary feeds several derived stats.
 export type Primaries = { str: number; dex: number; int: number; vit: number };
+// Base class a character resolves to for combat weighting (phys/mag split,
+// min-damage ratio, attack speed, power). Config maps it to numbers.
+export type CombatClass = 'beginner' | 'fighter' | 'archer' | 'magician' | 'rogue' | 'leader';
 export type Stats = {
   maxHp: number;
   maxMp: number;
@@ -102,21 +105,23 @@ export type Entity = {
   jobId: JobId;
   attainedJobs: JobId[];
   primaries: Primaries; // allocated attributes (STR/DEX/INT/VIT)
+  combatClass: CombatClass; // drives phys/mag split, attack speed, power
   stats: Stats; // derived from primaries + level via config.deriveStats
   hp: number;
   mp: number;
   skills: SkillRuntime[];
   activeSkillIndex: number; // hotkey slot 0..8
+  castTimerMs: number; // per-entity auto-cast accumulator (attack speed varies by class)
   statuses: StatusEffect[]; // active DoTs/buffs/debuffs (empty in skeleton)
   attacksPerRound: number; // 1 normally; rogues stack 2–3 (Phase 2)
   elite?: boolean;
 };
 
 // ---------- Combat groups (sticky blocks) ----------
+// Casting is per-entity (see Entity.castTimerMs); the group only tracks membership.
 export type CombatGroup = {
   id: GroupId;
   memberIds: EntityId[];
-  timerMs: number; // accumulates to COMBAT_TICK_MS then fires
 };
 
 // ---------- Maps ----------

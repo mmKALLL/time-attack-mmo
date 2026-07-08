@@ -1,4 +1,4 @@
-import type { Primaries, Stats } from './types';
+import type { CombatClass, Primaries, Stats } from './types';
 
 // ---------- Debug ----------
 export const DEBUG = false; // dev: start all skills at level 3 (else 0)
@@ -60,15 +60,15 @@ export const ENEMY_CLASS_ARCHETYPE: Record<string, Archetype> = {
 
 // Per-class combat weighting (design-doc): `phys` = physical share of damage
 // (magical = 1 - phys); `minDamageRatio` = minimum damage as a fraction of maximum
-// (rogues 40%, everyone else 60%). Tune class balance here.
-export type CombatClass = 'beginner' | 'fighter' | 'archer' | 'magician' | 'rogue' | 'leader';
-export const CLASS_COMBAT: Record<CombatClass, { phys: number; minDamageRatio: number }> = {
-  beginner: { phys: 0.5, minDamageRatio: 0.6 },
-  fighter: { phys: 0.8, minDamageRatio: 0.6 },
-  archer: { phys: 0.4, minDamageRatio: 0.6 },
-  magician: { phys: 0.2, minDamageRatio: 0.6 },
-  rogue: { phys: 0.6, minDamageRatio: 0.4 },
-  leader: { phys: 0.5, minDamageRatio: 0.7 },
+// (rogues 40%, everyone else 60%). `speed` scales attack cadence (rogues quicker,
+// mages slower) and `power` scales per-hit damage (slow mages hit harder). Tune here.
+export const CLASS_COMBAT: Record<CombatClass, { phys: number; minDamageRatio: number; speed: number; power: number }> = {
+  beginner: { phys: 0.5, minDamageRatio: 0.6, speed: 1.0, power: 1.0 },
+  fighter: { phys: 0.8, minDamageRatio: 0.6, speed: 1.0, power: 1.0 },
+  archer: { phys: 0.4, minDamageRatio: 0.6, speed: 1.0, power: 1.0 },
+  magician: { phys: 0.2, minDamageRatio: 0.6, speed: 0.8, power: 1.25 },
+  rogue: { phys: 0.6, minDamageRatio: 0.4, speed: 1.3, power: 1.0 },
+  leader: { phys: 0.5, minDamageRatio: 0.7, speed: 1.0, power: 1.0 },
 };
 // Enemy class -> combat class (enemies use 'mage'; players use 'magician').
 export const ENEMY_CLASS_COMBAT: Record<string, CombatClass> = { fighter: 'fighter', archer: 'archer', mage: 'magician', rogue: 'rogue', leader: 'leader' };
