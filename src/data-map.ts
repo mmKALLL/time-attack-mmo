@@ -38,7 +38,7 @@ export const MAPS: Record<string, MapDef> = {
     id: 'deepDungeon', name: 'Whisperstone Caverns', biome: 'deepDungeon', recommended: [25, 29],
     gen: { width: W, height: H, roomCountMin: 3, roomCountMax: 4, roomShape: 'rectangular', corridorWidth: 1, roomMin: 4, roomMax: 6, torchDensity: 8, obstacleCount: 4 },
     connections: [{ dir: 'w', toMap: 'mistyForest' }],
-    spawns: [{ pool: ['peikkoWarlord', 'haamuMage', 'metsanpeittoAncient'], levelMin: 25, levelMax: 29, maxAmount: 5, spawnInterval: 6, spawnAmount: 1 }],
+    spawns: [{ pool: ['peikkoFighter2', 'haamuMage', 'metsanpeittoLeader'], levelMin: 25, levelMax: 29, maxAmount: 5, spawnInterval: 6, spawnAmount: 1 }],
   },
 };
 export const START_MAP = 'mistyForest';
