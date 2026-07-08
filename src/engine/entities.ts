@@ -39,6 +39,7 @@ export function makeEntity(params: {
     sprite: params.sprite ?? '',
     asset: params.asset,
     cell: params.cell,
+    home: params.cell,
     facing: 'down',
     level: params.level,
     xp: 0,

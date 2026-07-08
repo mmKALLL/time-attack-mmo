@@ -3,7 +3,7 @@ import { DIRECTIONS, isWall, equals } from './grid';
 import { groupOf, stick } from './combat';
 import { exitAt } from './maps';
 import { isAlive } from './entities';
-import { randInt, pick } from './rng';
+import { randInt, pick, chance } from './rng';
 import { ENEMY_ROAM } from '../config';
 
 const ALL_DIRS: Direction[] = ['up', 'down', 'left', 'right'];
@@ -15,11 +15,28 @@ function startWait(s: WorldState): RoamState {
   return { phase: 'wait', timerMs: randInt(s, ENEMY_ROAM.minDelayMs, ENEMY_ROAM.maxDelayMs), dir: 'down', tilesLeft: 0 };
 }
 
-// Begin a move sequence: a random direction + a random length in tiles. The
-// first tile fires after tileDelayMs (timer set below).
-function startMove(s: WorldState, roam: RoamState): void {
+// Pick a sequence direction: uniform random, but with a small `homeBias` chance
+// to instead steer back toward the enemy's spawn cell — a soft leash so it drifts
+// home rather than wandering off forever. The bias roll is only spent when the
+// enemy is actually away from home (otherwise there's no homeward direction).
+function pickRoamDir(s: WorldState, e: Entity): Direction {
+  const home = e.home;
+  const homeward: Direction[] = [];
+  if (home) {
+    if (home.x < e.cell.x) homeward.push('left');
+    else if (home.x > e.cell.x) homeward.push('right');
+    if (home.y < e.cell.y) homeward.push('up');
+    else if (home.y > e.cell.y) homeward.push('down');
+  }
+  if (homeward.length && chance(s, ENEMY_ROAM.homeBias)) return pick(s, homeward);
+  return pick(s, ALL_DIRS);
+}
+
+// Begin a move sequence: a direction (homeward-biased) + a random length in tiles.
+// The first tile fires after tileDelayMs (timer set below).
+function startMove(s: WorldState, e: Entity, roam: RoamState): void {
   roam.phase = 'move';
-  roam.dir = pick(s, ALL_DIRS);
+  roam.dir = pickRoamDir(s, e);
   roam.tilesLeft = randInt(s, ENEMY_ROAM.minTiles, ENEMY_ROAM.maxTiles);
   roam.timerMs = ENEMY_ROAM.tileDelayMs;
 }
@@ -84,7 +101,7 @@ export function advanceRoaming(s: WorldState, dt: number): void {
     let guard = 0;
     while (roam.timerMs <= 0 && guard++ < 32) {
       if (roam.phase === 'wait') {
-        startMove(s, roam);
+        startMove(s, e, roam);
         continue;
       }
       // 'move' phase: a tile's timer elapsed, so take one step.

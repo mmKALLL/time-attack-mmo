@@ -81,7 +81,8 @@ export const ENEMY_ROAM = {
   maxDelayMs: 8000, // longest rest between move sequences
   minTiles: 1, // shortest wander (tiles per sequence)
   maxTiles: 4, // longest wander (tiles per sequence)
-  tileDelayMs: 750, // time to walk one tile mid-sequence (matches a lazy stroll)
+  tileDelayMs: 1000, // time to walk one tile mid-sequence (matches a lazy stroll)
+  homeBias: 0.1, // chance per sequence to steer back toward the spawn point (soft leash)
 } as const;
 
 // ---------- Primary-stat allocation (symmetric for players AND enemies) ----------

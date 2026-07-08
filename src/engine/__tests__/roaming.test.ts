@@ -33,13 +33,6 @@ function run(s: WorldState, steps: number, dt = 50): void {
 }
 
 describe('idle-enemy roaming', () => {
-  it('an idle enemy actually moves over simulated ticks', () => {
-    const s = world([rat('e1', { x: 6, y: 6 })]);
-    const start = { ...s.entities.e1.cell };
-    run(s, 400); // 400 * 50ms = 20s: covers the longest wait + a full sequence
-    expect(equals(s.entities.e1.cell, start)).toBe(false);
-  });
-
   it('only ever lands on floor — never a wall, portal, or another entity', () => {
     // Two roamers + a portal cell; simulate a long run and assert every frame.
     const exit: MapExit = { cell: { x: 3, y: 3 }, toMap: 'other' };

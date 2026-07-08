@@ -115,6 +115,7 @@ export type Entity = {
   statuses: StatusEffect[]; // active DoTs/buffs/debuffs (empty in skeleton)
   attacksPerRound: number; // 1 normally; rogues stack 2–3 (Phase 2)
   elite?: boolean;
+  home?: Cell; // spawn cell; roaming enemies have a small bias to drift back toward it
   // Idle-enemy roaming state (serializable; see engine/roaming.ts). Ungrouped
   // enemies alternate wait/move phases: `timerMs` counts down the current phase,
   // `dir`/`tilesLeft` describe the in-progress move sequence. Lazily initialized.
