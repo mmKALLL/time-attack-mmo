@@ -16,9 +16,11 @@ export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 25
 export const CAMERA_ZOOM_PCT = 40; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
 // Elliptical glow behind each enemy. wCells/hCells are in tiles (h > w hugs a
-// standing sprite); intensity is the additive alpha (0 disables).
-// export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.7, intensity: 0.5 };
-export const ENEMY_GLOW = { color: 0x1a1a1a, wCells: 1.5, hCells: 2, intensity: 0.8 };
+// standing sprite); intensity is the alpha (0 disables); pulseMs = pulse period
+// (0 = steady).
+export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.7, intensity: 0.5, pulseMs: 0 };
+// Additive torch light glow. cells = diameter in tiles; pulseMs = flicker period.
+export const TORCH_GLOW = { color: 0xffc27a, cells: 3.4, intensity: 1.0, pulseMs: 1600 };
 
 // ---------- Timing ----------
 export const SIM_TICK_MS = 50; // fixed simulation step (divides STEP_MS evenly)

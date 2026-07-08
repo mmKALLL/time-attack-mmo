@@ -59,12 +59,14 @@ function clearQuadrantCross(img: ImageData, half = 7) {
     }
   }
 }
-import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, CLASS_COMBAT, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, ENEMY_GLOW, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA } from '../config';
+import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, CLASS_COMBAT, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, ENEMY_GLOW, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA, TORCH_GLOW } from '../config';
 import { Sprites } from './sprites';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
 const FACING: Record<string, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 const UI = CELL_PX / 64; // world-space HUD/text was tuned for 64px cells; scale to the current cell size
+// Pulse factor in ~[0.4,1] for a glow; pulseMs<=0 means steady. `phase` desyncs instances.
+const glowPulse = (pulseMs: number, elapsedMs: number, phase: number) => (pulseMs > 0 ? 0.7 + 0.3 * Math.sin((elapsedMs / pulseMs) * 2 * Math.PI + phase) : 1);
 
 // Map tile sheets (2048x2048): four biome quadrants of 1024x1024, each a 4x4
 // grid of CELL_PX tiles. Floor quadrants are tileable ground fields; obstacle
@@ -475,13 +477,14 @@ export class WorldRenderer {
 
   // Faint red elliptical glow overlapping each enemy (taller than wide to hug a
   // standing sprite). Drawn into fx so it sits behind the enemy sprite (actors).
-  private drawEnemyGlow(world: WorldState) {
+  private drawEnemyGlow(world: WorldState, elapsedMs: number) {
     if (ENEMY_GLOW.intensity <= 0) return;
     for (const e of Object.values(world.entities)) {
       if (e.faction !== 'enemy') continue;
       const cx = e.cell.x * CELL_PX + CELL_PX / 2;
       const cy = e.cell.y * CELL_PX + CELL_PX * 0.45; // over the sprite body
-      this.addGlow(this.fx, cx, cy, ENEMY_GLOW.wCells, ENEMY_GLOW.color, ENEMY_GLOW.intensity, ENEMY_GLOW.hCells, false);
+      const alpha = ENEMY_GLOW.intensity * glowPulse(ENEMY_GLOW.pulseMs, elapsedMs, e.cell.x + e.cell.y);
+      this.addGlow(this.fx, cx, cy, ENEMY_GLOW.wCells, ENEMY_GLOW.color, alpha, ENEMY_GLOW.hCells, false);
     }
   }
 
@@ -494,8 +497,8 @@ export class WorldRenderer {
     this.lights.addChild(veil);
     for (const f of world.features) {
       if (f.kind !== 'torch') continue;
-      const pulse = 0.85 + 0.15 * Math.sin(elapsedMs / 260 + (f.cell.x + f.cell.y));
-      this.addGlow(this.lights, f.cell.x * CELL_PX + CELL_PX / 2, f.cell.y * CELL_PX + CELL_PX / 2, 3.4, 0xffc27a, pulse);
+      const alpha = TORCH_GLOW.intensity * glowPulse(TORCH_GLOW.pulseMs, elapsedMs, f.cell.x + f.cell.y);
+      this.addGlow(this.lights, f.cell.x * CELL_PX + CELL_PX / 2, f.cell.y * CELL_PX + CELL_PX / 2, TORCH_GLOW.cells, TORCH_GLOW.color, alpha);
     }
     for (const ex of world.exits) {
       const pulse = 0.7 + 0.3 * Math.sin(elapsedMs / 360 + (ex.cell.x + ex.cell.y));
@@ -528,7 +531,7 @@ export class WorldRenderer {
     this.drawPortals(world, elapsedMs);
     this.drawFeatures(world);
     this.drawCollisionOverlay(); // above walls/obstacles, below actors
-    this.drawEnemyGlow(world); // elliptical red glow behind each enemy
+    this.drawEnemyGlow(world, elapsedMs); // elliptical red glow behind each enemy
     const playerGroup = Object.values(world.groups).find((g) => g.memberIds.includes(world.playerId));
     if (playerGroup) this.drawBlockOutline(world, playerGroup);
     this.drawAttackRadius(world, elapsedMs); // always visible for the selected skill
