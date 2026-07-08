@@ -700,7 +700,7 @@ export class WorldRenderer {
       const crit = h.kind === 'crit';
       const miss = h.kind === 'miss';
       const text = miss ? 'MISS' : h.kind === 'heal' ? `+${h.amount}` : `${h.amount}`;
-      const fill = miss ? 0xcfd3da : crit ? 0xff5040 : h.kind === 'heal' ? COLORS.healText : COLORS.normalText;
+      const fill = miss ? 0x9aa0a8 : crit ? 0xff5040 : h.kind === 'heal' ? COLORS.healText : COLORS.normalText;
       const t = new Text({
         text,
         style: {
