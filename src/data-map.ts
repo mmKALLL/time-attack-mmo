@@ -1,5 +1,6 @@
 import type { Biome, Compass, MapDef, TileKind, TileMap } from './types';
 import { ENEMIES } from './data-enemy';
+import { MAP_SIZE } from './config';
 
 // ============================================================================
 // World topology (design-doc part 1, Finnish overworld). Towns are safe NPC maps
@@ -8,12 +9,6 @@ import { ENEMIES } from './data-enemy';
 // (forest / deepForest / lake / town); the doc's "plains" render as forest.
 // The generator (engine/map-generator) turns each MapDef into tiles/portals.
 // ============================================================================
-const W = 30;
-const H = 17;
-// Towns are smaller than field maps so portals sit near a room edge rather than
-// down a long corridor to a far corner. Still large enough to fill the viewport.
-const TOWN_W = 20;
-const TOWN_H = 13;
 const opp: Record<Compass, Compass> = { n: 's', s: 'n', e: 'w', w: 'e', ne: 'sw', sw: 'ne', nw: 'se', se: 'nw' };
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
@@ -43,15 +38,15 @@ function town(id: string, name: string): MapDef {
     name,
     biome: 'town',
     recommended: [1, 1],
-    gen: { width: TOWN_W, height: TOWN_H, tileset: 'town', roomCountMin: 1, roomCountMax: 1, roomShape: 'rectangular', corridorWidth: 2, roomMin: 5, roomMax: 8, torchDensity: 4, obstacleCount: 2 },
+    gen: { width: MAP_SIZE.town.width, height: MAP_SIZE.town.height, tileset: 'town', roomCountMin: 1, roomCountMax: 1, roomShape: 'rectangular', corridorWidth: 2, roomMin: 5, roomMax: 8, torchDensity: 4, obstacleCount: 2 },
     connections: [],
     spawns: [{ pool: [], maxAmount: 0, spawnInterval: 999, spawnAmount: 0 }],
   };
 }
 
 // A field/dungeon map for a level band. `rooms` = base room count; `width`/
-// `height` default to the standard field size but can be overridden per segment.
-function field(id: string, biome: Biome, lo: number, hi: number, rooms: number, width = W, height = H): MapDef {
+// `height` default to the biome's MAP_SIZE but can be overridden per segment.
+function field(id: string, biome: Biome, lo: number, hi: number, rooms: number, width = MAP_SIZE[biome].width, height = MAP_SIZE[biome].height): MapDef {
   const deep = biome === 'deepForest';
   return {
     id,

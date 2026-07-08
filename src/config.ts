@@ -18,12 +18,21 @@ export const DESIGN_H = 1080;
 export const CELL_PX = 256; // logical tile size (px); 1 enemy-asset tile == 1 cell
 export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
 export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
-export const CAMERA_ZOOM_PCT = 40; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
+export const CAMERA_ZOOM_PCT = 50; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
+// Default map footprint (in tiles) per biome. Towns are smaller so portals sit
+// near a room edge rather than down a long corridor; field biomes default larger.
+// A field segment (data-map) may override this per map.
+export const MAP_SIZE: Record<Biome, { width: number; height: number }> = {
+  town: { width: 20, height: 13 },
+  forest: { width: 30, height: 17 },
+  lake: { width: 30, height: 17 },
+  deepForest: { width: 30, height: 17 },
+};
 // Elliptical glow behind each enemy. wCells/hCells are in tiles (h > w hugs a
 // standing sprite); intensity is the alpha (0 disables); pulseMs = pulse period
 // (0 = steady).
-export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.7, intensity: 0.7, pulseMs: 2000 };
+export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.5, intensity: 0.7, pulseMs: 2000 };
 // export const ENEMY_GLOW = { color: 0x111111, wCells: 1.2, hCells: 1.7, intensity: 0.8, pulseMs: 0 };
 // Additive torch light glow. cells = diameter in tiles; pulseMs = flicker period.
 export const TORCH_GLOW = { color: 0xffc27a, cells: 7, intensity: 0.5, pulseMs: 8000 };
