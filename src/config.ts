@@ -20,34 +20,27 @@ export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
 export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
 export const CAMERA_ZOOM_PCT = 50; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
-// Default map footprint (in tiles) per biome. Towns are smaller so portals sit
-// near a room edge rather than down a long corridor; field biomes default larger.
-// A field segment (data-map) may override this per map.
+// Default map footprint (tiles) per biome; a data-map field segment can override it.
 export const MAP_SIZE: Record<Biome, { width: number; height: number }> = {
   town: { width: 15, height: 12 },
   forest: { width: 20, height: 15 },
   lake: { width: 22, height: 17 },
   deepForest: { width: 26, height: 20 },
 };
-// Elliptical glow behind each enemy. wCells/hCells are in tiles (h > w hugs a
-// standing sprite); intensity is the alpha (0 disables); pulseMs = pulse period
-// (0 = steady).
+// Elliptical glow behind each enemy (wCells/hCells in tiles; pulseMs 0 = steady).
 export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.5, intensity: 0.7, pulseMs: 2000 };
 // export const ENEMY_GLOW = { color: 0x111111, wCells: 1.2, hCells: 1.7, intensity: 0.8, pulseMs: 0 };
-// Additive torch light glow. cells = diameter in tiles; pulseMs = flicker period.
+// Additive torch glow (cells = diameter in tiles).
 export const TORCH_GLOW = { color: 0xffc27a, cells: 7, intensity: 0.5, pulseMs: 8000 };
-// Ambient "dusk" veil over the map, per biome (color + alpha; 0 alpha = none).
-// Towns are bright and safe; deep forest is gloomiest.
+// Ambient "dusk" veil over the map, per biome (alpha 0 = none).
 export const DUSK_OVERLAY: Record<Biome, { color: number; alpha: number }> = {
   town: { color: 0x0a0a12, alpha: 0 },
   forest: { color: 0x0a0a12, alpha: 0.1 },
   lake: { color: 0x0a0e18, alpha: 0 },
   deepForest: { color: 0x05060e, alpha: 0.2 },
 };
-// Screen-edge vignette, per biome: darkening toward the corners + a subtle warm
-// tint. `innerRadius` = size of the fully-clear centre; `outerRadius` = where it
-// reaches full darkness (both as a fraction of the screen's smaller/larger side).
-// Separate from DUSK_OVERLAY; set a biome's edge+warm alpha to 0 for a flat scene.
+// Screen-edge vignette per biome. innerRadius = fully-clear centre, outerRadius =
+// full-dark edge (fractions of the screen's min/max side).
 export const VIGNETTE: Record<Biome, { edgeAlpha: number; warmAlpha: number; innerRadius: number; outerRadius: number }> = {
   town: { edgeAlpha: 0.35, warmAlpha: 0.0, innerRadius: 0.38, outerRadius: 0.68 },
   forest: { edgeAlpha: 0.6, warmAlpha: 0.0, innerRadius: 0.3, outerRadius: 0.62 },
@@ -64,24 +57,17 @@ export const ANIM_FRAMES = 2; // handoff sprites have 2 animation frames
 export const DAMAGE_FLOAT_MS = 1150;
 export const MOVE_REPEAT_DELAY_MS = 40; // delay after the first step before auto-repeat kicks in
 export const MOVE_REPEAT_MS = 220; // held-key auto-repeat cadence for movement
-// Renderer-only: how long a sprite glides from its old cell to its new one after
-// a one-tile walk. The logic (Entity.cell) still updates instantly; only the
-// drawn pixel position eases over this window, driven by render delta time so it
-// stays framerate-independent (~70ms ≈ 4 frames at 60fps).
+// Draw-only glide time for a one-tile step; the logic cell updates instantly.
 export const MOVE_LERP_MS = 90;
 
 // ---------- Idle-enemy roaming ----------
-// Ungrouped, alive enemies lazily wander: they idle for a random delay in
-// [minDelayMs, maxDelayMs], then step a short sequence of [minTiles, maxTiles]
-// tiles in one direction (one tile every tileDelayMs), then idle again. Kept
-// slow and lazy so the world feels alive without enemies pacing frantically.
-// (See engine/roaming.ts. Enemies in a combat group stop roaming.)
+// Ungrouped, alive enemies wander lazily (see engine/roaming.ts).
 export const ENEMY_ROAM = {
-  minDelayMs: 2000, // shortest rest between move sequences
-  maxDelayMs: 8000, // longest rest between move sequences
-  minTiles: 1, // shortest wander (tiles per sequence)
-  maxTiles: 4, // longest wander (tiles per sequence)
-  tileDelayMs: 1000, // time to walk one tile mid-sequence (matches a lazy stroll)
+  minDelayMs: 2000,
+  maxDelayMs: 8000,
+  minTiles: 1,
+  maxTiles: 4,
+  tileDelayMs: 1000,
   homeBias: 0.1, // chance per sequence to steer back toward the spawn point (soft leash)
 } as const;
 
@@ -122,7 +108,7 @@ export const CLASS_COMBAT: Record<CombatClass, { phys: number; minDamageRatio: n
   fighter: { phys: 0.8, minDamageRatio: 0.6, speed: 1.0, power: 1.0 },
   archer: { phys: 0.4, minDamageRatio: 0.6, speed: 1.0, power: 1.0 },
   magician: { phys: 0.2, minDamageRatio: 0.6, speed: 0.8, power: 1.25 },
-  rogue: { phys: 0.6, minDamageRatio: 0.4, speed: 1.3, power: 1.0 },
+  rogue: { phys: 0.6, minDamageRatio: 0.4, speed: 1.5, power: 0.8 },
   leader: { phys: 0.5, minDamageRatio: 0.7, speed: 1.0, power: 1.0 },
 };
 // Enemy class -> combat class (enemies use 'mage'; players use 'magician').
