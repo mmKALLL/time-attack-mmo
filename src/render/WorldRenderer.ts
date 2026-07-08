@@ -233,39 +233,18 @@ export class WorldRenderer {
     this.bgTilesReady = !!(floor && obst);
     this.bg.removeChildren();
 
-    const { width, height, tiles } = world.map;
+    const { width, height } = world.map;
     const ts = MAPS[world.mapId]?.gen.tileset ?? 'forest';
     const [qx, qy] = QUAD[ts];
-    // Obstacle footprints keep floor underneath so the (transparent) prop art
-    // sits on ground, not on a dark wall block.
-    const obstacleCells = new Set<string>();
-    for (const f of world.features) {
-      if (f.kind !== 'obstacle') continue;
-      const [, , ow, oh] = OBS_SRC[f.size];
-      for (let dy = 0; dy < oh; dy++) for (let dx = 0; dx < ow; dx++) obstacleCells.add(KEY(f.cell.x + dx, f.cell.y + dy));
-    }
 
-    const g = new Graphics(); // dark wall base + procedural-floor fallback
+    // Floor extends everywhere — even under walls — so the (transparent) wall
+    // props sit on ground and the floor shows around and beyond them.
+    const g = new Graphics(); // procedural-floor fallback until the sheet loads
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const px = x * CELL_PX;
         const py = y * CELL_PX;
-        const solid = tiles[y * width + x] === 'wall' && !obstacleCells.has(KEY(x, y));
-        if (solid) {
-          // walls are the biome's 1x1 obstacle prop over a dark base (so gaps read solid)
-          g.rect(px, py, CELL_PX, CELL_PX).fill(COLORS.wallBottom);
-          const [wc, wr] = OBS_SRC['1x1'];
-          const tex = obst && this.mapSub(OBSTACLE_SHEET, qx + wc * CELL_PX, qy + wr * CELL_PX, CELL_PX, CELL_PX);
-          if (tex) {
-            const sp = new Sprite(tex);
-            sp.setSize(CELL_PX, CELL_PX);
-            sp.position.set(px, py);
-            this.bg.addChild(sp);
-          } else {
-            g.rect(px, py, CELL_PX, CELL_PX * 0.55).fill(COLORS.wallTop);
-          }
-        } else if (floor) {
-          // sample the biome quadrant's 4x4 field, tiling it across the map
+        if (floor) {
           const tex = this.mapSub(FLOOR_SHEET, qx + (x % 4) * CELL_PX, qy + (y % 4) * CELL_PX, CELL_PX, CELL_PX);
           if (tex) {
             const sp = new Sprite(tex);
@@ -280,7 +259,51 @@ export class WorldRenderer {
         }
       }
     }
-    this.bg.addChildAt(g, 0); // bases/fallback beneath the tile sprites
+    this.bg.addChildAt(g, 0); // fallback beneath the floor sprites
+
+    if (obst) this.buildWallProps(world, qx, qy);
+  }
+
+  // Cover only the innermost wall ring + corners with obstacle props: wall cells
+  // that touch walkable floor. Straight runs use the 3x1 / 1x3 props; corners and
+  // stragglers use the 1x1. (Feature obstacles carry their own art, so skip them.)
+  private buildWallProps(world: WorldState, qx: number, qy: number) {
+    const { width, height, tiles } = world.map;
+    const featureCells = new Set<string>();
+    for (const f of world.features) {
+      if (f.kind !== 'obstacle') continue;
+      const [, , ow, oh] = OBS_SRC[f.size];
+      for (let dy = 0; dy < oh; dy++) for (let dx = 0; dx < ow; dx++) featureCells.add(KEY(f.cell.x + dx, f.cell.y + dy));
+    }
+    const inBounds = (x: number, y: number) => x >= 0 && x < width && y >= 0 && y < height;
+    const walkable = (x: number, y: number) => inBounds(x, y) && tiles[y * width + x] === 'floor';
+    const capWall = (x: number, y: number) => {
+      if (!inBounds(x, y) || tiles[y * width + x] !== 'wall' || featureCells.has(KEY(x, y))) return false;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && walkable(x + dx, y + dy)) return true;
+      return false;
+    };
+
+    const covered = new Set<string>();
+    const free = (x: number, y: number) => capWall(x, y) && !covered.has(KEY(x, y));
+    const place = (size: ObstacleSize, x: number, y: number) => {
+      const [col, row, ow, oh] = OBS_SRC[size];
+      const tex = this.mapSub(OBSTACLE_SHEET, qx + col * CELL_PX, qy + row * CELL_PX, ow * CELL_PX, oh * CELL_PX);
+      if (tex) {
+        const sp = new Sprite(tex);
+        sp.setSize(ow * CELL_PX, oh * CELL_PX);
+        sp.position.set(x * CELL_PX, y * CELL_PX);
+        this.bg.addChild(sp);
+      }
+      for (let dy = 0; dy < oh; dy++) for (let dx = 0; dx < ow; dx++) covered.add(KEY(x + dx, y + dy));
+    };
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (!free(x, y)) continue;
+        if (free(x + 1, y) && free(x + 2, y)) place('3x1', x, y); // horizontal run
+        else if (free(x, y + 1) && free(x, y + 2)) place('1x3', x, y); // vertical run
+        else place('1x1', x, y); // corner / straggler
+      }
+    }
   }
 
   // Vignette + warm tint overlay (Emberdeep): screen-anchored (added to the app

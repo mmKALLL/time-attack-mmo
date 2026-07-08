@@ -38,8 +38,8 @@ function sk(s: {
 export const SKILLS: Record<string, Skill[]> = {
   // --- Tier 0 ---
   beginner: [
-    sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'melee', params: { dmg: lin(1.0, 0.2) } }),
-    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'area', params: { tiles: () => 2, dmg: lin(0.6, 0.12) } }),
+    sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'point', params: { dmg: lin(1.0, 0.2) } }),
+    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.12) } }),
     sk({ id: 'recover', name: 'Recover', description: 'Heal for 50% of max HP, cooldown {dur}s.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { dur: lin(180, -10) }, triggerMs: 2000 }),
   ],
 
