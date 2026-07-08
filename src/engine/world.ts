@@ -5,7 +5,8 @@ import { spendAttribute, levelUpSkill } from './progression';
 import { START_MAP } from '../data-map';
 import { step } from './grid';
 
-// On death the player returns to the starting town (Mäntyharju) at full health.
+// Respawn the player at the starting town (Mäntyharju) at full health — triggered
+// by the "You Died" screen's Respawn button.
 function respawnAtStart(s: WorldState): void {
   travelTo(s, START_MAP);
   const p = s.entities[s.playerId];
@@ -17,9 +18,10 @@ function respawnAtStart(s: WorldState): void {
 }
 
 export function applyInput(s: WorldState, input: Input): void {
-  // Character-screen actions work regardless of combat/death state.
+  // Actions allowed regardless of combat/death state (character screen, respawn).
   if (input.type === 'spendAttr') return spendAttribute(s, input.key);
   if (input.type === 'levelUpSkill') return levelUpSkill(s, input.index);
+  if (input.type === 'respawn') return respawnAtStart(s);
   const player = s.entities[s.playerId];
   if (!player || player.hp <= 0) return; // dead players take no actions until respawn
   if (input.type === 'move') {
@@ -53,8 +55,6 @@ export function tick(state: WorldState, inputs: Input[], dt: number): WorldState
   for (const input of inputs) applyInput(s, input);
   advanceCombat(s, dt);
   advanceRespawns(s, dt);
-  const player = s.entities[s.playerId];
-  if (player && player.hp <= 0) respawnAtStart(s);
   s.tickCount += 1;
   return s;
 }

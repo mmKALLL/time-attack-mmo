@@ -1,9 +1,9 @@
 import { useGame } from '../../state/store';
 
-// Shows when the controlled player is dead; Respawn resets the demo world.
+// Shows when the controlled player is dead; Respawn returns them to Mäntyharju.
 export function DeathOverlay() {
   const world = useGame((s) => s.world);
-  const reset = useGame((s) => s.reset);
+  const dispatch = useGame((s) => s.dispatch);
   const p = world.entities[world.playerId];
   if (p && p.hp > 0) return null;
   return (
@@ -32,7 +32,7 @@ export function DeathOverlay() {
         YOU DIED
       </div>
       <button
-        onClick={reset}
+        onClick={() => dispatch({ type: 'respawn' })}
         style={{
           marginTop: 24,
           fontFamily: 'var(--font-header)',

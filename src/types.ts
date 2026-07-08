@@ -202,4 +202,5 @@ export type Input =
   | { type: 'move'; dir: Direction }
   | { type: 'selectSkill'; slot: number } // 0..8 => keys 1..9
   | { type: 'spendAttr'; key: PrimaryKey } // raise a primary from the attribute pool
-  | { type: 'levelUpSkill'; index: number }; // raise a skill from the skill pool
+  | { type: 'levelUpSkill'; index: number } // raise a skill from the skill pool
+  | { type: 'respawn' }; // return to the starting town at full health
