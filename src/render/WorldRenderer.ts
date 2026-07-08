@@ -59,7 +59,24 @@ function clearQuadrantCross(img: ImageData, half = 7) {
     }
   }
 }
-import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, CLASS_COMBAT, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, DUSK_OVERLAY, ENEMY_GLOW, FLOOR_CHECKER_SIZE, MOVE_LERP_MS, OBSTACLE_OVERLAY_ALPHA, TORCH_GLOW, VIGNETTE } from '../config';
+import {
+  ANIM_FRAME_MS,
+  CAMERA_ZOOM_PERCENT,
+  CELL_PX,
+  CLASS_COMBAT,
+  COLORS,
+  COMBAT_TICK_MS,
+  DAMAGE_FLOAT_MS,
+  DESIGN_H,
+  DESIGN_W,
+  DUSK_OVERLAY,
+  ENEMY_GLOW,
+  FLOOR_CHECKER_SIZE,
+  MOVE_LERP_MS,
+  OBSTACLE_OVERLAY_ALPHA,
+  TORCH_GLOW,
+  VIGNETTE,
+} from '../config';
 import { Sprites } from './sprites';
 import { lerp, shouldSnap } from './tween';
 
@@ -290,12 +307,12 @@ export class WorldRenderer {
     return true;
   }
 
-  // Follow camera: fixed zoom (CAMERA_ZOOM_PCT), always centered on the player.
+  // Follow camera: fixed zoom (CAMERA_ZOOM_PERCENT), always centered on the player.
   // Tracks the player's interpolated pixel position so scrolling glides with the
   // sprite instead of snapping a tile ahead. No edge clamp — space outside the
   // map shows the black stage background.
   private camera(world: WorldState, pos: Map<string, { px: number; py: number }>) {
-    const scale = CAMERA_ZOOM_PCT / 100;
+    const scale = CAMERA_ZOOM_PERCENT / 100;
     const p = world.entities[world.playerId];
     const pp = p && pos.get(world.playerId);
     const cx = (pp ? pp.px + CELL_PX / 2 : (world.map.width * CELL_PX) / 2) * scale;
@@ -386,16 +403,19 @@ export class WorldRenderer {
         sp.position.set(x * CELL_PX, y * CELL_PX);
         this.bg.addChild(sp);
       }
-      for (let dy = 0; dy < oh; dy++) for (let dx = 0; dx < ow; dx++) {
-        covered.add(KEY(x + dx, y + dy));
-        this.propCells.add(KEY(x + dx, y + dy));
-      }
+      for (let dy = 0; dy < oh; dy++)
+        for (let dx = 0; dx < ow; dx++) {
+          covered.add(KEY(x + dx, y + dy));
+          this.propCells.add(KEY(x + dx, y + dy));
+        }
     };
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         if (!free(x, y)) continue;
-        if (free(x + 1, y) && free(x + 2, y)) place('3x1', x, y); // horizontal run
-        else if (free(x, y + 1) && free(x, y + 2)) place('1x3', x, y); // vertical run
+        if (free(x + 1, y) && free(x + 2, y))
+          place('3x1', x, y); // horizontal run
+        else if (free(x, y + 1) && free(x, y + 2))
+          place('1x3', x, y); // vertical run
         else place('1x1', x, y); // corner / straggler
       }
     }

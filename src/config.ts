@@ -18,7 +18,7 @@ export const DESIGN_H = 1080;
 export const CELL_PX = 256; // logical tile size (px); 1 enemy-asset tile == 1 cell
 export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
 export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
-export const CAMERA_ZOOM_PCT = 50; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
+export const CAMERA_ZOOM_PERCENT = 50; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
 // Default map footprint (tiles) per biome; a data-map field segment can override it.
 export const MAP_SIZE: Record<Biome, { width: number; height: number }> = {
@@ -27,6 +27,7 @@ export const MAP_SIZE: Record<Biome, { width: number; height: number }> = {
   lake: { width: 22, height: 17 },
   deepForest: { width: 26, height: 20 },
 };
+// ---------- Lighting & screen overlays (drawn in render/WorldRenderer.ts) ----------
 // Elliptical glow behind each enemy (wCells/hCells in tiles; pulseMs 0 = steady).
 export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.5, intensity: 0.7, pulseMs: 2000 };
 // export const ENEMY_GLOW = { color: 0x111111, wCells: 1.2, hCells: 1.7, intensity: 0.8, pulseMs: 0 };
@@ -56,8 +57,8 @@ export const ANIM_FRAME_MS = 420; // renderer 2-frame idle cadence
 export const ANIM_FRAMES = 2; // handoff sprites have 2 animation frames
 export const DAMAGE_FLOAT_MS = 1150;
 export const MOVE_REPEAT_DELAY_MS = 40; // delay after the first step before auto-repeat kicks in
-export const MOVE_REPEAT_MS = 220; // held-key auto-repeat cadence for movement
-// Draw-only glide time for a one-tile step; the logic cell updates instantly.
+export const MOVE_REPEAT_MS = 220; // held-key auto-repeat cadence (screens/DungeonScreen.tsx)
+// Draw-only glide for a one-tile step; logic cell updates instantly (render/WorldRenderer.ts).
 export const MOVE_LERP_MS = 90;
 
 // ---------- Idle-enemy roaming ----------
