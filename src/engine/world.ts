@@ -29,7 +29,8 @@ export function applyInput(s: WorldState, input: Input): void {
     if (!groupOf(s, player.id)) {
       const exit = exitAt(s, step(player.cell, input.dir));
       if (exit) {
-        travelTo(s, exit.toMap, s.mapId, input.dir); // arrive continuing the same way we walked in
+        player.facing = input.dir; // face the way we walked into the portal
+        travelTo(s, exit.toMap, s.mapId, input.dir); // ...and arrive continuing that way
         return;
       }
     }

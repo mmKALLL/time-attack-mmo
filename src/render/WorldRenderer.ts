@@ -59,7 +59,7 @@ function clearQuadrantCross(img: ImageData, half = 7) {
     }
   }
 }
-import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, CLASS_COMBAT, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, ENEMY_GLOW, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA, TORCH_GLOW } from '../config';
+import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, CLASS_COMBAT, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, DUSK_OVERLAY, ENEMY_GLOW, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA, TORCH_GLOW } from '../config';
 import { Sprites } from './sprites';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
@@ -492,8 +492,12 @@ export class WorldRenderer {
   // (the prop itself is hidden) and aqua around each portal.
   private buildLights(world: WorldState, elapsedMs: number) {
     this.lights.removeChildren();
+    // Per-biome dusk veil, oversized well past the map so it always fills the
+    // viewport (the camera can scroll past the map edges into the black stage).
+    const dusk = DUSK_OVERLAY[MAPS[world.mapId]?.biome ?? 'forest'];
+    const M = 10000;
     const veil = new Graphics();
-    veil.rect(0, 0, world.map.width * CELL_PX, world.map.height * CELL_PX).fill({ color: 0x0a0a12, alpha: 0.22 });
+    veil.rect(-M, -M, world.map.width * CELL_PX + 2 * M, world.map.height * CELL_PX + 2 * M).fill({ color: dusk.color, alpha: dusk.alpha });
     this.lights.addChild(veil);
     for (const f of world.features) {
       if (f.kind !== 'torch') continue;

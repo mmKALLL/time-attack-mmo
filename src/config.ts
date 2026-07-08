@@ -1,4 +1,4 @@
-import type { CombatClass, Primaries, Stats } from './types';
+import type { Biome, CombatClass, Primaries, Stats } from './types';
 
 // ---------- Debug ----------
 export const DEBUG = false; // dev: start skills at Lv2 (else Lv1)
@@ -23,10 +23,18 @@ export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N ti
 // Elliptical glow behind each enemy. wCells/hCells are in tiles (h > w hugs a
 // standing sprite); intensity is the alpha (0 disables); pulseMs = pulse period
 // (0 = steady).
-export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.7, intensity: 0.5, pulseMs: 0 };
+export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.7, intensity: 0.7, pulseMs: 2000 };
 // export const ENEMY_GLOW = { color: 0x111111, wCells: 1.2, hCells: 1.7, intensity: 0.8, pulseMs: 0 };
 // Additive torch light glow. cells = diameter in tiles; pulseMs = flicker period.
-export const TORCH_GLOW = { color: 0xffc27a, cells: 6, intensity: 0.8, pulseMs: 10000 };
+export const TORCH_GLOW = { color: 0xffc27a, cells: 7, intensity: 0.6, pulseMs: 8000 };
+// Ambient "dusk" veil over the map, per biome (color + alpha; 0 alpha = none).
+// Towns are bright and safe; deep forest is gloomiest.
+export const DUSK_OVERLAY: Record<Biome, { color: number; alpha: number }> = {
+  town: { color: 0x0a0a12, alpha: 0 },
+  forest: { color: 0x0a0a12, alpha: 0 },
+  lake: { color: 0x0a0e18, alpha: 0 },
+  deepForest: { color: 0x05060e, alpha: 0.2 },
+};
 
 // ---------- Timing ----------
 export const SIM_TICK_MS = 50; // fixed simulation step (divides STEP_MS evenly)
@@ -83,7 +91,8 @@ export const ENEMY_CLASS_COMBAT: Record<string, CombatClass> = { fighter: 'fight
 
 // Early enemies (level <= maxLevel) take a flat stat penalty so a fresh, under-
 // leveled player isn't overwhelmed. Applied to enemy derived stats only.
-export const ENEMY_STAT_PENALTY = { maxLevel: 5, factor: 0.7 };
+export const ENEMY_STAT_PENALTY = { maxLevel: 9, factor: 0.7 };
+
 export function enemyStatMult(level: number): number {
   return level <= ENEMY_STAT_PENALTY.maxLevel ? ENEMY_STAT_PENALTY.factor : 1;
 }
@@ -101,10 +110,10 @@ export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beg
   const physical = p.str * 4 + p.dex * 2;
   const magical = p.int * 4 + p.dex * 2;
   const { phys, minDamageRatio } = CLASS_COMBAT[cls];
-  const power = (phys * physical + (1 - phys) * magical) * 5;
+  const power = (phys * physical + (1 - phys) * magical) * 2;
   const accuracy = p.dex * 2;
   return {
-    maxHp: p.vit * 30 + p.str * 5 + level * 10 + 15,
+    maxHp: p.vit * 20 + p.str * 4 + level * 10 - 10,
     maxMp: p.int * 8 + level * 2 - 2,
     minDmg: Math.round(power * minDamageRatio),
     maxDmg: Math.round(power),
