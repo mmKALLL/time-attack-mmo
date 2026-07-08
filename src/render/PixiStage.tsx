@@ -4,8 +4,9 @@ import { DESIGN_W, DESIGN_H, COLORS } from '../config';
 import { useGame } from '../state/store';
 import { WorldRenderer } from './WorldRenderer';
 
-// Mounts one Pixi Application, scales the 1920x1080 stage to the viewport,
-// and redraws from the live engine state every animation frame.
+// Mounts one Pixi Application that fills the viewport at the device's real pixel
+// resolution, then scales the 1920x1080 design space onto the Pixi stage (not the
+// canvas via CSS) so high-res art is downscaled directly — no blocky re-upscaling.
 export function PixiStage() {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -18,18 +19,16 @@ export function PixiStage() {
     let initialized = false; // Pixi's resize system only exists post-init()
     let start = 0;
 
+    // Map the 1920x1080 design onto the (letterboxed, centered) viewport.
     const fit = () => {
-      const scale = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H);
-      const c = app.canvas;
-      c.style.transformOrigin = 'top left';
-      c.style.transform = `scale(${scale})`;
-      c.style.position = 'absolute';
-      c.style.left = `${(window.innerWidth - DESIGN_W * scale) / 2}px`;
-      c.style.top = `${(window.innerHeight - DESIGN_H * scale) / 2}px`;
+      const { width, height } = app.screen; // CSS px = viewport size (autoDensity)
+      const scale = Math.min(width / DESIGN_W, height / DESIGN_H);
+      app.stage.scale.set(scale);
+      app.stage.position.set((width - DESIGN_W * scale) / 2, (height - DESIGN_H * scale) / 2);
     };
 
     (async () => {
-      await app.init({ width: DESIGN_W, height: DESIGN_H, background: COLORS.stageBg, antialias: true });
+      await app.init({ resizeTo: window, resolution: window.devicePixelRatio || 1, autoDensity: true, background: COLORS.stageBg, antialias: true });
       initialized = true;
       if (disposed) {
         // Unmounted (e.g. StrictMode double-invoke) before init resolved.
@@ -38,7 +37,7 @@ export function PixiStage() {
       }
       host.appendChild(app.canvas);
       fit();
-      window.addEventListener('resize', fit);
+      app.renderer.on('resize', fit); // resizeTo:window resizes the buffer; re-fit the stage
       renderer = new WorldRenderer(app);
 
       const loop = (t: number) => {
@@ -52,7 +51,6 @@ export function PixiStage() {
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
-      window.removeEventListener('resize', fit);
       renderer?.destroy();
       // Only destroy once init() has finished wiring up the app; otherwise the
       // pending init() branch above tears it down after it resolves.

@@ -59,7 +59,7 @@ function clearQuadrantCross(img: ImageData, half = 7) {
     }
   }
 }
-import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA } from '../config';
+import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, ENEMY_GLOW, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA } from '../config';
 import { Sprites } from './sprites';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
@@ -470,11 +470,12 @@ export class WorldRenderer {
   // Faint red elliptical glow overlapping each enemy (taller than wide to hug a
   // standing sprite). Drawn into fx so it sits behind the enemy sprite (actors).
   private drawEnemyGlow(world: WorldState) {
+    if (ENEMY_GLOW.intensity <= 0) return;
     for (const e of Object.values(world.entities)) {
       if (e.faction !== 'enemy') continue;
       const cx = e.cell.x * CELL_PX + CELL_PX / 2;
       const cy = e.cell.y * CELL_PX + CELL_PX * 0.45; // over the sprite body
-      this.addGlow(this.fx, cx, cy, 1.2, 0xff5a5a, 0.28, 1.7);
+      this.addGlow(this.fx, cx, cy, ENEMY_GLOW.wCells, ENEMY_GLOW.color, ENEMY_GLOW.intensity, ENEMY_GLOW.hCells);
     }
   }
 

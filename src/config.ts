@@ -6,6 +6,9 @@ export const START_SKILL_LEVEL = DEBUG ? 3 : 0;
 const isTest = import.meta.env?.MODE === 'test'; // deterministic maps/enemies under vitest
 export const DEFAULT_SEED = DEBUG || isTest ? 1337 : Math.floor(Math.random() * 1e7); // starting RNG seed for the demo world
 export const OBSTACLE_OVERLAY_ALPHA = 0.26; // red tint over obstacle-prop cells (0 to disable)
+// Elliptical glow behind each enemy. wCells/hCells are in tiles (h > w hugs a
+// standing sprite); intensity is the additive alpha (0 disables).
+export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.7, intensity: 0.28 };
 
 // ---------- Display / geometry ----------
 export const DESIGN_W = 1920;
@@ -13,7 +16,7 @@ export const DESIGN_H = 1080;
 export const CELL_PX = 256; // logical tile size (px); 1 enemy-asset tile == 1 cell
 export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
 export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
-export const CAMERA_ZOOM_PCT = 33; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
+export const CAMERA_ZOOM_PCT = 40; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
 
 // ---------- Timing ----------
