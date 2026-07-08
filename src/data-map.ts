@@ -10,6 +10,10 @@ import { ENEMIES } from './data-enemy';
 // ============================================================================
 const W = 30;
 const H = 17;
+// Towns are smaller than field maps so portals sit near a room edge rather than
+// down a long corridor to a far corner. Still large enough to fill the viewport.
+const TOWN_W = 20;
+const TOWN_H = 13;
 const opp: Record<Compass, Compass> = { n: 's', s: 'n', e: 'w', w: 'e', ne: 'sw', sw: 'ne', nw: 'se', se: 'nw' };
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
@@ -33,8 +37,11 @@ const link = (a: string, dir: Compass, b: string) => {
 // A safe town: town tileset, no spawns.
 function town(id: string, name: string): MapDef {
   return {
-    id, name, biome: 'town', recommended: [1, 1],
-    gen: { width: W, height: H, tileset: 'town', roomCountMin: 2, roomCountMax: 3, roomShape: 'rectangular', corridorWidth: 2, roomMin: 5, roomMax: 8, torchDensity: 4, obstacleCount: 2 },
+    id,
+    name,
+    biome: 'town',
+    recommended: [1, 1],
+    gen: { width: TOWN_W, height: TOWN_H, tileset: 'town', roomCountMin: 1, roomCountMax: 1, roomShape: 'rectangular', corridorWidth: 2, roomMin: 5, roomMax: 8, torchDensity: 4, obstacleCount: 2 },
     connections: [],
     spawns: [{ pool: [], maxAmount: 0, spawnInterval: 999, spawnAmount: 0 }],
   };
@@ -44,7 +51,10 @@ function town(id: string, name: string): MapDef {
 function field(id: string, biome: Biome, lo: number, hi: number, rooms: number): MapDef {
   const deep = biome === 'deepForest';
   return {
-    id, name: `${cap(biome === 'deepForest' ? 'deep forest' : biome)} · Lv ${lo}–${hi}`, biome, recommended: [lo, hi],
+    id,
+    name: `${cap(biome === 'deepForest' ? 'deep forest' : biome)} · Lv ${lo}–${hi}`,
+    biome,
+    recommended: [lo, hi],
     gen: { width: W, height: H, tileset: biome, roomCountMin: rooms, roomCountMax: rooms + 1, roomShape: 'natural', corridorWidth: deep ? 1 : 2, roomMin: 5, roomMax: 8, torchDensity: deep ? 6 : 3, obstacleCount: 4 },
     connections: [],
     spawns: [{ pool: poolFor(lo, hi), maxAmount: 5, spawnInterval: 7, spawnAmount: 1 }],
@@ -73,14 +83,57 @@ link('lieksa3', 'n', 'lieksa4');
 type Seg = [Biome, number, number, number]; // biome, lo, hi, rooms  ("plains" -> forest)
 type Edge = { a: string; b: string; dir: Compass; seg: Seg[] };
 const EDGES: Edge[] = [
-  { a: 'mantyharju', b: 'savonlinna', dir: 'e', seg: [['forest', 1, 2, 2], ['forest', 3, 5, 2], ['forest', 4, 7, 3]] }, // gentle ramp out of the start town
+  {
+    a: 'mantyharju',
+    b: 'savonlinna',
+    dir: 'e',
+    seg: [
+      ['forest', 1, 2, 2],
+      ['forest', 3, 5, 2],
+      ['forest', 4, 7, 3],
+    ],
+  }, // gentle ramp out of the start town
   { a: 'savonlinna', b: 'varkaus', dir: 'nw', seg: [['forest', 7, 9, 4]] }, // plains
-  { a: 'savonlinna', b: 'lieksa', dir: 'ne', seg: [['lake', 10, 12, 2], ['forest', 12, 16, 2], ['deepForest', 16, 21, 2]] },
+  {
+    a: 'savonlinna',
+    b: 'lieksa',
+    dir: 'ne',
+    seg: [
+      ['lake', 10, 12, 2],
+      ['forest', 12, 16, 2],
+      ['deepForest', 16, 21, 2],
+    ],
+  },
   { a: 'varkaus', b: 'kuopio', dir: 'n', seg: [['lake', 9, 12, 2]] },
-  { a: 'varkaus', b: 'jyvaskyla', dir: 'w', seg: [['forest', 8, 10, 2], ['forest', 10, 14, 2]] }, // plains
+  {
+    a: 'varkaus',
+    b: 'jyvaskyla',
+    dir: 'w',
+    seg: [
+      ['forest', 8, 10, 2],
+      ['forest', 10, 14, 2],
+    ],
+  }, // plains
   { a: 'jyvaskyla', b: 'kuopio', dir: 'ne', seg: [['forest', 12, 16, 2]] },
-  { a: 'kuopio', b: 'kajaani', dir: 'n', seg: [['lake', 12, 16, 2], ['forest', 17, 21, 2], ['forest', 22, 26, 2]] }, // plains
-  { a: 'kajaani', b: 'lieksa', dir: 'e', seg: [['forest', 18, 22, 2], ['deepForest', 23, 27, 2]] },
+  {
+    a: 'kuopio',
+    b: 'kajaani',
+    dir: 'n',
+    seg: [
+      ['lake', 12, 16, 2],
+      ['forest', 17, 21, 2],
+      ['forest', 22, 26, 2],
+    ],
+  }, // plains
+  {
+    a: 'kajaani',
+    b: 'lieksa',
+    dir: 'e',
+    seg: [
+      ['forest', 18, 22, 2],
+      ['deepForest', 23, 27, 2],
+    ],
+  },
 ];
 for (const e of EDGES) {
   const nodes = [e.a];
@@ -108,7 +161,11 @@ export function demoMap(width = 30, height = 17): TileMap {
   const wall = (x: number, y: number) => {
     tiles[y * width + x] = 'wall';
   };
-  wall(10, 3); wall(10, 4); wall(11, 3);
-  wall(22, 12); wall(23, 12); wall(23, 13);
+  wall(10, 3);
+  wall(10, 4);
+  wall(11, 3);
+  wall(22, 12);
+  wall(23, 12);
+  wall(23, 13);
   return { width, height, tiles };
 }
