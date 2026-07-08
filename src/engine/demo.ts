@@ -1,6 +1,6 @@
 import type { TileMap, WorldState } from '../types';
-import { makeEntity, skillRuntime } from './entities';
-import { PARTY_SPAWN, getSkill } from '../data';
+import { makeEntity } from './entities';
+import { PARTY_SPAWN } from '../data';
 import { START_MAP } from '../data-map';
 import { DEFAULT_SEED } from '../config';
 import { travelTo } from './maps';
@@ -19,13 +19,6 @@ export function createDemoWorld(): WorldState {
       jobId: p.jobId,
     }),
   );
-  // Fresh start: the player knows only Strike, with a single point in it.
-  const player = heroes.find((h) => h.id === 'p1');
-  if (player) {
-    const strike = skillRuntime(getSkill('strike'));
-    strike.level = 1;
-    player.skills = [strike];
-  }
 
   const s: WorldState = {
     mapId: START_MAP,
