@@ -49,15 +49,16 @@ function town(id: string, name: string): MapDef {
   };
 }
 
-// A field/dungeon map for a level band. `rooms` = base room count.
-function field(id: string, biome: Biome, lo: number, hi: number, rooms: number): MapDef {
+// A field/dungeon map for a level band. `rooms` = base room count; `width`/
+// `height` default to the standard field size but can be overridden per segment.
+function field(id: string, biome: Biome, lo: number, hi: number, rooms: number, width = W, height = H): MapDef {
   const deep = biome === 'deepForest';
   return {
     id,
     name: `${cap(biome === 'deepForest' ? 'deep forest' : biome)} · Lv ${lo}–${hi}`,
     biome,
     recommended: [lo, hi],
-    gen: { width: W, height: H, tileset: biome, roomCountMin: rooms, roomCountMax: rooms + 1, roomShape: 'natural', corridorWidth: deep ? 1 : 2, roomMin: 5, roomMax: 8, torchDensity: deep ? 6 : 3, obstacleCount: 4 },
+    gen: { width, height, tileset: biome, roomCountMin: rooms, roomCountMax: rooms + 1, roomShape: 'natural', corridorWidth: deep ? 1 : 2, roomMin: 5, roomMax: 8, torchDensity: deep ? 6 : 3, obstacleCount: 4 },
     connections: [],
     spawns: [{ pool: poolFor(lo, hi), maxAmount: 5, spawnInterval: 7, spawnAmount: 1 }],
   };
@@ -82,7 +83,9 @@ link('lieksa2', 'n', 'lieksa3');
 link('lieksa3', 'n', 'lieksa4');
 
 // ---------- Field-map chains between nodes (design-doc part 1) ----------
-type Seg = [Biome, number, number, number]; // biome, lo, hi, rooms  ("plains" -> forest)
+// biome, lo, hi, rooms, and an optional [width, height] override for that map's
+// size (both given together; omitted -> the standard field size). "plains" -> forest.
+type Seg = [Biome, number, number, number, number?, number?];
 type Edge = { a: string; b: string; dir: Compass; seg: Seg[] };
 const EDGES: Edge[] = [
   {
@@ -141,7 +144,7 @@ for (const e of EDGES) {
   const nodes = [e.a];
   e.seg.forEach((s, i) => {
     const id = `${e.a}_${e.b}_${i}`;
-    add(field(id, s[0], s[1], s[2], s[3]));
+    add(field(id, s[0], s[1], s[2], s[3], s[4], s[5]));
     nodes.push(id);
   });
   nodes.push(e.b);
