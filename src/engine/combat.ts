@@ -1,6 +1,6 @@
 import type { Cell, CombatGroup, Direction, Entity, EntityId, WorldState } from '../types';
 import { DIRECTIONS, isWall, equals, key } from './grid';
-import { JOBS, getSkill, archetypeForJob } from '../data';
+import { JOBS, getSkill, archetypeForJob, combatClassForJob } from '../data';
 import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude } from './skills';
 import { ARCHETYPE_WEIGHTS, CRIT_MULT, allocatePrimaries, deriveStats, hitChance, rawDamage, xpReward, xpToNext, COMBAT_TICK_MS } from '../config';
@@ -150,7 +150,7 @@ function levelUp(e: Entity): void {
     e.xp -= xpToNext(e.level);
     e.level += 1;
     e.primaries = allocatePrimaries(ARCHETYPE_WEIGHTS[archetypeForJob(e.jobId)], e.level, growth);
-    e.stats = deriveStats(e.primaries, e.level);
+    e.stats = deriveStats(e.primaries, e.level, combatClassForJob(e.jobId));
     e.hp = e.stats.maxHp;
     e.mp = e.stats.maxMp;
   }

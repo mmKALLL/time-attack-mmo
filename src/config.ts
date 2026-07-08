@@ -44,6 +44,29 @@ export function allocatePrimaries(w: Primaries, level: number, growth = 1): Prim
   const at = (k: keyof Primaries) => PRIMARY_BASE + Math.round((pts * w[k]) / sum);
   return { str: at('str'), dex: at('dex'), int: at('int'), vit: at('vit') };
 }
+// Which archetype each enemy class allocates toward — tune enemy stat leanings here.
+export const ENEMY_CLASS_ARCHETYPE: Record<string, Archetype> = {
+  fighter: 'str',
+  archer: 'dex',
+  mage: 'int',
+  rogue: 'dex',
+  leader: 'balanced',
+};
+
+// Per-class combat weighting (design-doc): `phys` = physical share of damage
+// (magical = 1 - phys); `minDamageRatio` = minimum damage as a fraction of maximum
+// (rogues 40%, everyone else 60%). Tune class balance here.
+export type CombatClass = 'beginner' | 'fighter' | 'archer' | 'magician' | 'rogue' | 'leader';
+export const CLASS_COMBAT: Record<CombatClass, { phys: number; minDamageRatio: number }> = {
+  beginner: { phys: 0.5, minDamageRatio: 0.6 },
+  fighter: { phys: 0.8, minDamageRatio: 0.6 },
+  archer: { phys: 0.4, minDamageRatio: 0.6 },
+  magician: { phys: 0.2, minDamageRatio: 0.6 },
+  rogue: { phys: 0.6, minDamageRatio: 0.4 },
+  leader: { phys: 0.5, minDamageRatio: 0.7 },
+};
+// Enemy class -> combat class (enemies use 'mage'; players use 'magician').
+export const ENEMY_CLASS_COMBAT: Record<string, CombatClass> = { fighter: 'fighter', archer: 'archer', mage: 'magician', rogue: 'rogue', leader: 'leader' };
 
 // ---------- Derived stats (design-doc formulas) ----------
 // Crit grows as (dex*2+int)^0.7, softening to ^0.6 past 300; never a sure crit.
@@ -52,15 +75,18 @@ function critCurve(base: number): number {
   const c = base < 300 ? Math.pow(base, 0.7) : Math.pow(300, 0.7) + Math.pow(base - 300, 0.6);
   return Math.min(95, c);
 }
-export function deriveStats(p: Primaries, level: number): Stats {
+// Power is a class-weighted blend of physical + magical (beginner 50/50); the
+// class also sets how far minDmg sits below maxDmg.
+export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beginner'): Stats {
   const physical = p.str * 4 + p.dex * 2 + p.vit;
   const magical = p.int * 4 + p.dex * 2 + p.vit;
-  const power = Math.max(physical, magical); // a class uses its stronger school
+  const { phys, minDamageRatio } = CLASS_COMBAT[cls];
+  const power = phys * physical + (1 - phys) * magical;
   const accuracy = p.dex * 2 + p.vit + p.int;
   return {
-    maxHp: p.vit * 30 + p.str * 5 + level * 5,
-    maxMp: p.int * 10 + p.dex * 2 + level * 2,
-    minDmg: Math.round(power * 0.82),
+    maxHp: p.vit * 30 + p.str * 5 + level * 10 + 15,
+    maxMp: p.int * 8 + p.dex * 2 + level * 2 - 2,
+    minDmg: Math.round(power * minDamageRatio),
     maxDmg: Math.round(power),
     def: p.vit * 2 + p.str,
     accuracy,

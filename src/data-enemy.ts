@@ -1,6 +1,6 @@
 import type { EnemyAsset, Primaries, Skill } from './types';
 import { getSkill } from './data';
-import { ARCHETYPE_WEIGHTS, allocatePrimaries, type Archetype } from './config';
+import { ARCHETYPE_WEIGHTS, ENEMY_CLASS_ARCHETYPE, allocatePrimaries } from './config';
 
 // ============================================================================
 // Asset-based enemies. Each race occupies one quadrant of a 2048x2048 sheet;
@@ -86,9 +86,9 @@ const list: EnemyDef[] = [
 
 export const ENEMIES: Record<string, EnemyDef> = Object.fromEntries(list.map((d) => [d.id, d]));
 
-// Enemies auto-allocate primaries by class archetype + level (× growth for the
-// tougher elites), mirroring how heroes allocate so same-level fights stay ~50/50.
-const CLASS_ARCHETYPE: Record<EnemyClass, Archetype> = { fighter: 'str', archer: 'dex', mage: 'int', rogue: 'dex', leader: 'balanced' };
+// Enemies auto-allocate primaries by class archetype (configured in config.ts)
+// + level (× growth for the tougher elites), mirroring how heroes allocate so
+// same-level fights stay ~50/50.
 export function enemyPrimaries(def: EnemyDef): Primaries {
-  return allocatePrimaries(ARCHETYPE_WEIGHTS[CLASS_ARCHETYPE[def.cls]], def.level, def.growth);
+  return allocatePrimaries(ARCHETYPE_WEIGHTS[ENEMY_CLASS_ARCHETYPE[def.cls]], def.level, def.growth);
 }

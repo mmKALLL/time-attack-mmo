@@ -1,5 +1,5 @@
 import type { CooldownType, JobNode, ParamName, Skill, SkillElement, SkillKind, SkillParamFunction, SkillParams, ShapeKind } from './types';
-import type { Archetype } from './config';
+import type { Archetype, CombatClass } from './config';
 
 // ============================================================================
 // Per-level param formulas. dmg/heal are MULTIPLIERS on the normal damage calc;
@@ -215,6 +215,20 @@ const JOB_ARCHETYPE: Record<string, Archetype> = {
 };
 export function archetypeForJob(jobId: string): Archetype {
   return JOB_ARCHETYPE[jobId] ?? 'balanced';
+}
+
+// Which combat class a job resolves to (drives the phys/mag damage split). Every
+// class in a base's line inherits the base's combat class.
+const JOB_COMBAT_CLASS: Record<string, CombatClass> = {
+  beginner: 'beginner',
+  fighter: 'fighter', knight: 'fighter', paladin: 'fighter', duelist: 'fighter',
+  archer: 'archer', hunter: 'archer', sniper: 'archer', ranger: 'archer',
+  magician: 'magician', arcanist: 'magician', wizard: 'magician', druid: 'magician',
+  rogue: 'rogue', assassin: 'rogue', shadower: 'rogue', ninja: 'rogue',
+  flameRanger: 'magician', nimbleKnight: 'fighter', cinderSage: 'magician',
+};
+export function combatClassForJob(jobId: string): CombatClass {
+  return JOB_COMBAT_CLASS[jobId] ?? 'beginner';
 }
 
 // ============================================================================
