@@ -35,8 +35,8 @@ export const COMBAT_TICK_MS = 1500; // default per-skill trigger interval (6 * S
 export const ANIM_FRAME_MS = 420; // renderer 2-frame idle cadence
 export const ANIM_FRAMES = 2; // handoff sprites have 2 animation frames
 export const DAMAGE_FLOAT_MS = 1150;
-export const MOVE_REPEAT_DELAY_MS = 0; // delay after the first step before auto-repeat kicks in
-export const MOVE_REPEAT_MS = 225; // held-key auto-repeat cadence for movement
+export const MOVE_REPEAT_DELAY_MS = 50; // delay after the first step before auto-repeat kicks in
+export const MOVE_REPEAT_MS = 220; // held-key auto-repeat cadence for movement
 
 // ---------- Primary-stat allocation (symmetric for players AND enemies) ----------
 // Points are spread by class archetype so every stat matters for every class
@@ -81,6 +81,13 @@ export const CLASS_COMBAT: Record<CombatClass, { phys: number; minDamageRatio: n
 // Enemy class -> combat class (enemies use 'mage'; players use 'magician').
 export const ENEMY_CLASS_COMBAT: Record<string, CombatClass> = { fighter: 'fighter', archer: 'archer', mage: 'magician', rogue: 'rogue', leader: 'leader' };
 
+// Early enemies (level <= maxLevel) take a flat stat penalty so a fresh, under-
+// leveled player isn't overwhelmed. Applied to enemy derived stats only.
+export const ENEMY_STAT_PENALTY = { maxLevel: 5, factor: 0.7 };
+export function enemyStatMult(level: number): number {
+  return level <= ENEMY_STAT_PENALTY.maxLevel ? ENEMY_STAT_PENALTY.factor : 1;
+}
+
 // ---------- Derived stats (design-doc formulas) ----------
 // Crit grows as (dex*2+int)^0.7, softening to ^0.6 past 300; never a sure crit.
 function critCurve(base: number): number {
@@ -94,17 +101,32 @@ export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beg
   const physical = p.str * 4 + p.dex * 2;
   const magical = p.int * 4 + p.dex * 2;
   const { phys, minDamageRatio } = CLASS_COMBAT[cls];
-  const power = phys * physical + (1 - phys) * magical;
+  const power = (phys * physical + (1 - phys) * magical) * 5;
   const accuracy = p.dex * 2;
   return {
     maxHp: p.vit * 30 + p.str * 5 + level * 10 + 15,
     maxMp: p.int * 8 + level * 2 - 2,
     minDmg: Math.round(power * minDamageRatio),
     maxDmg: Math.round(power),
-    def: p.vit * 2 + p.str,
+    def: p.str * 4,
     accuracy,
     crit: critCurve(p.dex * 2 + p.int),
     dodge: accuracy * 0.25,
+  };
+}
+
+// Uniformly scale every derived stat (used for the early-enemy stat penalty).
+export function scaleStats(s: Stats, mult: number): Stats {
+  if (mult === 1) return s;
+  return {
+    maxHp: Math.max(1, Math.round(s.maxHp * mult)),
+    maxMp: Math.round(s.maxMp * mult),
+    minDmg: Math.round(s.minDmg * mult),
+    maxDmg: Math.round(s.maxDmg * mult),
+    def: Math.round(s.def * mult),
+    accuracy: Math.round(s.accuracy * mult),
+    crit: s.crit * mult,
+    dodge: s.dodge * mult,
   };
 }
 

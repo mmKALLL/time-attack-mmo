@@ -1,7 +1,7 @@
 import type { Cell, MapExit, MapId, WorldState } from '../types';
 import { MAPS } from '../data-map';
 import { ENEMIES, enemyPrimaries } from '../data-enemy';
-import { ENEMY_CLASS_COMBAT } from '../config';
+import { ENEMY_CLASS_COMBAT, enemyStatMult } from '../config';
 import { makeEntity } from './entities';
 import { isWall, equals, key } from './grid';
 import { randInt, pick } from './rng';
@@ -79,6 +79,7 @@ export function spawnEnemies(s: WorldState, amount: number): void {
       jobId: def.id,
       primaries: enemyPrimaries(def),
       combatClass: ENEMY_CLASS_COMBAT[def.cls],
+      statMult: enemyStatMult(def.level),
       growth: def.growth,
       skills: def.skills,
       elite: def.elite,

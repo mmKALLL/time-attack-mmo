@@ -1,6 +1,6 @@
 import type { Cell, CombatClass, EnemyAsset, Entity, EntityId, Faction, JobId, Primaries, Skill, SkillRuntime } from '../types';
 import { JOBS, archetypeForJob, combatClassForJob } from '../data';
-import { ARCHETYPE_WEIGHTS, allocatePrimaries, deriveStats, START_SKILL_LEVEL } from '../config';
+import { ARCHETYPE_WEIGHTS, allocatePrimaries, deriveStats, scaleStats, START_SKILL_LEVEL } from '../config';
 import { kitOf } from './jobs';
 
 export function skillRuntime(skill: Skill): SkillRuntime {
@@ -20,6 +20,7 @@ export function makeEntity(params: {
   jobId: JobId;
   primaries?: Primaries; // enemies pass explicit primaries; heroes auto-allocate by job
   combatClass?: CombatClass; // enemies pass their class; heroes derive it from the job
+  statMult?: number; // uniform derived-stat multiplier (early-enemy penalty; 1 = none)
   skills?: Skill[];
   growth?: number;
   attainedJobs?: JobId[];
@@ -29,7 +30,7 @@ export function makeEntity(params: {
   const growth = params.growth ?? job?.growth ?? 1;
   const primaries = params.primaries ?? allocatePrimaries(ARCHETYPE_WEIGHTS[archetypeForJob(params.jobId)], params.level, growth);
   const combatClass = params.combatClass ?? combatClassForJob(params.jobId);
-  const stats = deriveStats(primaries, params.level, combatClass);
+  const stats = scaleStats(deriveStats(primaries, params.level, combatClass), params.statMult ?? 1);
   const kit = params.skills ?? kitOf(params.jobId);
   return {
     id: params.id,
