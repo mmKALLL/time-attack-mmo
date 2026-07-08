@@ -59,8 +59,9 @@ function clearQuadrantCross(img: ImageData, half = 7) {
     }
   }
 }
-import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, CLASS_COMBAT, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, DUSK_OVERLAY, ENEMY_GLOW, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA, TORCH_GLOW, VIGNETTE } from '../config';
+import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, CLASS_COMBAT, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, DUSK_OVERLAY, ENEMY_GLOW, FLOOR_CHECKER_SIZE, MOVE_LERP_MS, OBSTACLE_OVERLAY_ALPHA, TORCH_GLOW, VIGNETTE } from '../config';
 import { Sprites } from './sprites';
+import { lerp, shouldSnap } from './tween';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
 const FACING: Record<string, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -90,6 +91,12 @@ const OBS_SRC: Record<ObstacleSize, [number, number, number, number]> = {
 };
 
 type Float = { text: Text; born: number; x: number; y: number; driftX: number };
+// Per-entity movement tween: the sprite eases from `from` (old pixel top-left)
+// toward `to` (target = cell * CELL_PX) over MOVE_LERP_MS. `elapsed` accumulates
+// render delta time. `cell` is the last cell we saw so we can detect a step and
+// decide slide-vs-snap. The engine's Entity.cell is unaffected — this is drawing
+// only.
+type MoveTween = { fromX: number; fromY: number; toX: number; toY: number; elapsed: number; cellX: number; cellY: number };
 
 // Draws the Emberdeep combat world imperatively from engine state. No React here.
 export class WorldRenderer {
@@ -114,6 +121,8 @@ export class WorldRenderer {
   private prevLevel = new Map<string, number>();
   private lastFloatTick = -1; // tickCount whose hit events were already floated
   private lastFlip = new Map<string, boolean>(); // horizontal flip persists across up/down moves
+  private tweens = new Map<string, MoveTween>(); // per-entity glide from old to new cell (draw-only)
+  private prevElapsed = -1; // last render's elapsedMs, to derive the frame's dt
   private floats: Float[] = [];
   private bgMapId: string | undefined; // tiles are rebuilt when the map changes
   private vignetteBiome: Biome | null = null; // vignette is rebuilt when the biome changes
@@ -282,12 +291,15 @@ export class WorldRenderer {
   }
 
   // Follow camera: fixed zoom (CAMERA_ZOOM_PCT), always centered on the player.
-  // No edge clamp — space outside the map shows the black stage background.
-  private camera(world: WorldState) {
+  // Tracks the player's interpolated pixel position so scrolling glides with the
+  // sprite instead of snapping a tile ahead. No edge clamp — space outside the
+  // map shows the black stage background.
+  private camera(world: WorldState, pos: Map<string, { px: number; py: number }>) {
     const scale = CAMERA_ZOOM_PCT / 100;
     const p = world.entities[world.playerId];
-    const cx = (p ? p.cell.x * CELL_PX + CELL_PX / 2 : (world.map.width * CELL_PX) / 2) * scale;
-    const cy = (p ? p.cell.y * CELL_PX + CELL_PX / 2 : (world.map.height * CELL_PX) / 2) * scale;
+    const pp = p && pos.get(world.playerId);
+    const cx = (pp ? pp.px + CELL_PX / 2 : (world.map.width * CELL_PX) / 2) * scale;
+    const cy = (pp ? pp.py + CELL_PX / 2 : (world.map.height * CELL_PX) / 2) * scale;
     this.root.scale.set(scale);
     this.root.x = DESIGN_W / 2 - cx;
     this.root.y = DESIGN_H / 2 - cy;
@@ -486,12 +498,13 @@ export class WorldRenderer {
 
   // Faint red elliptical glow overlapping each enemy (taller than wide to hug a
   // standing sprite). Drawn into fx so it sits behind the enemy sprite (actors).
-  private drawEnemyGlow(world: WorldState, elapsedMs: number) {
+  private drawEnemyGlow(world: WorldState, elapsedMs: number, pos: Map<string, { px: number; py: number }>) {
     if (ENEMY_GLOW.intensity <= 0) return;
     for (const e of Object.values(world.entities)) {
       if (e.faction !== 'enemy') continue;
-      const cx = e.cell.x * CELL_PX + CELL_PX / 2;
-      const cy = e.cell.y * CELL_PX + CELL_PX * 0.45; // over the sprite body
+      const p = pos.get(e.id) ?? { px: e.cell.x * CELL_PX, py: e.cell.y * CELL_PX };
+      const cx = p.px + CELL_PX / 2; // follow the interpolated sprite, not the raw cell
+      const cy = p.py + CELL_PX * 0.45; // over the sprite body
       const alpha = ENEMY_GLOW.intensity * glowPulse(ENEMY_GLOW.pulseMs, elapsedMs, e.cell.x + e.cell.y);
       this.addGlow(this.fx, cx, cy, ENEMY_GLOW.wCells, ENEMY_GLOW.color, alpha, ENEMY_GLOW.hCells, false);
     }
@@ -534,8 +547,18 @@ export class WorldRenderer {
   }
 
   render(world: WorldState, elapsedMs: number) {
+    // Frame delta drives the movement tweens (framerate-independent); guard the
+    // first frame and any clock reset so a huge dt can't teleport a glide.
+    const dt = this.prevElapsed < 0 ? 0 : Math.max(0, elapsedMs - this.prevElapsed);
+    this.prevElapsed = elapsedMs;
+    // Advance every entity's glide once per frame into `pos`; camera, glow, and
+    // sprites then read the same interpolated position (so nothing lags the sprite).
+    const pos = new Map<string, { px: number; py: number }>();
+    for (const e of Object.values(world.entities)) pos.set(e.id, this.entityPos(e, dt));
+    const at = (e: Entity) => pos.get(e.id) ?? { px: e.cell.x * CELL_PX, py: e.cell.y * CELL_PX };
+
     this.buildBg(world);
-    this.camera(world);
+    this.camera(world, pos);
     this.fx.removeChildren();
     this.actors.removeChildren();
     const frame = Math.floor(elapsedMs / ANIM_FRAME_MS) % 2;
@@ -544,19 +567,21 @@ export class WorldRenderer {
     this.drawPortals(world, elapsedMs);
     this.drawFeatures(world);
     this.drawCollisionOverlay(); // above walls/obstacles, below actors
-    this.drawEnemyGlow(world, elapsedMs); // elliptical red glow behind each enemy
+    this.drawEnemyGlow(world, elapsedMs, pos); // elliptical red glow behind each enemy
     const playerGroup = Object.values(world.groups).find((g) => g.memberIds.includes(world.playerId));
     if (playerGroup) this.drawBlockOutline(world, playerGroup);
     this.drawAttackRadius(world, elapsedMs); // always visible for the selected skill
 
     for (const e of Object.values(world.entities)) {
-      this.drawEntity(world, e, frame, bob);
+      const { px, py } = at(e);
+      this.drawEntity(world, e, frame, bob, px, py);
       this.spawnLevelUpIfLeveled(e, elapsedMs);
     }
     this.spawnHitFloats(world, elapsedMs); // damage/crit/heal/miss numbers from the tick
     this.buildLights(world, elapsedMs); // dusk veil + torch glows over the scene
     // reap tracking maps for entities that no longer exist
     for (const id of [...this.prevLevel.keys()]) if (!world.entities[id]) this.prevLevel.delete(id);
+    for (const id of [...this.tweens.keys()]) if (!world.entities[id]) this.tweens.delete(id);
 
     this.updateFloats(elapsedMs);
   }
@@ -583,9 +608,40 @@ export class WorldRenderer {
     this.prevLevel.set(e.id, e.level);
   }
 
-  private drawEntity(world: WorldState, e: Entity, frame: number, bob: number) {
-    const px = e.cell.x * CELL_PX;
-    const py = e.cell.y * CELL_PX;
+  // Interpolated pixel top-left for an entity this frame. The logic cell updates
+  // instantly (engine); the sprite eases from its previous pixel position to the
+  // new cell over MOVE_LERP_MS, advanced by the frame's `dt`. Snaps (no slide) on
+  // teleport-sized jumps, on first sight, and when the lerp window is disabled.
+  // Every entity shares this so future enemy roaming glides too. Returns the
+  // cell's exact pixel position when no tween is active.
+  private entityPos(e: Entity, dt: number): { px: number; py: number } {
+    const targetX = e.cell.x * CELL_PX;
+    const targetY = e.cell.y * CELL_PX;
+    const t = this.tweens.get(e.id);
+    // First sight, teleport-sized jump, or disabled window: snap to the cell.
+    if (!t || MOVE_LERP_MS <= 0 || shouldSnap({ x: t.cellX, y: t.cellY }, e.cell)) {
+      this.tweens.set(e.id, { fromX: targetX, fromY: targetY, toX: targetX, toY: targetY, elapsed: MOVE_LERP_MS, cellX: e.cell.x, cellY: e.cell.y });
+      return { px: targetX, py: targetY };
+    }
+    // A one-tile step retargets the glide from the sprite's current position.
+    if (t.cellX !== e.cell.x || t.cellY !== e.cell.y) {
+      const p = Math.min(1, t.elapsed / MOVE_LERP_MS);
+      t.fromX = lerp(t.fromX, t.toX, p);
+      t.fromY = lerp(t.fromY, t.toY, p);
+      t.toX = targetX;
+      t.toY = targetY;
+      t.elapsed = 0;
+      t.cellX = e.cell.x;
+      t.cellY = e.cell.y;
+    }
+    t.elapsed += dt;
+    const p = Math.min(1, t.elapsed / MOVE_LERP_MS);
+    return { px: lerp(t.fromX, t.toX, p), py: lerp(t.fromY, t.toY, p) };
+  }
+
+  private drawEntity(world: WorldState, e: Entity, frame: number, bob: number, px: number, py: number) {
+    // px/py are the entity's interpolated (glide) pixel top-left this frame;
+    // everything pinned to it below (shadow, sprite, facing, pips) rides along.
 
     // contact shadow
     const shadow = new Graphics();

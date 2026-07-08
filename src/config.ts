@@ -24,10 +24,10 @@ export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N ti
 // near a room edge rather than down a long corridor; field biomes default larger.
 // A field segment (data-map) may override this per map.
 export const MAP_SIZE: Record<Biome, { width: number; height: number }> = {
-  town: { width: 20, height: 13 },
-  forest: { width: 30, height: 17 },
-  lake: { width: 30, height: 17 },
-  deepForest: { width: 30, height: 17 },
+  town: { width: 15, height: 12 },
+  forest: { width: 20, height: 15 },
+  lake: { width: 22, height: 17 },
+  deepForest: { width: 26, height: 20 },
 };
 // Elliptical glow behind each enemy. wCells/hCells are in tiles (h > w hugs a
 // standing sprite); intensity is the alpha (0 disables); pulseMs = pulse period
@@ -50,9 +50,9 @@ export const DUSK_OVERLAY: Record<Biome, { color: number; alpha: number }> = {
 // Separate from DUSK_OVERLAY; set a biome's edge+warm alpha to 0 for a flat scene.
 export const VIGNETTE: Record<Biome, { edgeAlpha: number; warmAlpha: number; innerRadius: number; outerRadius: number }> = {
   town: { edgeAlpha: 0.35, warmAlpha: 0.0, innerRadius: 0.38, outerRadius: 0.68 },
-  forest: { edgeAlpha: 0.5, warmAlpha: 0.0, innerRadius: 0.3, outerRadius: 0.62 },
-  lake: { edgeAlpha: 0.42, warmAlpha: 0.0, innerRadius: 0.34, outerRadius: 0.66 },
-  deepForest: { edgeAlpha: 0.7, warmAlpha: 0.05, innerRadius: 0.22, outerRadius: 0.56 },
+  forest: { edgeAlpha: 0.6, warmAlpha: 0.0, innerRadius: 0.3, outerRadius: 0.62 },
+  lake: { edgeAlpha: 0.42, warmAlpha: 0.05, innerRadius: 0.34, outerRadius: 0.66 },
+  deepForest: { edgeAlpha: 0.8, warmAlpha: 0.0, innerRadius: 0.22, outerRadius: 0.56 },
 };
 
 // ---------- Timing ----------
@@ -62,8 +62,13 @@ export const COMBAT_TICK_MS = 1500; // default per-skill trigger interval (6 * S
 export const ANIM_FRAME_MS = 420; // renderer 2-frame idle cadence
 export const ANIM_FRAMES = 2; // handoff sprites have 2 animation frames
 export const DAMAGE_FLOAT_MS = 1150;
-export const MOVE_REPEAT_DELAY_MS = 50; // delay after the first step before auto-repeat kicks in
+export const MOVE_REPEAT_DELAY_MS = 40; // delay after the first step before auto-repeat kicks in
 export const MOVE_REPEAT_MS = 220; // held-key auto-repeat cadence for movement
+// Renderer-only: how long a sprite glides from its old cell to its new one after
+// a one-tile walk. The logic (Entity.cell) still updates instantly; only the
+// drawn pixel position eases over this window, driven by render delta time so it
+// stays framerate-independent (~70ms ≈ 4 frames at 60fps).
+export const MOVE_LERP_MS = 90;
 
 // ---------- Primary-stat allocation (symmetric for players AND enemies) ----------
 // Points are spread by class archetype so every stat matters for every class
