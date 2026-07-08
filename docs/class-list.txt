@@ -1,0 +1,17 @@
+Beginner
+Fighter
+Knight
+Paladin
+Duelist
+Archer
+Hunter
+Sniper
+Ranger
+Magician
+Arcanist
+Wizard
+Druid
+Rogue
+Assassin
+Shadower
+Ninja

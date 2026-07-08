@@ -22,7 +22,7 @@ const DEFAULT_TILES: Record<ShapeKind, number> = {
   point: 1,
   line: 3,
   arc: 3,
-  area: 4,
+  area: 6,
   cross: 5,
   party: 9,
 };
@@ -54,8 +54,7 @@ function area(n: number): Offset[] {
   const height = Math.ceil(n / width);
   const top = -Math.floor((height - 1) / 2);
   const out: Offset[] = [];
-  for (let dx = 1; dx <= width && out.length < n; dx++)
-    for (let h = 0; h < height && out.length < n; h++) out.push({ dx, dy: top + h });
+  for (let dx = 1; dx <= width && out.length < n; dx++) for (let h = 0; h < height && out.length < n; h++) out.push({ dx, dy: top + h });
   return out;
 }
 
@@ -63,8 +62,7 @@ function area(n: number): Offset[] {
 function cross(n: number): Offset[] {
   const cx = 2;
   const out: Offset[] = [{ dx: cx, dy: 0 }];
-  for (let r = 1; out.length < n && r <= 4; r++)
-    out.push({ dx: cx + r, dy: 0 }, { dx: cx - r, dy: 0 }, { dx: cx, dy: -r }, { dx: cx, dy: r });
+  for (let r = 1; out.length < n && r <= 4; r++) out.push({ dx: cx + r, dy: 0 }, { dx: cx - r, dy: 0 }, { dx: cx, dy: -r }, { dx: cx, dy: r });
   return out.slice(0, n);
 }
 

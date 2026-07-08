@@ -39,13 +39,13 @@ export const SKILLS: Record<string, Skill[]> = {
   // --- Tier 0 ---
   beginner: [
     sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'melee', params: { dmg: lin(1.0, 0.2) } }),
-    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'area', params: { tiles: lin(2, 1), dmg: lin(1.0, 0.2) } }),
-    sk({ id: 'recover', name: 'Recover', description: 'Heal self for {dmg} life.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { dmg: lin(0.8, 0.15) }, triggerMs: 2000 }),
+    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'area', params: { tiles: () => 2, dmg: lin(0.6, 0.12) } }),
+    sk({ id: 'recover', name: 'Recover', description: 'Heal for 50% of max HP, cooldown {dur}s.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { dur: lin(180, -10) }, triggerMs: 2000 }),
   ],
 
   // --- Fighter ---
   fighter: [
-    sk({ id: 'powerStab', name: 'Power Stab', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'steel', shapeKind: 'melee', params: { dmg: lin(1.1, 0.2) } }),
+    sk({ id: 'powerStab', name: 'Power Stab', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'steel', shapeKind: 'melee', params: { dmg: lin(1.4, 0.3) } }),
     sk({ id: 'cleave', name: 'Cleave', description: 'Sweep all {tiles} tiles in front for {dmg} damage.', kind: 'attack', target: 'adjacent-arc', element: 'steel', shapeKind: 'arc', params: { dmg: lin(0.9, 0.15), tiles: lin(3, 0.5) } }),
     sk({ id: 'bracingGuard', name: 'Bracing Guard', description: 'Raise defense by {pct}% for {dur}s.', kind: 'buff', target: 'self', element: 'steel', shapeKind: 'self', params: { pct: lin(15, 4), dur: lin(4, 1) }, cooldownMs: 6000, cooldownType: 'active' }),
   ],

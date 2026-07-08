@@ -18,7 +18,7 @@ export type EnemyDef = { id: string; name: string; asset: EnemyAsset; cls: Enemy
 const CLASS_OFFSET: Record<EnemyClass, number> = { fighter: 0, archer: 1, rogue: 2, mage: 4, leader: 12 };
 const CLASS_SKILL: Record<EnemyClass, string> = { fighter: 'enemyStrike', archer: 'enemyShot', mage: 'enemyHex', rogue: 'enemyGouge', leader: 'enemyRuin' };
 const CLASS_GROWTH: Record<EnemyClass, number> = { fighter: 1.0, archer: 0.95, rogue: 0.95, mage: 1.0, leader: 1.25 };
-const CLASS_TITLE: Record<EnemyClass, string> = { fighter: 'Warrior', archer: 'Archer', mage: 'Mage', rogue: 'Rogue', leader: 'Chief' };
+const CLASS_TITLE: Record<EnemyClass, string> = { fighter: 'Fighter', archer: 'Archer', mage: 'Magician', rogue: 'Rogue', leader: 'Chief' };
 const CLASS_TILE: Record<Exclude<EnemyClass, 'leader'>, [number, number]> = { fighter: [1, 2], archer: [3, 4], mage: [5, 6], rogue: [7, 8] };
 const LEADER_TILES: Record<1 | 2, [number, number, number, number]> = { 1: [9, 10, 13, 14], 2: [11, 12, 15, 16] };
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
@@ -61,8 +61,8 @@ const HIGHWAY = 'highway-enemies-3.png'; // q3 rosvo; q4 varas (fighter/archer/r
 const list: EnemyDef[] = [
   // Forest folk (mid-tier)
   ...race(FOREST, 1, 'menninkainen', 'Menninkäinen', 6),
-  ...race(FOREST, 2, 'peikko', 'Peikko', 12, { mage: 1 }), // brute trolls: dim casters
-  ...race(FOREST, 3, 'haltia', 'Haltia', 14, { archer: 3, mage: 5 }), // elven marksmen & mages
+  ...race(FOREST, 2, 'peikko', 'Peikko', 12, { fighter: 4, mage: 1 }), // brute trolls: dim casters
+  ...race(FOREST, 3, 'haltia', 'Haltia', 14, { archer: 4, mage: 5 }), // elven marksmen & mages
   ...race(FOREST, 4, 'metsanpeitto', 'Metsänpeitto', 16),
   // Aquatic (used once a lake/water biome exists)
   ...race(AQUATIC, 1, 'nakki', 'Näkki', 9),
