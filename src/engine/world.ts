@@ -1,7 +1,19 @@
 import type { Input, WorldState } from '../types';
 import { moveOrStick, advanceCombat, groupOf } from './combat';
 import { exitAt, travelTo, advanceRespawns } from './maps';
+import { START_MAP } from '../data-map';
 import { step } from './grid';
+
+// On death the player returns to the starting town (Mäntyharju) at full health.
+function respawnAtStart(s: WorldState): void {
+  travelTo(s, START_MAP);
+  const p = s.entities[s.playerId];
+  if (p) {
+    p.hp = p.stats.maxHp;
+    p.mp = p.stats.maxMp;
+    p.castTimerMs = 0;
+  }
+}
 
 export function applyInput(s: WorldState, input: Input): void {
   const player = s.entities[s.playerId];
@@ -29,6 +41,8 @@ export function tick(state: WorldState, inputs: Input[], dt: number): WorldState
   for (const input of inputs) applyInput(s, input);
   advanceCombat(s, dt);
   advanceRespawns(s, dt);
+  const player = s.entities[s.playerId];
+  if (player && player.hp <= 0) respawnAtStart(s);
   s.tickCount += 1;
   return s;
 }

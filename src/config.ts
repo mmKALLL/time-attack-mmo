@@ -19,8 +19,9 @@ export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N ti
 // standing sprite); intensity is the alpha (0 disables); pulseMs = pulse period
 // (0 = steady).
 export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.7, intensity: 0.5, pulseMs: 0 };
+// export const ENEMY_GLOW = { color: 0x111111, wCells: 1.2, hCells: 1.7, intensity: 0.8, pulseMs: 0 };
 // Additive torch light glow. cells = diameter in tiles; pulseMs = flicker period.
-export const TORCH_GLOW = { color: 0xffc27a, cells: 3.4, intensity: 1.0, pulseMs: 1600 };
+export const TORCH_GLOW = { color: 0xffc27a, cells: 6, intensity: 0.8, pulseMs: 10000 };
 
 // ---------- Timing ----------
 export const SIM_TICK_MS = 50; // fixed simulation step (divides STEP_MS evenly)

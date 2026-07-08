@@ -39,11 +39,11 @@ describe('world reducer', () => {
     const s1 = tick(s0, [{ type: 'move', dir: fromLeft ? 'left' : 'right' }], 50);
     expect(s1.mapId).toBe(ex.toMap);
   });
-  it('demo world has a lone player (no allies) and enemies', () => {
+  it('demo world starts with a lone player (no allies) in the safe town', () => {
     const s = createDemoWorld();
     const facts = Object.values(s.entities).map((e) => e.faction);
     expect(facts.filter((f) => f === 'player').length).toBe(1);
     expect(facts.filter((f) => f === 'ally').length).toBe(0);
-    expect(facts.filter((f) => f === 'enemy').length).toBeGreaterThan(0);
+    expect(facts.filter((f) => f === 'enemy').length).toBe(0); // starting town is safe
   });
 });

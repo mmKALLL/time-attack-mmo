@@ -46,9 +46,7 @@ export type ParamName = 'dmg' | 'heal' | 'pct' | 'dur' | 'tiles' | 'hits' | 'use
 export type SkillParams = Partial<Record<ParamName, SkillParamFunction>>;
 
 export type SkillKind = 'attack' | 'heal' | 'buff' | 'debuff' | 'dot';
-export type SkillElement =
-  | 'neutral' | 'steel' | 'guardian' | 'holy' | 'blade' | 'precision' | 'volley'
-  | 'nature' | 'arcane' | 'fire' | 'primal' | 'guile' | 'poison' | 'shadow' | 'trap';
+export type SkillElement = 'neutral' | 'steel' | 'guardian' | 'holy' | 'blade' | 'precision' | 'volley' | 'nature' | 'arcane' | 'fire' | 'primal' | 'guile' | 'poison' | 'shadow' | 'trap';
 export type ShapeKind = 'self' | 'melee' | 'point' | 'line' | 'arc' | 'area' | 'cross' | 'party';
 
 export type Skill = {
@@ -126,7 +124,7 @@ export type CombatGroup = {
 
 // ---------- Maps ----------
 export type MapId = string;
-export type Biome = 'farmland' | 'plains' | 'forest' | 'mistyForest' | 'deepDungeon';
+export type Biome = 'forest' | 'deepForest' | 'lake' | 'town'; // aligned with the tileset quadrants, eventually add all of farmland / plains / forest / mythical misty forest / deep dark forest / lake / hill / mountain / tundra / snowy plains / snowy forest / cave / dungeon / village / town / city
 export type Compass = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 export type ObstacleSize = '1x1' | '1x3' | '3x1' | '3x3';
 
@@ -197,6 +195,4 @@ export type WorldState = {
 };
 
 // ---------- Inputs ----------
-export type Input =
-  | { type: 'move'; dir: Direction }
-  | { type: 'selectSkill'; slot: number }; // 0..8 => keys 1..9
+export type Input = { type: 'move'; dir: Direction } | { type: 'selectSkill'; slot: number }; // 0..8 => keys 1..9

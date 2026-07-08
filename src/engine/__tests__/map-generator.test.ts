@@ -3,7 +3,7 @@ import { generateMap, allReachable } from '../map-generator';
 import { MAPS } from '../../data-map';
 
 describe('map generator', () => {
-  const def = MAPS.deepDungeon;
+  const def = MAPS.lieksa; // a deep-forest dungeon map with obstacles + connections
 
   it('is deterministic for a given seed', () => {
     const a = generateMap(def, 123);

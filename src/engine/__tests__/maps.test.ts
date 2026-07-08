@@ -12,12 +12,17 @@ const heroIds = (s: WorldState) =>
 const enemyCount = (s: WorldState) => Object.values(s.entities).filter((e) => e.faction === 'enemy').length;
 
 describe('maps & transitions', () => {
-  it('starts in START_MAP with the lone player, spawned enemies, and generated exits', () => {
+  it('starts in START_MAP (a safe town) with the lone player and generated exits', () => {
     const s = createDemoWorld();
     expect(s.mapId).toBe(START_MAP);
     expect(heroIds(s)).toHaveLength(1);
-    expect(enemyCount(s)).toBeGreaterThan(0);
+    expect(enemyCount(s)).toBe(0); // the starting town is safe
     expect(s.exits).toHaveLength(MAPS[START_MAP].connections.length);
+  });
+  it('field maps beyond the town spawn enemies', () => {
+    const s = createDemoWorld();
+    travelTo(s, s.exits[0].toMap, s.mapId); // step into the first field map
+    expect(enemyCount(s)).toBeGreaterThan(0);
   });
   it('exitAt matches a generated portal cell', () => {
     const s = createDemoWorld();
