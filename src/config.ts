@@ -4,6 +4,7 @@ import type { Stats } from './types';
 export const DEBUG = true; // dev: start all skills at level 3 (else 0)
 export const START_SKILL_LEVEL = DEBUG ? 3 : 0;
 export const DEFAULT_SEED = 1337; // starting RNG seed for the demo world
+export const OBSTACLE_OVERLAY_ALPHA = 0.28; // DEBUG red tint over obstacle-prop cells
 
 // ---------- Display / geometry ----------
 export const DESIGN_W = 1920;

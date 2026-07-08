@@ -45,7 +45,7 @@ function keyOutBackground(img: ImageData) {
     if (y - 1 >= 0) stack.push(p - width);
   }
 }
-import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DEBUG, DESIGN_H, DESIGN_W, FLOOR_CHECKER_SIZE } from '../config';
+import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DEBUG, DESIGN_H, DESIGN_W, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA } from '../config';
 import { Sprites } from './sprites';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
@@ -371,7 +371,7 @@ export class WorldRenderer {
     const g = new Graphics();
     for (const key of this.propCells) {
       const [x, y] = key.split(',').map(Number);
-      g.rect(x * CELL_PX, y * CELL_PX, CELL_PX, CELL_PX).fill({ color: 0xff3b30, alpha: 0.28 });
+      g.rect(x * CELL_PX, y * CELL_PX, CELL_PX, CELL_PX).fill({ color: 0xff3b30, alpha: OBSTACLE_OVERLAY_ALPHA });
     }
     this.fx.addChild(g);
   }
@@ -429,7 +429,6 @@ export class WorldRenderer {
       const cx = ex.cell.x * CELL_PX + CELL_PX / 2;
       const cy = ex.cell.y * CELL_PX + CELL_PX / 2;
       const g = new Graphics();
-      g.rect(cx - CELL_PX / 2 + 2, cy - CELL_PX / 2 + 2, CELL_PX - 4, CELL_PX - 4).fill({ color: 0x43c7c0, alpha: 0.18 });
       g.circle(cx, cy, 26 * UI).fill({ color: 0x8fe0d8, alpha: 0.12 + 0.12 * pulse }); // soft aqua disc
       g.circle(cx, cy, 22 * UI).stroke({ width: 3 * UI, color: 0x5fe0d6, alpha: 0.75 + 0.25 * pulse });
       g.circle(cx, cy, (10 + 6 * pulse) * UI).stroke({ width: 2.5 * UI, color: 0xbdf4ee, alpha: 0.9 });
