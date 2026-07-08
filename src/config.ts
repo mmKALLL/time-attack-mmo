@@ -26,14 +26,24 @@ export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N ti
 export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.7, intensity: 0.7, pulseMs: 2000 };
 // export const ENEMY_GLOW = { color: 0x111111, wCells: 1.2, hCells: 1.7, intensity: 0.8, pulseMs: 0 };
 // Additive torch light glow. cells = diameter in tiles; pulseMs = flicker period.
-export const TORCH_GLOW = { color: 0xffc27a, cells: 7, intensity: 0.6, pulseMs: 8000 };
+export const TORCH_GLOW = { color: 0xffc27a, cells: 7, intensity: 0.5, pulseMs: 8000 };
 // Ambient "dusk" veil over the map, per biome (color + alpha; 0 alpha = none).
 // Towns are bright and safe; deep forest is gloomiest.
 export const DUSK_OVERLAY: Record<Biome, { color: number; alpha: number }> = {
   town: { color: 0x0a0a12, alpha: 0 },
-  forest: { color: 0x0a0a12, alpha: 0 },
+  forest: { color: 0x0a0a12, alpha: 0.1 },
   lake: { color: 0x0a0e18, alpha: 0 },
   deepForest: { color: 0x05060e, alpha: 0.2 },
+};
+// Screen-edge vignette, per biome: darkening toward the corners + a subtle warm
+// tint. `innerRadius` = size of the fully-clear centre; `outerRadius` = where it
+// reaches full darkness (both as a fraction of the screen's smaller/larger side).
+// Separate from DUSK_OVERLAY; set a biome's edge+warm alpha to 0 for a flat scene.
+export const VIGNETTE: Record<Biome, { edgeAlpha: number; warmAlpha: number; innerRadius: number; outerRadius: number }> = {
+  town: { edgeAlpha: 0.35, warmAlpha: 0.0, innerRadius: 0.38, outerRadius: 0.68 },
+  forest: { edgeAlpha: 0.5, warmAlpha: 0.0, innerRadius: 0.3, outerRadius: 0.62 },
+  lake: { edgeAlpha: 0.42, warmAlpha: 0.0, innerRadius: 0.34, outerRadius: 0.66 },
+  deepForest: { edgeAlpha: 0.7, warmAlpha: 0.05, innerRadius: 0.22, outerRadius: 0.56 },
 };
 
 // ---------- Timing ----------

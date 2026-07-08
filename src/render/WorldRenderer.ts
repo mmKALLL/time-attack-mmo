@@ -1,5 +1,5 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
-import type { CombatGroup, Entity, ObstacleSize, TilesetName, WorldState } from '../types';
+import type { Biome, CombatGroup, Entity, ObstacleSize, TilesetName, WorldState } from '../types';
 import { getSkill } from '../data';
 import { MAPS } from '../data-map';
 import { shapeFor } from '../engine/shapes';
@@ -59,7 +59,7 @@ function clearQuadrantCross(img: ImageData, half = 7) {
     }
   }
 }
-import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, CLASS_COMBAT, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, DUSK_OVERLAY, ENEMY_GLOW, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA, TORCH_GLOW } from '../config';
+import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, CLASS_COMBAT, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, DUSK_OVERLAY, ENEMY_GLOW, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA, TORCH_GLOW, VIGNETTE } from '../config';
 import { Sprites } from './sprites';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
@@ -116,7 +116,7 @@ export class WorldRenderer {
   private lastFlip = new Map<string, boolean>(); // horizontal flip persists across up/down moves
   private floats: Float[] = [];
   private bgMapId: string | undefined; // tiles are rebuilt when the map changes
-  private builtVignette = false;
+  private vignetteBiome: Biome | null = null; // vignette is rebuilt when the biome changes
 
   constructor(private app: Application) {
     this.root.addChild(this.bg, this.fx, this.actors, this.lights, this.floatLayer);
@@ -294,7 +294,7 @@ export class WorldRenderer {
   }
 
   private buildBg(world: WorldState) {
-    this.buildVignette();
+    this.buildVignette(world);
     // Rebuilt when the map changes, and retried each frame until both tile sheets
     // have loaded (so we swap the procedural fallback for the real biome art).
     const floor = this.plainAtlas(FLOOR_SHEET);
@@ -390,24 +390,33 @@ export class WorldRenderer {
   }
 
   // Vignette + warm tint overlay (Emberdeep): screen-anchored (added to the app
-  // stage, not the world root) so it stays put as the camera scrolls. Built once.
-  private buildVignette() {
-    if (this.builtVignette) return;
+  // stage, not the world root) so it stays put as the camera scrolls. Rebuilt when
+  // the biome changes, since its darkness/clear-radius are configured per biome.
+  private buildVignette(world: WorldState) {
+    const biome = MAPS[world.mapId]?.biome ?? 'forest';
+    if (this.vignetteBiome === biome) return;
+    this.vignetteBiome = biome;
+    if (this.vignette) {
+      this.vignette.removeFromParent();
+      this.vignette.destroy();
+      this.vignette = null;
+    }
+    const v = VIGNETTE[biome];
+    if (v.edgeAlpha <= 0 && v.warmAlpha <= 0) return; // fully disabled for this biome
     const cv = document.createElement('canvas');
     cv.width = DESIGN_W;
     cv.height = DESIGN_H;
     const ctx = cv.getContext('2d')!;
-    const grad = ctx.createRadialGradient(cv.width / 2, cv.height / 2, Math.min(cv.width, cv.height) * 0.3, cv.width / 2, cv.height / 2, Math.max(cv.width, cv.height) * 0.62);
+    const grad = ctx.createRadialGradient(cv.width / 2, cv.height / 2, Math.min(cv.width, cv.height) * v.innerRadius, cv.width / 2, cv.height / 2, Math.max(cv.width, cv.height) * v.outerRadius);
     grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.66)');
+    grad.addColorStop(1, `rgba(0,0,0,${v.edgeAlpha})`);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, cv.width, cv.height);
-    ctx.fillStyle = 'rgba(180,110,50,0.06)';
+    ctx.fillStyle = `rgba(180,110,50,${v.warmAlpha})`;
     ctx.fillRect(0, 0, cv.width, cv.height);
     this.vignette = new Sprite(Texture.from(cv));
     this.vignette.eventMode = 'none';
     this.app.stage.addChild(this.vignette);
-    this.builtVignette = true;
   }
 
   // Obstacle props (torches are handled by buildLights — they emit light only).
