@@ -126,11 +126,10 @@ export type MapExit = { cell: Cell; toMap: MapId }; // a generated portal tile
 export type MapConnection = { dir: Compass; toMap: MapId }; // which edge links where
 
 // Respawn: the map holds up to `maxAmount` enemies; every `spawnInterval`s it
-// tops up by `spawnAmount` (never exceeding the cap).
+// tops up by `spawnAmount` (never exceeding the cap). Each enemy's level is
+// fixed by its definition, so the pool determines the difficulty band.
 export type SpawnRule = {
   pool: string[];
-  levelMin: number;
-  levelMax: number;
   maxAmount: number;
   spawnInterval: number; // seconds
   spawnAmount: number;

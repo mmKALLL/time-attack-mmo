@@ -203,7 +203,7 @@ Load multiple maps (rooms/zones); move tile data to JSON. Map connections/edges,
 
 Biomes (Finnish style): farmland / plains / forest / mythical misty forest / deep dark forest / lake / hill / mountain / tundra / snowy plains / snowy forest / cave / dungeon / village / town / city.
 
-Each world-map location = one in-game map, with 1-4 connecting maps containing monsters between them depending on distance (fewer in the south, more in the north).
+Each world-map location = one in-game map, with 1-8 connecting maps (=exits) containing monsters between them depending on distance (fewer in the south, more in the north).
 
 Spawn tables need density + respawn params, e.g. maxAmount, spawnInterval (seconds), spawnAmount.
 

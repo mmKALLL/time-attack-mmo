@@ -59,7 +59,7 @@ export function spawnEnemies(s: WorldState, amount: number): void {
       name: def.name,
       asset: def.asset,
       cell,
-      level: Math.max(1, randInt(s, rule.levelMin, rule.levelMax) + def.levelOffset),
+      level: def.level,
       jobId: def.id,
       growth: def.growth,
       skills: def.skills,

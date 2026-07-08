@@ -31,6 +31,16 @@ describe('content data', () => {
       for (const t of tiles) expect(t).toMatch(/^q[1-4]-\d{1,2}$/);
     }
   });
+  it('has fixed enemy levels that densely fill 1..40', () => {
+    const levels = Object.values(ENEMIES).map((e) => e.level);
+    for (const l of levels) expect(l).toBeGreaterThanOrEqual(1), expect(l).toBeLessThanOrEqual(40);
+    expect(Math.min(...levels)).toBeLessThanOrEqual(2);
+    expect(Math.max(...levels)).toBeGreaterThanOrEqual(38);
+    const covered = new Set(levels);
+    let gaps = 0;
+    for (let l = 1; l <= 40; l++) if (!covered.has(l)) gaps++;
+    expect(gaps).toBeLessThan(6);
+  });
   it('party spawns reference real jobs', () => {
     for (const p of PARTY_SPAWN) expect(JOBS[p.jobId]).toBeDefined();
   });
