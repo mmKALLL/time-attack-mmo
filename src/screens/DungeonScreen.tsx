@@ -53,6 +53,10 @@ export function DungeonScreen() {
       }
       if (e.key >= '1' && e.key <= '9') {
         useGame.getState().enqueue({ type: 'selectSkill', slot: Number(e.key) - 1 });
+        return;
+      }
+      if (e.key === 'm' || e.key === 'M') {
+        useGame.getState().setScene('worldMap'); // open the world map (pauses the sim loop)
       }
     };
     const onUp = (e: KeyboardEvent) => {

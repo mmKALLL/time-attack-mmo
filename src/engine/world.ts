@@ -21,6 +21,7 @@ export function applyInput(s: WorldState, input: Input): void {
   // Actions allowed regardless of combat/death state (character screen, respawn).
   if (input.type === 'spendAttr') return spendAttribute(s, input.key);
   if (input.type === 'levelUpSkill') return levelUpSkill(s, input.index);
+  if (input.type === 'travelToMap') return travelTo(s, input.mapId); // world-map quick travel (no fromMap => arrive at the map's entry)
   if (input.type === 'respawn') return respawnAtStart(s);
   const player = s.entities[s.playerId];
   if (!player || player.hp <= 0) return; // dead players take no actions until respawn

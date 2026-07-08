@@ -25,6 +25,7 @@ export function createDemoWorld(): WorldState {
     map: EMPTY_MAP,
     features: [],
     exits: [],
+    discovered: [START_MAP],
     entities: Object.fromEntries(heroes.map((e) => [e.id, e])),
     groups: {},
     playerId: 'p1',

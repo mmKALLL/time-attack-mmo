@@ -92,6 +92,7 @@ export function spawnEnemies(s: WorldState, amount: number): void {
 export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId, arrivalDir?: Direction): void {
   const def = MAPS[toMap];
   if (!def) return;
+  if (!s.discovered.includes(toMap)) s.discovered.push(toMap); // "discovered zones" for the world map
   const gen = generateMap(def, mapSeed(toMap));
   s.mapId = toMap;
   s.map = gen.tiles;

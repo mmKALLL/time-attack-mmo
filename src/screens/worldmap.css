@@ -1,0 +1,117 @@
+/* World Map screen — discovered zones, travel-to-town, party marker.
+   Same scale-to-fit pattern as skills.css: a 1920x1080 layer anchored top-left
+   and scaled to the viewport. The graph itself is drawn with SVG (crisp at any
+   zoom); everything here is chrome around it. */
+.wm-fit {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(1200px 700px at 30% -10%, #1a1e28, #0a0b0f 68%);
+}
+.wm-root {
+  width: 1920px;
+  height: 1080px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  font-family: Spectral, Georgia, serif;
+  color: #e9ddc4;
+  user-select: none;
+}
+.wm-panel {
+  position: absolute;
+  box-sizing: border-box;
+  background: linear-gradient(#232833, #151a22);
+  border: 1px solid #0a0d12;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 #3d4757, inset 0 0 0 1px #2a3140, 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+.wm-gold {
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(184, 146, 90, 0.3);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.wm-hd {
+  font-family: Cinzel, serif;
+  color: #cca96b;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.wm-px {
+  font-family: 'Press Start 2P', monospace;
+}
+.wm-btn {
+  font-family: Cinzel, serif;
+  letter-spacing: 1px;
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+}
+
+/* Parchment surface behind the graph. */
+.wm-map {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: radial-gradient(1000px 620px at 42% 34%, #232a24, #12140f 74%);
+}
+.wm-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Graph edges (roads between maps). */
+.wm-edge {
+  stroke: #4a5240;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.wm-edge.dim {
+  stroke: #2a2f26;
+  stroke-dasharray: 6 8;
+}
+
+/* Nodes. Towns get a diamond, field/dungeon maps a circle; the two are also
+   color-keyed. Discovered-town nodes are the only travel targets — they get the
+   pointer cursor and a hover lift. */
+.wm-node {
+  transition: filter 0.1s;
+}
+.wm-node.town.discovered {
+  cursor: pointer;
+}
+.wm-node.town.discovered:hover {
+  filter: brightness(1.3) drop-shadow(0 0 8px rgba(230, 197, 131, 0.55));
+}
+.wm-label {
+  font-family: Cinzel, serif;
+  fill: #e9ddc4;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: #0b0d09;
+  stroke-width: 3px;
+}
+.wm-sublabel {
+  font-family: 'Press Start 2P', monospace;
+  fill: #b7a06a;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: #0b0d09;
+  stroke-width: 3px;
+}
+
+/* Legend swatches. */
+.wm-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  vertical-align: -2px;
+  margin-right: 8px;
+}

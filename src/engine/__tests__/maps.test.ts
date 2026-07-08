@@ -40,6 +40,16 @@ describe('maps & transitions', () => {
     expect(Object.keys(s.groups)).toHaveLength(0);
     expect(enemyCount(s)).toBeGreaterThan(0);
   });
+  it('grows the discovered list (deduped) as new maps are entered', () => {
+    const s = createDemoWorld();
+    expect(s.discovered).toEqual([START_MAP]);
+    const next = s.exits[0].toMap;
+    travelTo(s, next, s.mapId);
+    expect(s.discovered).toContain(next);
+    const before = s.discovered.length;
+    travelTo(s, START_MAP, s.mapId); // re-entering an already-discovered map adds nothing
+    expect(s.discovered.length).toBe(before);
+  });
   it('never exceeds a spawn rule’s maxAmount', () => {
     const s = createDemoWorld();
     expect(enemyCount(s)).toBeLessThanOrEqual(MAPS[s.mapId].spawns[0].maxAmount);

@@ -11,6 +11,7 @@ function world(entities: Entity[]): WorldState {
     map: demoMap(10, 10),
     features: [],
     exits: [],
+    discovered: ['test'],
     entities: Object.fromEntries(entities.map((e) => [e.id, e])),
     groups: {},
     playerId: 'p1',

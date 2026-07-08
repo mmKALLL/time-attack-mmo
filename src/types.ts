@@ -186,6 +186,7 @@ export type WorldState = {
   map: TileMap;
   features: MapFeature[]; // obstacles + torches for the current map
   exits: MapExit[]; // generated portal tiles for the current map
+  discovered: MapId[]; // maps the party has entered (serializable set; world-map "discovered zones")
   entities: Record<EntityId, Entity>;
   groups: Record<GroupId, CombatGroup>;
   playerId: EntityId;
@@ -203,4 +204,5 @@ export type Input =
   | { type: 'selectSkill'; slot: number } // 0..8 => keys 1..9
   | { type: 'spendAttr'; key: PrimaryKey } // raise a primary from the attribute pool
   | { type: 'levelUpSkill'; index: number } // raise a skill from the skill pool
+  | { type: 'travelToMap'; mapId: MapId } // quick-travel to a discovered town from the world map
   | { type: 'respawn' }; // return to the starting town at full health

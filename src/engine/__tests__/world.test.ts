@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { tick } from '../world';
 import { createDemoWorld } from '../demo';
+import { MAPS, START_MAP } from '../../data-map';
 
 describe('world reducer', () => {
   it('does not mutate the input state (immutability boundary)', () => {
@@ -38,6 +39,18 @@ describe('world reducer', () => {
     s0.entities[s0.playerId].cell = { x: ex.cell.x + (fromLeft ? 1 : -1), y: ex.cell.y };
     const s1 = tick(s0, [{ type: 'move', dir: fromLeft ? 'left' : 'right' }], 50);
     expect(s1.mapId).toBe(ex.toMap);
+  });
+  it('travelToMap quick-travels to a town and records discovery', () => {
+    const s0 = createDemoWorld();
+    const town = Object.values(MAPS).find((m) => m.biome === 'town' && m.id !== s0.mapId)!;
+    const s1 = tick(s0, [{ type: 'travelToMap', mapId: town.id }], 50);
+    expect(s1.mapId).toBe(town.id);
+    expect(s1.discovered).toContain(town.id);
+    expect(s0.discovered).not.toContain(town.id); // input state untouched (immutability boundary)
+  });
+  it('starts with only the start map discovered', () => {
+    const s = createDemoWorld();
+    expect(s.discovered).toEqual([START_MAP]);
   });
   it('demo world starts with a lone player (no allies) in the safe town', () => {
     const s = createDemoWorld();

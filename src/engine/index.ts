@@ -2,6 +2,7 @@ export * from './grid';
 export * from './rng';
 export * from './map-generator';
 export * from './maps';
+export * from './worldmap-layout';
 export * from './entities';
 export * from './jobs';
 export * from './skills';
