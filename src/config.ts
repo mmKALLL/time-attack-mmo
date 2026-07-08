@@ -3,7 +3,8 @@ import type { Primaries, Stats } from './types';
 // ---------- Debug ----------
 export const DEBUG = false; // dev: start all skills at level 3 (else 0)
 export const START_SKILL_LEVEL = DEBUG ? 3 : 0;
-export const DEFAULT_SEED = DEBUG ? 1337 : Math.floor(Math.random() * 1e7); // starting RNG seed for the demo world
+const isTest = import.meta.env?.MODE === 'test'; // deterministic maps/enemies under vitest
+export const DEFAULT_SEED = DEBUG || isTest ? 1337 : Math.floor(Math.random() * 1e7); // starting RNG seed for the demo world
 export const OBSTACLE_OVERLAY_ALPHA = 0.26; // red tint over obstacle-prop cells (0 to disable)
 
 // ---------- Display / geometry ----------
