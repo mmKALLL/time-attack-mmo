@@ -121,6 +121,7 @@ export type CombatGroup = {
 
 // ---------- Maps ----------
 export type MapId = string;
+export type Biome = 'farmland' | 'plains' | 'forest' | 'mistyForest' | 'deepDungeon';
 export type Compass = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 export type ObstacleSize = '1x1' | '1x3' | '3x1' | '3x3';
 
@@ -162,7 +163,7 @@ export type GenParams = {
 export type MapDef = {
   id: MapId;
   name: string;
-  biome: string;
+  biome: Biome;
   recommended: [number, number]; // recommended level range (zone banner)
   gen: GenParams;
   connections: MapConnection[];
