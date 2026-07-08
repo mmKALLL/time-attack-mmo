@@ -60,27 +60,27 @@ const HIGHWAY = 'highway-enemies-3.png'; // q3 rosvo; q4 varas (fighter/archer/r
 
 const list: EnemyDef[] = [
   // Forest folk (mid-tier)
-  ...race(FOREST, 1, 'menninkainen', 'Menninkäinen', 6),
-  ...race(FOREST, 2, 'peikko', 'Peikko', 12, { fighter: 4, mage: 1 }), // brute trolls: dim casters
+  ...race(FOREST, 1, 'menninkainen', 'Menninkäinen', 3),
+  ...race(FOREST, 2, 'peikko', 'Peikko', 10, { fighter: 4, mage: 1 }), // brute trolls: dim casters
   ...race(FOREST, 3, 'haltia', 'Haltia', 14, { archer: 4, mage: 5 }), // elven marksmen & mages
   ...race(FOREST, 4, 'metsanpeitto', 'Metsänpeitto', 16),
   // Aquatic (used once a lake/water biome exists)
   ...race(AQUATIC, 1, 'nakki', 'Näkki', 9),
   ...race(AQUATIC, 2, 'vetehinen', 'Vetehinen', 13),
   ...race(AQUATIC, 3, 'ikuturso', 'Iku-Turso', 17),
-  ...race(AQUATIC, 4, 'vesihiisi', 'Vesihiisi', 18),
+  ...race(AQUATIC, 4, 'vesihiisi', 'Vesihiisi', 4),
   // Highway bandits (q3, low level) + a mixed q4: varas thieves + haamu ghosts
   ...race(HIGHWAY, 3, 'rosvo', 'Rosvo', 1, { rogue: 4 }), // bandit cutthroats
-  enemy('varasFighter', 'Varas Bruiser', HIGHWAY, 4, 'fighter', 1, 3),
-  enemy('varasFighter2', 'Greater Varas Bruiser', HIGHWAY, 4, 'fighter', 2, 3),
-  enemy('varasArcher', 'Varas Bowman', HIGHWAY, 4, 'archer', 1, 3),
-  enemy('varasArcher2', 'Greater Varas Bowman', HIGHWAY, 4, 'archer', 2, 3),
-  enemy('varasRogue', 'Varas Thief', HIGHWAY, 4, 'rogue', 1, 3),
-  enemy('varasRogue2', 'Greater Varas Thief', HIGHWAY, 4, 'rogue', 2, 3),
-  enemy('haamuMage', 'Haamu Wraith', HIGHWAY, 4, 'mage', 1, 8),
-  enemy('haamuMage2', 'Greater Haamu Wraith', HIGHWAY, 4, 'mage', 2, 8),
-  enemy('haamuLeader', 'Kummitus Revenant', HIGHWAY, 4, 'leader', 1, 8),
-  enemy('haamuLeader2', 'Kummitus Overlord', HIGHWAY, 4, 'leader', 2, 8),
+  enemy('varasFighter', 'Varas Bruiser', HIGHWAY, 4, 'fighter', 1, 5),
+  enemy('varasFighter2', 'Greater Varas Bruiser', HIGHWAY, 4, 'fighter', 2, 5),
+  enemy('varasArcher', 'Varas Bowman', HIGHWAY, 4, 'archer', 1, 5),
+  enemy('varasArcher2', 'Greater Varas Bowman', HIGHWAY, 4, 'archer', 2, 5),
+  enemy('varasRogue', 'Varas Thief', HIGHWAY, 4, 'rogue', 1, 5),
+  enemy('varasRogue2', 'Greater Varas Thief', HIGHWAY, 4, 'rogue', 2, 5),
+  enemy('haamuMage', 'Haamu Wraith', HIGHWAY, 4, 'mage', 1, 5),
+  enemy('haamuMage2', 'Greater Haamu Wraith', HIGHWAY, 4, 'mage', 2, 5),
+  enemy('haamuLeader', 'Kummitus Revenant', HIGHWAY, 4, 'leader', 1, 5),
+  enemy('haamuLeader2', 'Kummitus Overlord', HIGHWAY, 4, 'leader', 2, 5),
 ];
 
 export const ENEMIES: Record<string, EnemyDef> = Object.fromEntries(list.map((d) => [d.id, d]));
