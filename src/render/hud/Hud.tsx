@@ -118,7 +118,7 @@ function Hotbar() {
           <div
             key={rt.skillId + i}
             className={`slot${active ? ' active' : ''}${cooling ? ' cooling' : ''}`}
-            title={`${skill.name} (Lv${rt.level})\n${describeSkill(skill, rt.level, player.stats.atk)}`}
+            title={`${skill.name} (Lv${rt.level})\n${describeSkill(skill, rt.level, player.stats.maxDmg)}`}
           >
             <span className="digit">{i + 1}</span>
             <span className="lvl">L{rt.level}</span>

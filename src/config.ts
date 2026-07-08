@@ -1,9 +1,9 @@
-import type { Stats } from './types';
+import type { Primaries, Stats } from './types';
 
 // ---------- Debug ----------
 export const DEBUG = false; // dev: start all skills at level 3 (else 0)
 export const START_SKILL_LEVEL = DEBUG ? 3 : 0;
-export const DEFAULT_SEED = 1337; // starting RNG seed for the demo world
+export const DEFAULT_SEED = DEBUG ? 1337 : Math.floor(Math.random() * 1e7); // starting RNG seed for the demo world
 export const OBSTACLE_OVERLAY_ALPHA = 0.26; // red tint over obstacle-prop cells (0 to disable)
 
 // ---------- Display / geometry ----------
@@ -23,25 +23,62 @@ export const ANIM_FRAME_MS = 420; // renderer 2-frame idle cadence
 export const ANIM_FRAMES = 2; // handoff sprites have 2 animation frames
 export const DAMAGE_FLOAT_MS = 1150;
 export const MOVE_REPEAT_DELAY_MS = 0; // delay after the first step before auto-repeat kicks in
-export const MOVE_REPEAT_MS = 250; // held-key auto-repeat cadence for movement
+export const MOVE_REPEAT_MS = 225; // held-key auto-repeat cadence for movement
 
-// ---------- Symmetric stat model (used for BOTH players and enemies) ----------
-// Placeholder for Phase 2's deriveStats(primaries, level).
-const BASE = { maxHp: 60, maxMp: 30, atk: 9, def: 3 };
-const PER_LEVEL = { maxHp: 74, maxMp: 8, atk: 3, def: 1.5 };
+// ---------- Primary-stat allocation (symmetric for players AND enemies) ----------
+// Points are spread by class archetype so every stat matters for every class
+// (all weights non-zero). Enemies allocate the same way by level, keeping a
+// same-level fight ~50/50.
+export type Archetype = 'str' | 'dex' | 'int' | 'balanced';
+export const PRIMARY_BASE = 5; // each primary at level 1
+export const PRIMARY_POINTS_PER_LEVEL = 3; // design-doc: +3 attribute points / level
+export const ARCHETYPE_WEIGHTS: Record<Archetype, Primaries> = {
+  str: { str: 40, dex: 15, int: 15, vit: 30 },
+  dex: { str: 20, dex: 40, int: 15, vit: 25 },
+  int: { str: 15, dex: 15, int: 40, vit: 30 },
+  balanced: { str: 25, dex: 25, int: 25, vit: 25 },
+};
+export function allocatePrimaries(w: Primaries, level: number, growth = 1): Primaries {
+  const pts = PRIMARY_POINTS_PER_LEVEL * Math.max(0, level - 1) * growth;
+  const sum = w.str + w.dex + w.int + w.vit || 1;
+  const at = (k: keyof Primaries) => PRIMARY_BASE + Math.round((pts * w[k]) / sum);
+  return { str: at('str'), dex: at('dex'), int: at('int'), vit: at('vit') };
+}
 
-export function statsFor(level: number, growth: number): Stats {
+// ---------- Derived stats (design-doc formulas) ----------
+// Crit grows as (dex*2+int)^0.7, softening to ^0.6 past 300; never a sure crit.
+function critCurve(base: number): number {
+  if (base <= 0) return 0;
+  const c = base < 300 ? Math.pow(base, 0.7) : Math.pow(300, 0.7) + Math.pow(base - 300, 0.6);
+  return Math.min(95, c);
+}
+export function deriveStats(p: Primaries, level: number): Stats {
+  const physical = p.str * 4 + p.dex * 2 + p.vit;
+  const magical = p.int * 4 + p.dex * 2 + p.vit;
+  const power = Math.max(physical, magical); // a class uses its stronger school
+  const accuracy = p.dex * 2 + p.vit + p.int;
   return {
-    maxHp: Math.round((BASE.maxHp + PER_LEVEL.maxHp * (level - 1)) * growth),
-    maxMp: Math.round((BASE.maxMp + PER_LEVEL.maxMp * (level - 1)) * growth),
-    atk: Math.round((BASE.atk + PER_LEVEL.atk * (level - 1)) * growth),
-    def: Math.round((BASE.def + PER_LEVEL.def * (level - 1)) * growth),
+    maxHp: p.vit * 30 + p.str * 5 + level * 5,
+    maxMp: p.int * 10 + p.dex * 2 + level * 2,
+    minDmg: Math.round(power * 0.82),
+    maxDmg: Math.round(power),
+    def: p.vit * 2 + p.str,
+    accuracy,
+    crit: critCurve(p.dex * 2 + p.int),
+    dodge: accuracy * 0.25,
   };
 }
 
-// ---------- Damage ----------
-export function damage(attackerAtk: number, skillPower: number, defenderDef: number): number {
-  return Math.max(1, Math.round(attackerAtk * skillPower - defenderDef));
+// ---------- Damage / accuracy ----------
+export const CRIT_MULT = 1.6;
+// Hit rate = 1.2 - dodge/accuracy (5x accuracy over dodge => guaranteed hit).
+export function hitChance(accuracy: number, dodge: number): number {
+  if (accuracy <= 0) return 0.05;
+  return Math.max(0.05, Math.min(1, 1.2 - dodge / accuracy));
+}
+// Final damage from a rolled base value, the skill multiplier, and target defense.
+export function rawDamage(rolled: number, mult: number, def: number): number {
+  return Math.max(1, Math.round(rolled * mult - def));
 }
 
 // ---------- Progression ----------

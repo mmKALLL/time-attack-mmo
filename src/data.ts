@@ -1,4 +1,5 @@
 import type { CooldownType, JobNode, ParamName, Skill, SkillElement, SkillKind, SkillParamFunction, SkillParams, ShapeKind } from './types';
+import type { Archetype } from './config';
 
 // ============================================================================
 // Per-level param formulas. dmg/heal are MULTIPLIERS on the normal damage calc;
@@ -201,6 +202,20 @@ export const JOBS: Record<string, JobNode> = {
 };
 
 // Asset-based enemies (race/class/tier with spritesheet art) live in ./data-enemy.ts.
+
+// Which primary-stat archetype a job favors (drives auto-allocated attributes).
+// Base classes set the archetype; second classes inherit their base's lean.
+const JOB_ARCHETYPE: Record<string, Archetype> = {
+  beginner: 'balanced',
+  fighter: 'str', knight: 'str', paladin: 'str', duelist: 'str',
+  archer: 'dex', hunter: 'dex', sniper: 'dex', ranger: 'dex',
+  magician: 'int', arcanist: 'int', wizard: 'int', druid: 'int',
+  rogue: 'dex', assassin: 'dex', shadower: 'dex', ninja: 'dex',
+  flameRanger: 'int', nimbleKnight: 'balanced', cinderSage: 'int',
+};
+export function archetypeForJob(jobId: string): Archetype {
+  return JOB_ARCHETYPE[jobId] ?? 'balanced';
+}
 
 // ============================================================================
 // Start scenario — a lone level-1 Beginner. (Allies were dropped for the

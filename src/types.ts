@@ -12,11 +12,20 @@ export type JobId = string;
 export type GroupId = string;
 
 // ---------- Stats ----------
-// Skeleton ships `Stats` as placeholder DERIVED stats. Phase 2 replaces the
-// generator with deriveStats(primaries, level); `Primaries` is defined now so
-// the shape is forward-compatible (see design §"Stat system").
-export type Stats = { maxHp: number; maxMp: number; atk: number; def: number };
+// Primary attributes are allocated (by class archetype × level); deriveStats
+// turns them into the derived stats combat reads (see config.deriveStats and
+// design-doc §"Stat system"). Every primary feeds several derived stats.
 export type Primaries = { str: number; dex: number; int: number; vit: number };
+export type Stats = {
+  maxHp: number;
+  maxMp: number;
+  minDmg: number; // damage roll floor (before skill multiplier + defense)
+  maxDmg: number; // damage roll ceiling; also the "power" heals scale on
+  def: number;
+  accuracy: number; // vs the target's dodge -> hit chance
+  crit: number; // crit chance %
+  dodge: number;
+};
 
 // ---------- Status effects (Phase 2 systems; type present now) ----------
 export type StatusKind = 'poison' | 'stun' | 'slow' | 'atkUp' | 'atkDown' | 'defDown';
@@ -92,8 +101,8 @@ export type Entity = {
   xp: number; // progress toward the next level (heroes)
   jobId: JobId;
   attainedJobs: JobId[];
-  stats: Stats; // placeholder derived stats (Phase 2: computed from `primaries`)
-  primaries?: Primaries; // populated once the primary-stat system lands
+  primaries: Primaries; // allocated attributes (STR/DEX/INT/VIT)
+  stats: Stats; // derived from primaries + level via config.deriveStats
   hp: number;
   mp: number;
   skills: SkillRuntime[];

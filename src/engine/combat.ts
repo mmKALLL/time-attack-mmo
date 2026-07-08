@@ -1,9 +1,10 @@
 import type { Cell, CombatGroup, Direction, Entity, EntityId, WorldState } from '../types';
 import { DIRECTIONS, isWall, equals, key } from './grid';
-import { JOBS, getSkill } from '../data';
+import { JOBS, getSkill, archetypeForJob } from '../data';
 import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude } from './skills';
-import { damage, statsFor, xpReward, xpToNext, COMBAT_TICK_MS } from '../config';
+import { ARCHETYPE_WEIGHTS, CRIT_MULT, allocatePrimaries, deriveStats, hitChance, rawDamage, xpReward, xpToNext, COMBAT_TICK_MS } from '../config';
+import { nextRand } from './rng';
 
 // ---------- Queries (never mutate) ----------
 export function groupOf(s: WorldState, id: EntityId): CombatGroup | undefined {
@@ -108,6 +109,18 @@ export function advanceCombat(s: WorldState, dt: number): void {
   cleanupDead(s);
 }
 
+// Roll one attack: check hit (accuracy vs dodge), roll damage in [minDmg,maxDmg],
+// apply the skill multiplier and target defense, then a chance to crit. Uses the
+// world's seeded RNG so replays/networking stay deterministic. 0 = a miss.
+function resolveAttack(s: WorldState, caster: Entity, target: Entity, mult: number): number {
+  if (nextRand(s) > hitChance(caster.stats.accuracy, target.stats.dodge)) return 0;
+  const { minDmg, maxDmg } = caster.stats;
+  const rolled = minDmg + nextRand(s) * Math.max(0, maxDmg - minDmg);
+  let dmg = rawDamage(rolled, mult, target.stats.def);
+  if (nextRand(s) < caster.stats.crit / 100) dmg = Math.round(dmg * CRIT_MULT);
+  return dmg;
+}
+
 function fireSkills(s: WorldState, g: CombatGroup): void {
   for (const caster of membersOf(s, g)) {
     if (!isAlive(caster)) continue;
@@ -118,23 +131,26 @@ function fireSkills(s: WorldState, g: CombatGroup): void {
     const mag = magnitude(skill, rt.level);
     for (const t of skillTargets(caster, skill, living, rt.level)) {
       if (skill.kind === 'heal') {
-        if (mag > 0) t.hp = Math.min(t.stats.maxHp, t.hp + Math.round(caster.stats.atk * mag));
+        if (mag > 0) t.hp = Math.min(t.stats.maxHp, t.hp + Math.round(caster.stats.maxDmg * mag));
       } else if (skill.params.dmg) {
         // attack + damaging debuffs; pure buffs/debuffs/DoTs are inert until Phase 2.
-        t.hp = Math.max(0, t.hp - damage(caster.stats.atk, mag, t.stats.def));
+        t.hp = Math.max(0, t.hp - resolveAttack(s, caster, t, mag));
       }
     }
     caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
   }
 }
 
-// Level up a hero: bump level, regrow stats, refill hp/mp (carry surplus XP).
+// Level up a hero: bump level, re-allocate primaries for the new level, re-derive
+// stats, refill hp/mp (carry surplus XP). Manual allocation lands with the
+// allocation screen; until then heroes auto-allocate by their job archetype.
 function levelUp(e: Entity): void {
   const growth = JOBS[e.jobId]?.growth ?? 1;
   while (e.xp >= xpToNext(e.level)) {
     e.xp -= xpToNext(e.level);
     e.level += 1;
-    e.stats = statsFor(e.level, growth);
+    e.primaries = allocatePrimaries(ARCHETYPE_WEIGHTS[archetypeForJob(e.jobId)], e.level, growth);
+    e.stats = deriveStats(e.primaries, e.level);
     e.hp = e.stats.maxHp;
     e.mp = e.stats.maxMp;
   }
