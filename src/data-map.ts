@@ -83,9 +83,9 @@ link('lieksa2', 'n', 'lieksa3');
 link('lieksa3', 'n', 'lieksa4');
 
 // ---------- Field-map chains between nodes (design-doc part 1) ----------
-// biome, lo, hi, rooms, and an optional [width, height] override for that map's
-// size (both given together; omitted -> the standard field size). "plains" -> forest.
-type Seg = [Biome, number, number, number, number?, number?];
+// One field map in a chain. `width`/`height` optionally override the standard
+// field size for that map. ("plains" from the design doc render as forest.)
+type Seg = { biome: Biome; lo: number; hi: number; rooms: number; width?: number; height?: number };
 type Edge = { a: string; b: string; dir: Compass; seg: Seg[] };
 const EDGES: Edge[] = [
   {
@@ -93,41 +93,41 @@ const EDGES: Edge[] = [
     b: 'savonlinna',
     dir: 'e',
     seg: [
-      ['forest', 1, 2, 2],
-      ['forest', 3, 5, 2],
-      ['forest', 4, 7, 3],
+      { biome: 'forest', lo: 1, hi: 2, rooms: 2, width: 22, height: 13 }, // small starter map
+      { biome: 'forest', lo: 3, hi: 5, rooms: 2, width: 26, height: 15 },
+      { biome: 'forest', lo: 4, hi: 7, rooms: 3 },
     ],
   }, // gentle ramp out of the start town
-  { a: 'savonlinna', b: 'varkaus', dir: 'nw', seg: [['forest', 7, 9, 4]] }, // plains
+  { a: 'savonlinna', b: 'varkaus', dir: 'nw', seg: [{ biome: 'forest', lo: 7, hi: 9, rooms: 4 }] }, // plains
   {
     a: 'savonlinna',
     b: 'lieksa',
     dir: 'ne',
     seg: [
-      ['lake', 10, 12, 2],
-      ['forest', 12, 16, 2],
-      ['deepForest', 16, 21, 2],
+      { biome: 'lake', lo: 10, hi: 12, rooms: 2 },
+      { biome: 'forest', lo: 12, hi: 16, rooms: 2 },
+      { biome: 'deepForest', lo: 16, hi: 21, rooms: 2 },
     ],
   },
-  { a: 'varkaus', b: 'kuopio', dir: 'n', seg: [['lake', 9, 12, 2]] },
+  { a: 'varkaus', b: 'kuopio', dir: 'n', seg: [{ biome: 'lake', lo: 9, hi: 12, rooms: 2 }] },
   {
     a: 'varkaus',
     b: 'jyvaskyla',
     dir: 'w',
     seg: [
-      ['forest', 8, 10, 2],
-      ['forest', 10, 14, 2],
+      { biome: 'forest', lo: 8, hi: 10, rooms: 2 },
+      { biome: 'forest', lo: 10, hi: 14, rooms: 2 },
     ],
   }, // plains
-  { a: 'jyvaskyla', b: 'kuopio', dir: 'ne', seg: [['forest', 12, 16, 2]] },
+  { a: 'jyvaskyla', b: 'kuopio', dir: 'ne', seg: [{ biome: 'forest', lo: 12, hi: 16, rooms: 2 }] },
   {
     a: 'kuopio',
     b: 'kajaani',
     dir: 'n',
     seg: [
-      ['lake', 12, 16, 2],
-      ['forest', 17, 21, 2],
-      ['forest', 22, 26, 2],
+      { biome: 'lake', lo: 12, hi: 16, rooms: 2 },
+      { biome: 'forest', lo: 17, hi: 21, rooms: 2 },
+      { biome: 'forest', lo: 22, hi: 26, rooms: 2 },
     ],
   }, // plains
   {
@@ -135,8 +135,8 @@ const EDGES: Edge[] = [
     b: 'lieksa',
     dir: 'e',
     seg: [
-      ['forest', 18, 22, 2],
-      ['deepForest', 23, 27, 2],
+      { biome: 'forest', lo: 18, hi: 22, rooms: 2 },
+      { biome: 'deepForest', lo: 23, hi: 27, rooms: 2 },
     ],
   },
 ];
@@ -144,7 +144,7 @@ for (const e of EDGES) {
   const nodes = [e.a];
   e.seg.forEach((s, i) => {
     const id = `${e.a}_${e.b}_${i}`;
-    add(field(id, s[0], s[1], s[2], s[3], s[4], s[5]));
+    add(field(id, s.biome, s.lo, s.hi, s.rooms, s.width, s.height));
     nodes.push(id);
   });
   nodes.push(e.b);
