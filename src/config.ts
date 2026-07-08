@@ -1,10 +1,10 @@
 import type { Stats } from './types';
 
 // ---------- Debug ----------
-export const DEBUG = true; // dev: start all skills at level 3 (else 0)
+export const DEBUG = false; // dev: start all skills at level 3 (else 0)
 export const START_SKILL_LEVEL = DEBUG ? 3 : 0;
 export const DEFAULT_SEED = 1337; // starting RNG seed for the demo world
-export const OBSTACLE_OVERLAY_ALPHA = 0.28; // DEBUG red tint over obstacle-prop cells
+export const OBSTACLE_OVERLAY_ALPHA = 0.26; // red tint over obstacle-prop cells (0 to disable)
 
 // ---------- Display / geometry ----------
 export const DESIGN_W = 1920;
@@ -12,7 +12,7 @@ export const DESIGN_H = 1080;
 export const CELL_PX = 256; // logical tile size (px); 1 enemy-asset tile == 1 cell
 export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
 export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
-export const CAMERA_ZOOM_PCT = 25; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
+export const CAMERA_ZOOM_PCT = 33; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
 
 // ---------- Timing ----------

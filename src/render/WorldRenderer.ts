@@ -45,7 +45,7 @@ function keyOutBackground(img: ImageData) {
     if (y - 1 >= 0) stack.push(p - width);
   }
 }
-import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DEBUG, DESIGN_H, DESIGN_W, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA } from '../config';
+import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA } from '../config';
 import { Sprites } from './sprites';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
@@ -364,10 +364,10 @@ export class WorldRenderer {
     }
   }
 
-  // Debug aid: translucent red over cells that carry an obstacle prop (the wall
-  // ring + feature obstacles) so blockers stand out against the floor.
+  // Translucent red over cells that carry an obstacle prop (the wall ring +
+  // feature obstacles) so blockers stand out against the floor.
   private drawCollisionOverlay() {
-    if (!DEBUG || !this.propCells.size) return;
+    if (!this.propCells.size) return;
     const g = new Graphics();
     for (const key of this.propCells) {
       const [x, y] = key.split(',').map(Number);
