@@ -270,10 +270,6 @@ export function SkillAllocationScreen() {
   return (
     <div className="sa-fit">
       <div className="sa-root" style={{ transform: `scale(${scale})` }}>
-        <button className="sa-btn" onClick={() => setScene('dungeon')} style={{ position: 'absolute', top: -0, left: -0, zIndex: 5, padding: '6px 14px', fontSize: 12, color: '#e6c583', background: 'linear-gradient(#232833,#151a22)', border: '1px solid #0a0d12', display: 'none' }}>
-          ← Dungeon
-        </button>
-
         {/* HEADER */}
         <div className="sa-panel" style={{ top: 22, left: 24, width: 1212, height: 108, display: 'flex', alignItems: 'center', padding: '0 22px', gap: 18 }}>
           <div className="sa-gold" />
@@ -323,7 +319,7 @@ export function SkillAllocationScreen() {
               Confirm
             </div>
             <div className="sa-btn" onClick={pending > 0 ? reset : () => setScene('dungeon')} style={{ padding: '5px 22px', fontSize: 12, color: '#b3a888', background: '#1a1e26', border: '1px solid #3a4152' }}>
-              {pending > 0 ? 'Reset' : '← Dungeon'}
+              {pending > 0 ? 'Reset' : 'Return'}
             </div>
           </div>
         </div>
