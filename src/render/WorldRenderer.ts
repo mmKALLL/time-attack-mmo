@@ -45,7 +45,7 @@ function keyOutBackground(img: ImageData) {
     if (y - 1 >= 0) stack.push(p - width);
   }
 }
-import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, FLOOR_CHECKER_SIZE } from '../config';
+import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DEBUG, DESIGN_H, DESIGN_W, FLOOR_CHECKER_SIZE } from '../config';
 import { Sprites } from './sprites';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
@@ -92,6 +92,7 @@ export class WorldRenderer {
   private plainLoading = new Set<string>();
   private subCache = new Map<string, Texture>();
   private bgTilesReady = false; // floor + obstacle sheets loaded when the current bg was built
+  private propCells = new Set<string>(); // cells carrying an obstacle prop (wall ring + features)
   private prevHp = new Map<string, number>();
   private prevLevel = new Map<string, number>();
   private floats: Float[] = [];
@@ -237,6 +238,15 @@ export class WorldRenderer {
     const ts = MAPS[world.mapId]?.gen.tileset ?? 'forest';
     const [qx, qy] = QUAD[ts];
 
+    // Track which cells carry a prop (feature obstacles + the wall ring) for the
+    // collision overlay. Feature obstacles occupy their whole footprint.
+    this.propCells = new Set<string>();
+    for (const f of world.features) {
+      if (f.kind !== 'obstacle') continue;
+      const [, , ow, oh] = OBS_SRC[f.size];
+      for (let dy = 0; dy < oh; dy++) for (let dx = 0; dx < ow; dx++) this.propCells.add(KEY(f.cell.x + dx, f.cell.y + dy));
+    }
+
     // Floor extends everywhere — even under walls — so the (transparent) wall
     // props sit on ground and the floor shows around and beyond them.
     const g = new Graphics(); // procedural-floor fallback until the sheet loads
@@ -261,7 +271,7 @@ export class WorldRenderer {
     }
     this.bg.addChildAt(g, 0); // fallback beneath the floor sprites
 
-    if (obst) this.buildWallProps(world, qx, qy);
+    this.buildWallProps(world, qx, qy); // records ring cells even before the sheet loads
   }
 
   // Cover only the innermost wall ring + corners with obstacle props: wall cells
@@ -294,7 +304,10 @@ export class WorldRenderer {
         sp.position.set(x * CELL_PX, y * CELL_PX);
         this.bg.addChild(sp);
       }
-      for (let dy = 0; dy < oh; dy++) for (let dx = 0; dx < ow; dx++) covered.add(KEY(x + dx, y + dy));
+      for (let dy = 0; dy < oh; dy++) for (let dx = 0; dx < ow; dx++) {
+        covered.add(KEY(x + dx, y + dy));
+        this.propCells.add(KEY(x + dx, y + dy));
+      }
     };
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -351,7 +364,20 @@ export class WorldRenderer {
     }
   }
 
-  // Warm radial falloff used for every torch light (built once, tinted by blend).
+  // Debug aid: translucent red over cells that carry an obstacle prop (the wall
+  // ring + feature obstacles) so blockers stand out against the floor.
+  private drawCollisionOverlay() {
+    if (!DEBUG || !this.propCells.size) return;
+    const g = new Graphics();
+    for (const key of this.propCells) {
+      const [x, y] = key.split(',').map(Number);
+      g.rect(x * CELL_PX, y * CELL_PX, CELL_PX, CELL_PX).fill({ color: 0xff3b30, alpha: 0.28 });
+    }
+    this.fx.addChild(g);
+  }
+
+  // White radial falloff shared by every light; the color comes from the sprite
+  // tint (warm for torches, aqua for portals) under an additive blend.
   private glowTex(): Texture {
     if (this.glowTexture) return this.glowTexture;
     const S = 256;
@@ -359,33 +385,41 @@ export class WorldRenderer {
     cv.width = cv.height = S;
     const ctx = cv.getContext('2d')!;
     const grad = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
-    grad.addColorStop(0, 'rgba(255,201,122,0.95)');
-    grad.addColorStop(0.4, 'rgba(238,150,70,0.45)');
-    grad.addColorStop(1, 'rgba(255,140,50,0)');
+    grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+    grad.addColorStop(0.4, 'rgba(255,255,255,0.42)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, S, S);
     this.glowTexture = Texture.from(cv);
     return this.glowTexture;
   }
 
-  // A gentle ambient dusk over the map, with an additive warm glow at each torch
-  // so torches read as pools of light without drawing the torch prop itself.
+  private addGlow(cx: number, cy: number, cells: number, tint: number, alpha: number) {
+    const sp = new Sprite(this.glowTex());
+    sp.anchor.set(0.5);
+    sp.blendMode = 'add';
+    sp.tint = tint;
+    sp.alpha = alpha;
+    sp.setSize(CELL_PX * cells, CELL_PX * cells);
+    sp.position.set(cx, cy);
+    this.lights.addChild(sp);
+  }
+
+  // A gentle ambient dusk over the map, with additive glows: warm at each torch
+  // (the prop itself is hidden) and aqua around each portal.
   private buildLights(world: WorldState, elapsedMs: number) {
     this.lights.removeChildren();
     const veil = new Graphics();
     veil.rect(0, 0, world.map.width * CELL_PX, world.map.height * CELL_PX).fill({ color: 0x0a0a12, alpha: 0.22 });
     this.lights.addChild(veil);
-    const tex = this.glowTex();
     for (const f of world.features) {
       if (f.kind !== 'torch') continue;
       const pulse = 0.85 + 0.15 * Math.sin(elapsedMs / 260 + (f.cell.x + f.cell.y));
-      const sp = new Sprite(tex);
-      sp.anchor.set(0.5);
-      sp.blendMode = 'add';
-      sp.setSize(CELL_PX * 3.4, CELL_PX * 3.4);
-      sp.alpha = pulse;
-      sp.position.set(f.cell.x * CELL_PX + CELL_PX / 2, f.cell.y * CELL_PX + CELL_PX / 2);
-      this.lights.addChild(sp);
+      this.addGlow(f.cell.x * CELL_PX + CELL_PX / 2, f.cell.y * CELL_PX + CELL_PX / 2, 3.4, 0xffc27a, pulse);
+    }
+    for (const ex of world.exits) {
+      const pulse = 0.7 + 0.3 * Math.sin(elapsedMs / 360 + (ex.cell.x + ex.cell.y));
+      this.addGlow(ex.cell.x * CELL_PX + CELL_PX / 2, ex.cell.y * CELL_PX + CELL_PX / 2, 3.2, 0x7fe6dd, pulse);
     }
   }
 
@@ -395,9 +429,11 @@ export class WorldRenderer {
       const cx = ex.cell.x * CELL_PX + CELL_PX / 2;
       const cy = ex.cell.y * CELL_PX + CELL_PX / 2;
       const g = new Graphics();
-      g.rect(cx - CELL_PX / 2 + 2, cy - CELL_PX / 2 + 2, CELL_PX - 4, CELL_PX - 4).fill({ color: 0x43c7c0, alpha: 0.1 });
-      g.circle(cx, cy, 22 * UI).stroke({ width: 3 * UI, color: 0x43c7c0, alpha: 0.45 + 0.4 * pulse });
-      g.circle(cx, cy, (10 + 6 * pulse) * UI).stroke({ width: 2 * UI, color: 0x8fe0d8, alpha: 0.6 });
+      g.rect(cx - CELL_PX / 2 + 2, cy - CELL_PX / 2 + 2, CELL_PX - 4, CELL_PX - 4).fill({ color: 0x43c7c0, alpha: 0.18 });
+      g.circle(cx, cy, 26 * UI).fill({ color: 0x8fe0d8, alpha: 0.12 + 0.12 * pulse }); // soft aqua disc
+      g.circle(cx, cy, 22 * UI).stroke({ width: 3 * UI, color: 0x5fe0d6, alpha: 0.75 + 0.25 * pulse });
+      g.circle(cx, cy, (10 + 6 * pulse) * UI).stroke({ width: 2.5 * UI, color: 0xbdf4ee, alpha: 0.9 });
+      g.circle(cx, cy, 4 * UI).fill({ color: 0xffffff, alpha: 0.85 }); // bright core
       this.fx.addChild(g);
     }
   }
@@ -412,6 +448,7 @@ export class WorldRenderer {
 
     this.drawPortals(world, elapsedMs);
     this.drawFeatures(world);
+    this.drawCollisionOverlay(); // above walls/obstacles, below actors
     const playerGroup = Object.values(world.groups).find((g) => g.memberIds.includes(world.playerId));
     if (playerGroup) {
       this.drawBlockOutline(world, playerGroup);
