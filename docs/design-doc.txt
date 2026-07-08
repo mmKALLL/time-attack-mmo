@@ -185,7 +185,7 @@ Typically enemy quadrants have the following structure:
 
 
 
-The first character is the enemy race index, the second character is the class (fighter / archer / mage / rogue / leader), the third character is the tier (1 = normal (level 1-20), 2 = strong (level 20-40)). Typically fighter has the enemy's base level, archer +1, mage +4, rogue +2, and leader +6, but the exact numbers can shift +-3 depending on how a race specializes in things.
+The first character is the enemy race index, the second character is the class (fighter / archer / mage / rogue / leader), the third character is the tier (1 = normal (level 1-30), 2 = strong (level +8)). Typically fighter has the enemy's base level, archer +1, mage +4, rogue +2, and leader +12, but the exact numbers can shift +-3 depending on how a race specializes in things.
 
 The enemy spritesheets have a black cross splitting the quadrants; it should be ignored.
 

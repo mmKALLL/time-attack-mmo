@@ -1,6 +1,7 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
-import type { CombatGroup, Entity, WorldState } from '../types';
+import type { CombatGroup, Entity, ObstacleSize, TilesetName, WorldState } from '../types';
 import { getSkill } from '../data';
+import { MAPS } from '../data-map';
 import { shapeFor } from '../engine/shapes';
 import { tileRect, tileLayout } from '../asset-tiles';
 
@@ -51,6 +52,27 @@ const KEY = (x: number, y: number) => `${x},${y}`;
 const FACING: Record<string, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 const UI = CELL_PX / 64; // world-space HUD/text was tuned for 64px cells; scale to the current cell size
 
+// Map tile sheets (2048x2048): four biome quadrants of 1024x1024, each a 4x4
+// grid of CELL_PX tiles. Floor quadrants are tileable ground fields; obstacle
+// quadrants hold one prop per footprint size (1x1 corner, 3x1 top, 1x3 left,
+// 3x3 center). Quadrant order: forest, lake / deepForest, town.
+const FLOOR_SHEET = 'tiles-floor.png';
+const OBSTACLE_SHEET = 'tiles-obstacles.png';
+const QUAD_PX = CELL_PX * 4; // one biome quadrant spans 4x4 cells
+const QUAD: Record<TilesetName, [number, number]> = {
+  forest: [0, 0],
+  lake: [QUAD_PX, 0],
+  deepForest: [0, QUAD_PX],
+  town: [QUAD_PX, QUAD_PX],
+};
+// obstacle footprint -> [col, row, cols, rows] within its biome quadrant
+const OBS_SRC: Record<ObstacleSize, [number, number, number, number]> = {
+  '1x1': [0, 0, 1, 1],
+  '3x1': [1, 0, 3, 1],
+  '1x3': [0, 1, 1, 3],
+  '3x3': [1, 1, 3, 3],
+};
+
 type Float = { text: Text; born: number; x: number; y: number };
 
 // Draws the Emberdeep combat world imperatively from engine state. No React here.
@@ -64,7 +86,10 @@ export class WorldRenderer {
   private texCache = new Map<string, Texture>();
   private atlasReady = new Map<string, Texture>(); // background-keyed enemy sheets
   private atlasLoading = new Set<string>();
+  private plainReady = new Map<string, Texture>(); // map sheets, used as-is (no keying)
+  private plainLoading = new Set<string>();
   private subCache = new Map<string, Texture>();
+  private bgFloorReady = false; // floor sheet loaded when the current bg was built
   private prevHp = new Map<string, number>();
   private prevLevel = new Map<string, number>();
   private floats: Float[] = [];
@@ -128,6 +153,39 @@ export class WorldRenderer {
     return t;
   }
 
+  // Map sheets (floor/obstacles) are used as authored — opaque floor, already-
+  // transparent obstacles — so they skip the white-key pass the enemy sheets need.
+  private async loadPlainAtlas(filename: string) {
+    const url = assetUrl(filename);
+    if (!url) return;
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    this.plainReady.set(filename, Texture.from(img));
+  }
+
+  private plainAtlas(filename: string): Texture | undefined {
+    const ready = this.plainReady.get(filename);
+    if (ready) return ready;
+    if (!this.plainLoading.has(filename)) {
+      this.plainLoading.add(filename);
+      void this.loadPlainAtlas(filename);
+    }
+    return undefined; // still loading
+  }
+
+  // A rectangular sub-texture (px) of a map sheet.
+  private mapSub(filename: string, x: number, y: number, w: number, h: number): Texture | undefined {
+    const key = `${filename}|${x},${y},${w},${h}`;
+    const cached = this.subCache.get(key);
+    if (cached) return cached;
+    const base = this.plainAtlas(filename);
+    if (!base) return undefined; // still loading
+    const t = new Texture({ source: base.source, frame: new Rectangle(x, y, w, h) });
+    this.subCache.set(key, t);
+    return t;
+  }
+
   private drawEnemyAsset(e: Entity, px: number, py: number, bob: number) {
     const asset = e.asset!;
     const layout = tileLayout(asset.tiles);
@@ -164,19 +222,44 @@ export class WorldRenderer {
 
   private buildBg(world: WorldState) {
     this.buildVignette();
-    if (this.bgMapId === world.mapId) return; // tiles unchanged
+    // Rebuilt when the map changes, and retried each frame until the floor sheet
+    // has loaded (so we swap the procedural fallback for the real biome art).
+    const floor = this.plainAtlas(FLOOR_SHEET);
+    if (this.bgMapId === world.mapId && this.bgFloorReady) return;
     this.bgMapId = world.mapId;
+    this.bgFloorReady = !!floor;
     this.bg.removeChildren();
-    const g = new Graphics();
+
     const { width, height, tiles } = world.map;
+    const ts = MAPS[world.mapId]?.gen.tileset ?? 'forest';
+    const [qx, qy] = QUAD[ts];
+    // Obstacle footprints keep floor underneath so the (transparent) prop art
+    // sits on ground, not on a dark wall block.
+    const obstacleCells = new Set<string>();
+    for (const f of world.features) {
+      if (f.kind !== 'obstacle') continue;
+      const [, , ow, oh] = OBS_SRC[f.size];
+      for (let dy = 0; dy < oh; dy++) for (let dx = 0; dx < ow; dx++) obstacleCells.add(KEY(f.cell.x + dx, f.cell.y + dy));
+    }
+
+    const g = new Graphics(); // walls + procedural-floor fallback
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const t = tiles[y * width + x];
         const px = x * CELL_PX;
         const py = y * CELL_PX;
-        if (t === 'wall') {
+        const solid = tiles[y * width + x] === 'wall' && !obstacleCells.has(KEY(x, y));
+        if (solid) {
           g.rect(px, py, CELL_PX, CELL_PX).fill(COLORS.wallBottom);
           g.rect(px, py, CELL_PX, CELL_PX * 0.55).fill(COLORS.wallTop);
+        } else if (floor) {
+          // sample the biome quadrant's 4x4 field, tiling it across the map
+          const tex = this.mapSub(FLOOR_SHEET, qx + (x % 4) * CELL_PX, qy + (y % 4) * CELL_PX, CELL_PX, CELL_PX);
+          if (tex) {
+            const sp = new Sprite(tex);
+            sp.setSize(CELL_PX, CELL_PX);
+            sp.position.set(px, py);
+            this.bg.addChild(sp);
+          }
         } else {
           const checker = (Math.floor(x / FLOOR_CHECKER_SIZE) + Math.floor(y / FLOOR_CHECKER_SIZE)) % 2;
           g.rect(px, py, CELL_PX, CELL_PX).fill(checker ? COLORS.floor : COLORS.floorAlt);
@@ -184,7 +267,7 @@ export class WorldRenderer {
         }
       }
     }
-    this.bg.addChild(g);
+    this.bg.addChildAt(g, 0); // walls/fallback beneath the floor sprites
   }
 
   // Vignette + warm tint overlay (Emberdeep): screen-anchored (added to the app
@@ -209,7 +292,8 @@ export class WorldRenderer {
   }
 
   private drawFeatures(world: WorldState, frame: number) {
-    const OBS: Record<string, [number, number]> = { '1x1': [1, 1], '1x3': [1, 3], '3x1': [3, 1], '3x3': [3, 3] };
+    const ts = MAPS[world.mapId]?.gen.tileset ?? 'forest';
+    const [qx, qy] = QUAD[ts];
     for (const f of world.features) {
       if (f.kind === 'torch') {
         const sp = new Sprite(this.tex('torch', frame));
@@ -217,13 +301,21 @@ export class WorldRenderer {
         sp.position.set(f.cell.x * CELL_PX, f.cell.y * CELL_PX);
         this.actors.addChild(sp);
       } else {
-        const [ow, oh] = OBS[f.size];
+        const [col, row, ow, oh] = OBS_SRC[f.size];
         const px = f.cell.x * CELL_PX;
         const py = f.cell.y * CELL_PX;
-        const g = new Graphics();
-        g.rect(px + 3, py + 3, ow * CELL_PX - 6, oh * CELL_PX - 6).fill(0x2c2822);
-        g.rect(px + 3, py + 3, ow * CELL_PX - 6, (oh * CELL_PX - 6) * 0.45).fill(0x453f34);
-        this.fx.addChild(g);
+        const tex = this.mapSub(OBSTACLE_SHEET, qx + col * CELL_PX, qy + row * CELL_PX, ow * CELL_PX, oh * CELL_PX);
+        if (tex) {
+          const sp = new Sprite(tex);
+          sp.setSize(ow * CELL_PX, oh * CELL_PX);
+          sp.position.set(px, py);
+          this.fx.addChild(sp);
+        } else {
+          const g = new Graphics(); // fallback block until the obstacle sheet loads
+          g.rect(px + 3, py + 3, ow * CELL_PX - 6, oh * CELL_PX - 6).fill(0x2c2822);
+          g.rect(px + 3, py + 3, ow * CELL_PX - 6, (oh * CELL_PX - 6) * 0.45).fill(0x453f34);
+          this.fx.addChild(g);
+        }
       }
     }
   }

@@ -135,9 +135,11 @@ export type SpawnRule = {
   spawnAmount: number;
 };
 
+export type TilesetName = 'forest' | 'lake' | 'deepForest' | 'town'; // floor/obstacle quadrants
 export type GenParams = {
   width: number;
   height: number;
+  tileset: TilesetName;
   roomCountMin: number;
   roomCountMax: number;
   roomShape: 'rectangular' | 'natural';

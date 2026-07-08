@@ -33,7 +33,10 @@ describe('content data', () => {
   });
   it('has fixed enemy levels that densely fill 1..40', () => {
     const levels = Object.values(ENEMIES).map((e) => e.level);
-    for (const l of levels) expect(l).toBeGreaterThanOrEqual(1), expect(l).toBeLessThanOrEqual(40);
+    for (const l of levels) {
+      expect(l).toBeGreaterThanOrEqual(1);
+      expect(l).toBeLessThanOrEqual(40);
+    }
     expect(Math.min(...levels)).toBeLessThanOrEqual(2);
     expect(Math.max(...levels)).toBeGreaterThanOrEqual(38);
     const covered = new Set(levels);
