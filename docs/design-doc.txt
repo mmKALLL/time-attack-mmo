@@ -55,6 +55,7 @@ Stat attributes should probably be something like STR / DEX / VIT / INT, with so
 
 Attacks and skills have a physical component and a magical component. The phys-mag ratio between these components is based on class: 
 
+Beginner / leader: 50% physical, 50% magical
 Fighter: 80% physical, 20% magical
 Archer: 40% physical, 60% magical
 Magician: 20% physical, 80% magical
@@ -247,3 +248,19 @@ Skills should have a maximum of 5 points for beginners, and 10 points for all ot
 
 ----
 
+Enemies should allocate stats based on their class, configurable in config.ts:
+
+fighter: 60% in str, 10% in vit, rest randomly
+archer:  30% in str, 30% in dex, 8% in vit, rest randomly
+magician: 60% in int, 6% in vit, rest randomly
+rogue: 10% in str, 30% in dex, 30% in int, 7% in vit, rest randomly
+leader: 20% vit, rest randomly
+
+----
+
+Class differentiation in terms of attack shapes:
+
+Fighter: adjacent enemies, 4 tiles/8 tiles, 1x3 in front
+Archer: long lines
+Magician: 3x3, cones, weird shapes like 1,0 + 3,-1 + 3,1
+Rogue: mix of all kinds of shapes; balanced thanks to lower minimum damage
