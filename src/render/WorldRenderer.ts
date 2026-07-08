@@ -45,6 +45,41 @@ function keyOutBackground(img: ImageData) {
     if (y - 1 >= 0) stack.push(p - width);
   }
 }
+
+// Player sheets sit on a flat neutral-gray background (sampled from the top-left
+// pixel) rather than white. Keying it needs care: the gray overlaps silver armor,
+// so (1) only zero flat *neutral* bg-colored pixels (bow gaps etc.) — colored
+// sprite bodies survive — and (2) flood-fill the open background + soft edges
+// from the borders, where blends toward the sprite are safe to clear.
+function keyOutCornerBg(img: ImageData) {
+  const { data, width, height } = img;
+  const br = data[0];
+  const bgc = data[1];
+  const bb = data[2];
+  const near = (i: number, tol: number) => Math.abs(data[i] - br) <= tol && Math.abs(data[i + 1] - bgc) <= tol && Math.abs(data[i + 2] - bb) <= tol;
+  const neutral = (i: number) => Math.abs(data[i] - data[i + 1]) < 10 && Math.abs(data[i + 1] - data[i + 2]) < 10;
+
+  for (let i = 0; i < data.length; i += 4) if (near(i, 16) && neutral(i)) data[i + 3] = 0;
+
+  const visited = new Uint8Array(width * height);
+  const stack: number[] = [];
+  for (let x = 0; x < width; x++) stack.push(x, (height - 1) * width + x);
+  for (let y = 0; y < height; y++) stack.push(y * width, y * width + width - 1);
+  while (stack.length) {
+    const p = stack.pop()!;
+    if (visited[p]) continue;
+    visited[p] = 1;
+    const i = p * 4;
+    if (data[i + 3] !== 0 && !near(i, 42)) continue;
+    data[i + 3] = 0;
+    const x = p % width;
+    const y = (p / width) | 0;
+    if (x + 1 < width) stack.push(p + 1);
+    if (x - 1 >= 0) stack.push(p - 1);
+    if (y + 1 < height) stack.push(p + width);
+    if (y - 1 >= 0) stack.push(p - width);
+  }
+}
 import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA } from '../config';
 import { Sprites } from './sprites';
 
@@ -73,6 +108,18 @@ const OBS_SRC: Record<ObstacleSize, [number, number, number, number]> = {
   '3x3': [1, 1, 3, 3],
 };
 
+// Player art: a 4x4 grid of 512px class portraits (downscaled to one cell), plus
+// a standalone image for the Beginner. Index = reading order in the sheet.
+const PLAYER_SHEET = 'player-classes.png';
+const PLAYER_BEGINNER = 'player-classes-beginner.png';
+const PLAYER_TILE_SRC = 512;
+const PLAYER_CLASS_INDEX: Record<string, number> = {
+  fighter: 0, knight: 1, paladin: 2, duelist: 3,
+  archer: 4, hunter: 5, sniper: 6, ranger: 7,
+  magician: 8, arcanist: 9, wizard: 10, druid: 11,
+  rogue: 12, assassin: 13, shadower: 14, ninja: 15,
+};
+
 type Float = { text: Text; born: number; x: number; y: number };
 
 // Draws the Emberdeep combat world imperatively from engine state. No React here.
@@ -90,6 +137,8 @@ export class WorldRenderer {
   private atlasLoading = new Set<string>();
   private plainReady = new Map<string, Texture>(); // map sheets, used as-is (no keying)
   private plainLoading = new Set<string>();
+  private pAtlasReady = new Map<string, Texture>(); // player sheets, corner-color keyed
+  private pAtlasLoading = new Set<string>();
   private subCache = new Map<string, Texture>();
   private bgTilesReady = false; // floor + obstacle sheets loaded when the current bg was built
   private propCells = new Set<string>(); // cells carrying an obstacle prop (wall ring + features)
@@ -209,6 +258,68 @@ export class WorldRenderer {
     cont.scale.x = flip ? -1 : 1;
     cont.position.set(flip ? baseX + totalW : baseX, py + CELL_PX - totalH + bob);
     this.actors.addChild(cont);
+  }
+
+  // Player class sheets: key out the neutral-gray background, then serve tiles.
+  private async loadPlayerAtlas(filename: string) {
+    const url = assetUrl(filename);
+    if (!url) return;
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const cv = document.createElement('canvas');
+    cv.width = img.width;
+    cv.height = img.height;
+    const ctx = cv.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    const data = ctx.getImageData(0, 0, cv.width, cv.height);
+    keyOutCornerBg(data);
+    ctx.putImageData(data, 0, 0);
+    this.pAtlasReady.set(filename, Texture.from(cv));
+  }
+
+  private playerAtlas(filename: string): Texture | undefined {
+    const ready = this.pAtlasReady.get(filename);
+    if (ready) return ready;
+    if (!this.pAtlasLoading.has(filename)) {
+      this.pAtlasLoading.add(filename);
+      void this.loadPlayerAtlas(filename);
+    }
+    return undefined;
+  }
+
+  private playerSub(filename: string, sx: number, sy: number, size: number): Texture | undefined {
+    const key = `P|${filename}|${sx},${sy},${size}`;
+    const cached = this.subCache.get(key);
+    if (cached) return cached;
+    const base = this.playerAtlas(filename);
+    if (!base) return undefined;
+    const t = new Texture({ source: base.source, frame: new Rectangle(sx, sy, size, size) });
+    this.subCache.set(key, t);
+    return t;
+  }
+
+  // Render a hero from the class art (Beginner has its own image). Returns false
+  // when the job has no portrait (e.g. a fusion) so the caller falls back to the
+  // procedural sprite; true means "uses class art" even while it's still loading.
+  private drawPlayerAsset(e: Entity, px: number, py: number, bob: number): boolean {
+    let tex: Texture | undefined;
+    if (e.jobId === 'beginner') {
+      tex = this.playerSub(PLAYER_BEGINNER, 0, 0, PLAYER_TILE_SRC);
+    } else {
+      const idx = PLAYER_CLASS_INDEX[e.jobId];
+      if (idx === undefined) return false;
+      tex = this.playerSub(PLAYER_SHEET, (idx % 4) * PLAYER_TILE_SRC, Math.floor(idx / 4) * PLAYER_TILE_SRC, PLAYER_TILE_SRC);
+    }
+    if (tex) {
+      const sp = new Sprite(tex);
+      sp.setSize(CELL_PX, CELL_PX); // downscale the 512px portrait to one cell
+      sp.anchor.set(0.5, 1); // bottom-center on the cell
+      if (e.facing === 'left') sp.scale.x = -Math.abs(sp.scale.x);
+      sp.position.set(px + CELL_PX / 2, py + CELL_PX + bob);
+      this.actors.addChild(sp);
+    }
+    return true;
   }
 
   // Follow camera: fixed zoom (CAMERA_ZOOM_PCT), always centered on the player.
@@ -498,10 +609,11 @@ export class WorldRenderer {
     shadow.ellipse(px + CELL_PX / 2, py + CELL_PX - 7 * UI, CELL_PX * 0.32, CELL_PX * 0.12).fill({ color: 0x000000, alpha: 0.32 });
     this.actors.addChild(shadow);
 
-    // sprite: asset-based enemies use spritesheet tiles; players use procedural art
+    // sprite: enemies use their spritesheet tiles; heroes use the class art;
+    // anything without art (e.g. a fusion) falls back to the procedural sprite.
     if (e.asset) {
       this.drawEnemyAsset(e, px, py, bob);
-    } else {
+    } else if (!this.drawPlayerAsset(e, px, py, bob)) {
       const sp = new Sprite(this.tex(e.sprite, frame));
       sp.setSize(CELL_PX, CELL_PX);
       sp.position.set(px, py + bob);
