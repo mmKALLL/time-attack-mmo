@@ -73,7 +73,7 @@ link('lieksa3', 'n', 'lieksa4');
 type Seg = [Biome, number, number, number]; // biome, lo, hi, rooms  ("plains" -> forest)
 type Edge = { a: string; b: string; dir: Compass; seg: Seg[] };
 const EDGES: Edge[] = [
-  { a: 'mantyharju', b: 'savonlinna', dir: 'e', seg: [['forest', 1, 4, 2], ['forest', 4, 7, 3]] },
+  { a: 'mantyharju', b: 'savonlinna', dir: 'e', seg: [['forest', 1, 2, 2], ['forest', 3, 5, 2], ['forest', 4, 7, 3]] }, // gentle ramp out of the start town
   { a: 'savonlinna', b: 'varkaus', dir: 'nw', seg: [['forest', 7, 9, 4]] }, // plains
   { a: 'savonlinna', b: 'lieksa', dir: 'ne', seg: [['lake', 10, 12, 2], ['forest', 12, 16, 2], ['deepForest', 16, 21, 2]] },
   { a: 'varkaus', b: 'kuopio', dir: 'n', seg: [['lake', 9, 12, 2]] },
