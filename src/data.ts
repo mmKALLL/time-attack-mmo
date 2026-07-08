@@ -1,16 +1,4 @@
-import type {
-  CooldownType,
-  JobNode,
-  ParamName,
-  Skill,
-  SkillElement,
-  SkillKind,
-  SkillParamFunction,
-  SkillParams,
-  ShapeKind,
-  TileKind,
-  TileMap,
-} from './types';
+import type { CooldownType, JobNode, ParamName, Skill, SkillElement, SkillKind, SkillParamFunction, SkillParams, ShapeKind } from './types';
 
 // ============================================================================
 // Per-level param formulas. dmg/heal are MULTIPLIERS on the normal damage calc;
@@ -46,10 +34,12 @@ function sk(s: {
 // Skills grouped by the job that grants them (see kitOf in engine/jobs).
 // Buffs/debuffs/DoTs are data-only this pass; their mechanics land in Phase 2.
 // ============================================================================
+// prettier-ignore
 export const SKILLS: Record<string, Skill[]> = {
   // --- Tier 0 ---
   beginner: [
     sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'melee', params: { dmg: lin(1.0, 0.2) } }),
+    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'area', params: { tiles: lin(2, 1), dmg: lin(1.0, 0.2) } }),
     sk({ id: 'recover', name: 'Recover', description: 'Heal self for {dmg} life.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { dmg: lin(0.8, 0.15) }, triggerMs: 2000 }),
   ],
 
@@ -147,6 +137,15 @@ export const SKILLS: Record<string, Skill[]> = {
   spider: [sk({ id: 'venomFang', name: 'Venom Fang', description: 'Fang strike for {dmg} damage.', kind: 'attack', target: 'melee', element: 'poison', shapeKind: 'melee', params: { dmg: lin(0.95, 0.1) } })],
   mushroom: [sk({ id: 'sporeBurst', name: 'Spore Burst', description: 'Burst spores over an area for {dmg}.', kind: 'attack', target: 'area', element: 'nature', shapeKind: 'area', params: { dmg: lin(1.2, 0.15), tiles: flat(4) } })],
   golem: [sk({ id: 'boulderSmash', name: 'Boulder Smash', description: 'Smash the ground for {dmg} after {delay}s.', kind: 'attack', target: 'area', element: 'steel', shapeKind: 'area', params: { dmg: lin(1.4, 0.2), tiles: flat(4), delay: lin(1, 0.1) }, cooldownMs: 4000 })],
+
+  // --- Generic enemy skills by class (fighter/archer/mage/rogue/leader) ---
+  enemyClass: [
+    sk({ id: 'enemyStrike', name: 'Strike', description: 'Strike a foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'melee', params: { dmg: lin(1.0, 0.1) } }),
+    sk({ id: 'enemyShot', name: 'Shot', description: 'Loose a shot down a line for {dmg}.', kind: 'attack', target: 'line', element: 'neutral', shapeKind: 'line', params: { dmg: lin(0.9, 0.1), tiles: lin(3, 0.3) } }),
+    sk({ id: 'enemyHex', name: 'Hex', description: 'Blast {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'arcane', shapeKind: 'area', params: { dmg: lin(1.1, 0.12), tiles: flat(4) }, triggerMs: 1750 }),
+    sk({ id: 'enemyGouge', name: 'Gouge', description: 'Gouge a foe for {dmg}.', kind: 'attack', target: 'point', element: 'poison', shapeKind: 'point', params: { dmg: lin(1.2, 0.12) }, triggerMs: 1000 }),
+    sk({ id: 'enemyRuin', name: 'Ruin', description: 'Devastate {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'steel', shapeKind: 'area', params: { dmg: lin(1.5, 0.18), tiles: flat(6) }, cooldownMs: 4000 }),
+  ],
 };
 
 // Flat id -> Skill lookup for the engine (runtime stores skill ids, not objects).
@@ -201,24 +200,7 @@ export const JOBS: Record<string, JobNode> = {
   cinderSage: { id: 'cinderSage', name: 'Cinder Sage', requires: ['wizard', 'arcanist'], growth: 1.25, role: 'Control', accent: '#a07ad0' },
 };
 
-// ============================================================================
-// Monsters — kept OUT of JOBS so they never appear as player-unlockable classes.
-// ============================================================================
-export type MonsterTemplate = {
-  id: string;
-  name: string;
-  sprite: string;
-  growth: number;
-  skills: Skill[];
-  elite?: boolean;
-};
-export const MONSTERS: Record<string, MonsterTemplate> = {
-  slime: { id: 'slime', name: 'Cave Slime', sprite: 'slime', growth: 0.85, skills: SKILLS.slime },
-  bat: { id: 'bat', name: 'Gloom Bat', sprite: 'bat', growth: 0.9, skills: SKILLS.bat },
-  spider: { id: 'spider', name: 'Venom Spider', sprite: 'spider', growth: 0.95, skills: SKILLS.spider },
-  mushroom: { id: 'mushroom', name: 'Sporeling', sprite: 'mushroom', growth: 0.9, skills: SKILLS.mushroom },
-  golem: { id: 'golem', name: 'Stoneheart Golem', sprite: 'golem', growth: 1.15, skills: SKILLS.golem, elite: true },
-};
+// Asset-based enemies (race/class/tier with spritesheet art) live in ./data-enemy.ts.
 
 // ============================================================================
 // Demo scenario — party + a nearby enemy cluster the player can walk into.
@@ -228,29 +210,5 @@ export const PARTY_SPAWN = [
   { id: 'p2', name: 'Sable', sprite: 'knight', jobId: 'nimbleKnight', level: 23, faction: 'ally' as const, cell: { x: 5, y: 8 } },
   { id: 'p3', name: 'Orrin', sprite: 'wizard', jobId: 'cinderSage', level: 24, faction: 'ally' as const, cell: { x: 5, y: 9 } },
 ];
-export const ENEMY_SPAWN = [
-  { monster: 'slime', level: 20, cell: { x: 14, y: 7 } },
-  { monster: 'bat', level: 19, cell: { x: 16, y: 8 } },
-  { monster: 'spider', level: 21, cell: { x: 15, y: 9 } },
-  { monster: 'mushroom', level: 20, cell: { x: 17, y: 6 } },
-  { monster: 'golem', level: 25, cell: { x: 18, y: 8 } },
-];
 
-// ============================================================================
-// Maps — tile data will move to JSON later.
-// ============================================================================
-export function demoMap(width = 30, height = 17): TileMap {
-  const tiles: TileKind[] = [];
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const border = x === 0 || y === 0 || x === width - 1 || y === height - 1;
-      tiles.push(border ? 'wall' : 'floor');
-    }
-  }
-  const wall = (x: number, y: number) => {
-    tiles[y * width + x] = 'wall';
-  };
-  wall(10, 3); wall(10, 4); wall(11, 3);
-  wall(22, 12); wall(23, 12); wall(23, 13);
-  return { width, height, tiles };
-}
+// Map data (biomes, tiles, portals, spawns) lives in ./data-map.ts.

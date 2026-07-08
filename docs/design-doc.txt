@@ -107,3 +107,132 @@ Lieksa
 Kajaani
 Sodankylä
 Utsjoki
+
+
+----
+
+World map based map generation, part 1. Each location has exits that start from the map closest to the location and end at the other point of interest. When travelling in the reverse direction, the maps are in reverse order as well, like a doubly linked list:
+
+Mäntyharju - tiny NPC map, starting town for beginners at level 1
+Exit 1 - east towards Savonlinna, 2 maps: forest (lv 1-4, 2 small rooms), forest (lv 4-7, 3 small rooms)
+
+Savonlinna - medium NPC map, town/castle, allows job advancement to fighter 1st job
+Exit 1: southwest towards Mäntyharju
+Exit 2: northwest towards Varkaus, 1 map: plains (lv 7-9, 4 small rooms)
+Exit 3: northeast towards Lieksa, 3 maps: lake (lv 10-12, 2 large rooms), forest (lv 12-16, 2 large rooms), deep forest (lv 16-21, 2 large rooms)
+
+Varkaus - small NPC map, town, allows job advancement to rogue 1st job
+Exit 1: south towards Savonlinna
+Exit 2: north towards Kuopio, 1 map: lake (lv 9-12, 2 small rooms)
+Exit 3: west towards Jyväskylä, 2 maps: forest (lv 8-10, 2 small rooms), plains (lv 10-14, 2 medium rooms)
+
+Jyväskylä - large NPC map, town, allows job advancement to magician 1st job
+Exit 1: east towards Varkaus
+Exit 2: northeast towards Kuopio, 1 map: forest (lv 12-16, 2 medium rooms)
+
+Kuopio - large NPC map, town, allows job advancement to archer 1st job
+Exit 1: southwest towards Jyväskylä
+Exit 2: south towards Varkaus
+Exit 3: north towards Kajaani, 3 maps: lake (lv 12-16, 2 medium rooms), plains (lv 17-21, 2 large rooms), plains (lv 22-26, 2 large rooms)
+
+Kajaani - medium NPC map, town, allows job advancement to 2nd job for all classes
+Exit 1: south towards Kuopio
+Exit 2: east towards Lieksa, 2 maps: forest (lv 18-22, 2 large rooms), deep forest (lv 23-27, 2 large rooms)
+
+Lieksa - deep forest dungeon, 4 maps: deep forest (lv 20-24, 2 large rooms), deep forest (lv 25-29, 3 medium rooms), deep forest (lv 30-34, 5 small rooms), deep forest (lv 35-40, 2 large rooms)
+Exit 1: north towards Kajaani
+Exit 2: south towards Savonlinna
+
+----
+
+World map based map generation, part 2. Each location has exits that start from the map closest to the location and end at the other point of interest. When travelling in the reverse direction, the maps are in reverse order as well, like a doubly linked list:
+
+(TODO based on world map; add cities all the way to Turku, then the eastern side until Rovaniemi)
+
+----
+
+
+The assets directory has assets for enemies. The assets have a semi-black cross going through them that should be ignored. Each asset file is typically 2048x2048, split into four quadrants:
+
+q1 q2
+q3 q4
+
+Each quadrant is split into 16 tiles, each 256x256 pixels, similarly ordered and indexed 1-16.
+Each enemy can be made of one or more adjacent tiles. Therefore the type for an enemy's asset tile data should have the type { filename: string, tiles: string | string[], facing?: 'left' | 'right' }, where filename is the path from within the assets subdirectory, and the tiles strings are in the format quadrant-index, for example "q1-12" or "q3-8". The facing tells whether the asset's face is facing to the left or to the right (right by default).
+
+If an enemy is formed from two tiles, they are expected to be set up vertically like this
+
+tile1
+tile2
+
+If from 4 tiles, they are in a grid like this:
+
+tile1 tile2
+tile3 tile4
+
+Then we can start creating enemies that actually use these assets.
+
+Typically enemy quadrants have the following structure:
+
+1f1,1f2,1a1,1a2,2f1,2f2,2a1,2a2
+1m1,1m2,1r1,1r2,2m1,2m2,2r1,2r2
+1l1,1l1,1l2,1l2,2l1,2l1,2l2,2l2
+1l1,1l1,1l2,1l2,2l1,2l1,2l2,2l2
+3f1,3f2,3a1,3a2,4f1,4f2,4a1,4a2
+3m1,3m2,3r1,3r2,4m1,4m2,4r1,4r2
+3l1,3l1,3l2,3l2,4l1,4l1,4l2,4l2
+3l1,3l1,3l2,3l2,4l1,4l1,4l2,4l2
+
+
+
+The first character is the enemy race index, the second character is the class (fighter / archer / mage / rogue / leader), the third character is the tier (1 = normal (level 1-20), 2 = strong (level 20-40)). Typically fighter has the enemy's base level, archer +1, mage +4, rogue +2, and leader +6, but the exact numbers can shift +-3 depending on how a race specializes in things.
+
+The enemy spritesheets have a black cross splitting the quadrants; it should be ignored.
+
+In assets/forest-enemies.png, the enemy races are: 1 = menninkäinen, 2 = peikko, 3 = haltia, and 4 = metsänpeitto. 
+
+In assets/aquatic-enemies.png, the enemy races are: 1 = Näkki, 2 = Vetehinen, 3 = Iku-Turso / Tursas, 4 = Vesihiisi
+
+In assets/highway-enemies-3.png, the races are: 1 = unused, 2 = unused, 3 = Rosvo, 4 = fighter / archer / rogue are varas, others are kummitus / haamu
+
+Add a mapping from these enemies to different biomes as appropriate, so that each biome has at least 2-3 possible enemy types. We'll add more types later.
+
+----
+
+Load multiple maps (rooms/zones); move tile data to JSON. Map connections/edges, per-map spawn tables, enter/exit transitions, world-state load/unload. Foundation for the world map. See world-map-design/ for the overworld.
+
+Biomes (Finnish style): farmland / plains / forest / mythical misty forest / deep dark forest / lake / hill / mountain / tundra / snowy plains / snowy forest / cave / dungeon / village / town / city.
+
+Each world-map location = one in-game map, with 1-4 connecting maps containing monsters between them depending on distance (fewer in the south, more in the north).
+
+Spawn tables need density + respawn params, e.g. maxAmount, spawnInterval (seconds), spawnAmount.
+
+Procedural map shapes (a function/file taking params -> tile data). ~2-4 rooms per map, connected. Natural (caverns/forests): varied room shapes + twisting corridors. Human-made (settlements/dungeons): rectangular rooms + straight corridors; ensure all exits reachable. Aim for Diablo II / Brogue variety + emergent graphics.
+
+Generation params: tileset, corridorWidth, roomCount (~2-4), roomSize (min/avg/max width), roomShape (rectangular / natural), torchDensity (per 100 wall tiles), torchGlowDistance, ambientLightLevel (0-100 opacity for un-torched areas), rooms as union of two rectangles, small/medium/large obstacles inside rooms, which of the 8 compass directions have portals and where.
+
+Tile types: portal, floor, wall, 3x1 obstacle, 1x3 obstacle, 3x3 obstacle, 1x1 obstacle.
+
+There are two asset files for maps in v1:
+
+assets/tiles-floor.png
+assets/tiles-obstacles.png
+
+The floor is a repeatable floor tile in 4 biome quadrants:
+
+forest,lake
+deep-forest,town
+
+Each quadrant is 512x512
+
+The obstacles have similar layout. However, for each biome, they have the following sizes of obstacles:
+
+1x1,3x1,3x1,3x1
+1x3,3x3,3x3,3x3
+1x3,3x3,3x3,3x3
+1x3,3x3,3x3,3x3
+
+(Adjacent tiles with the same size name are part of the same obstacle. Each tile is 128x128.)
+
+----
+

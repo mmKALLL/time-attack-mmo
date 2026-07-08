@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { Entity, Offset } from '../../types';
 import { JOBS, getSkill, describeSkill } from '../../data';
+import { MAPS } from '../../data-map';
 import { COMBAT_TICK_MS, xpToNext } from '../../config';
 import { shapeFor } from '../../engine/shapes';
 import { useGame } from '../../state/store';
@@ -44,10 +45,15 @@ function heroes(entities: Record<string, Entity>): Entity[] {
 }
 
 function ZoneBanner() {
+  const world = useGame((s) => s.world);
+  const def = MAPS[world.mapId];
+  if (!def) return null;
   return (
     <div className="panel zone-banner">
-      <div className="title">Whisperstone Caverns</div>
-      <div className="sub">DEPTH III · RECOMMENDED LV 22–26</div>
+      <div className="title">{def.name}</div>
+      <div className="sub">
+        RECOMMENDED LV {def.recommended[0]}–{def.recommended[1]}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { Cell, Entity, EntityId, Faction, JobId, Skill, SkillRuntime } from '../types';
+import type { Cell, EnemyAsset, Entity, EntityId, Faction, JobId, Skill, SkillRuntime } from '../types';
 import { JOBS } from '../data';
 import { statsFor, START_SKILL_LEVEL } from '../config';
 import { kitOf } from './jobs';
@@ -13,7 +13,8 @@ export function makeEntity(params: {
   id: EntityId;
   faction: Faction;
   name: string;
-  sprite: string;
+  sprite?: string;
+  asset?: EnemyAsset;
   cell: Cell;
   level: number;
   jobId: JobId;
@@ -30,7 +31,8 @@ export function makeEntity(params: {
     id: params.id,
     faction: params.faction,
     name: params.name,
-    sprite: params.sprite,
+    sprite: params.sprite ?? '',
+    asset: params.asset,
     cell: params.cell,
     facing: 'down',
     level: params.level,

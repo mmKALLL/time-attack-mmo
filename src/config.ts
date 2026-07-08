@@ -3,13 +3,15 @@ import type { Stats } from './types';
 // ---------- Debug ----------
 export const DEBUG = true; // dev: start all skills at level 3 (else 0)
 export const START_SKILL_LEVEL = DEBUG ? 3 : 0;
+export const DEFAULT_SEED = 1337; // starting RNG seed for the demo world
 
 // ---------- Display / geometry ----------
 export const DESIGN_W = 1920;
 export const DESIGN_H = 1080;
-export const CELL_PX = 64; // tile size; 30 x 16.875 grid
-export const SPRITE_SRC = 32; // sprites authored at 32x32, drawn at 2x
-export const CAMERA_ZOOM_PCT = 130; // follow-camera zoom (100% = sprites at native 2x/64px)
+export const CELL_PX = 256; // logical tile size (px); 1 enemy-asset tile == 1 cell
+export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
+export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
+export const CAMERA_ZOOM_PCT = 25; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
 
 // ---------- Timing ----------
@@ -19,7 +21,7 @@ export const COMBAT_TICK_MS = 1500; // default per-skill trigger interval (6 * S
 export const ANIM_FRAME_MS = 420; // renderer 2-frame idle cadence
 export const ANIM_FRAMES = 2; // handoff sprites have 2 animation frames
 export const DAMAGE_FLOAT_MS = 1150;
-export const MOVE_REPEAT_DELAY_MS = 600; // delay after the first step before auto-repeat kicks in
+export const MOVE_REPEAT_DELAY_MS = 0; // delay after the first step before auto-repeat kicks in
 export const MOVE_REPEAT_MS = 250; // held-key auto-repeat cadence for movement
 
 // ---------- Symmetric stat model (used for BOTH players and enemies) ----------
@@ -48,7 +50,7 @@ export function xpToNext(level: number): number {
 }
 // XP granted for defeating an enemy of the given level.
 export function xpReward(enemyLevel: number): number {
-  return Math.round(12 * Math.pow(1.15, enemyLevel - 1));
+  return Math.round(15 * Math.pow(1.25, enemyLevel - 1));
 }
 
 // ---------- Combat world palette (Direction A "Emberdeep") ----------

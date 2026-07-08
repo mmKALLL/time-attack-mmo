@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DIRECTIONS, inBounds, isWall, step, equals } from '../grid';
-import { demoMap } from '../../data';
+import { demoMap } from '../../data-map';
 
 const map = demoMap(5, 5);
 

@@ -1,10 +1,20 @@
 import type { Input, WorldState } from '../types';
-import { moveOrStick, advanceCombat } from './combat';
+import { moveOrStick, advanceCombat, groupOf } from './combat';
+import { exitAt, travelTo, advanceRespawns } from './maps';
+import { step } from './grid';
 
 export function applyInput(s: WorldState, input: Input): void {
   const player = s.entities[s.playerId];
   if (!player || player.hp <= 0) return; // dead players take no actions until respawn
   if (input.type === 'move') {
+    // Stepping onto a portal tile (while not stuck in combat) warps to the linked map.
+    if (!groupOf(s, player.id)) {
+      const exit = exitAt(s, step(player.cell, input.dir));
+      if (exit) {
+        travelTo(s, exit.toMap, s.mapId);
+        return;
+      }
+    }
     moveOrStick(s, s.playerId, input.dir);
   } else if (input.type === 'selectSkill') {
     if (input.slot >= 0 && input.slot < player.skills.length) player.activeSkillIndex = input.slot;
@@ -17,6 +27,7 @@ export function tick(state: WorldState, inputs: Input[], dt: number): WorldState
   const s = structuredClone(state) as WorldState;
   for (const input of inputs) applyInput(s, input);
   advanceCombat(s, dt);
+  advanceRespawns(s, dt);
   s.tickCount += 1;
   return s;
 }

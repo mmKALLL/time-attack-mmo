@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { Skill } from '../types';
-import { JOBS, SKILLS, SKILL_INDEX, MONSTERS, PARTY_SPAWN, ENEMY_SPAWN, demoMap } from '../data';
+import { JOBS, SKILLS, SKILL_INDEX, PARTY_SPAWN } from '../data';
+import { MAPS, START_MAP, demoMap } from '../data-map';
+import { ENEMIES } from '../data-enemy';
 
 const groups = SKILLS as Record<string, Skill[]>;
 
@@ -21,15 +23,24 @@ describe('content data', () => {
     expect(seconds).toHaveLength(12);
     for (const j of seconds) expect(groups[j.id]).toHaveLength(3);
   });
-  it('monsters reference indexed skills and stay out of the player DAG', () => {
-    for (const m of Object.values(MONSTERS)) {
-      for (const s of m.skills) expect(SKILL_INDEX[s.id]).toBeDefined();
-      expect(JOBS[m.id]).toBeUndefined();
+  it('enemies reference indexed skills, valid tile refs, and stay out of the player DAG', () => {
+    for (const e of Object.values(ENEMIES)) {
+      for (const s of e.skills) expect(SKILL_INDEX[s.id]).toBeDefined();
+      expect(JOBS[e.id]).toBeUndefined();
+      const tiles = Array.isArray(e.asset.tiles) ? e.asset.tiles : [e.asset.tiles];
+      for (const t of tiles) expect(t).toMatch(/^q[1-4]-\d{1,2}$/);
     }
   });
-  it('demo spawns reference real jobs and monsters', () => {
+  it('party spawns reference real jobs', () => {
     for (const p of PARTY_SPAWN) expect(JOBS[p.jobId]).toBeDefined();
-    for (const e of ENEMY_SPAWN) expect(MONSTERS[e.monster]).toBeDefined();
+  });
+  it('maps: spawn pools + connection targets are valid; START_MAP exists', () => {
+    expect(MAPS[START_MAP]).toBeDefined();
+    for (const m of Object.values(MAPS)) {
+      expect(m.gen.width).toBeGreaterThan(0);
+      for (const rule of m.spawns) for (const mon of rule.pool) expect(ENEMIES[mon]).toBeDefined();
+      for (const c of m.connections) expect(MAPS[c.toMap]).toBeDefined();
+    }
   });
   it('demo map is a bordered floor field', () => {
     const m = demoMap();

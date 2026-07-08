@@ -1,17 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import { moveOrStick, advanceCombat, groupOf, enemyAt } from '../combat';
 import { makeEntity } from '../entities';
-import { demoMap } from '../../data';
+import { demoMap } from '../../data-map';
 import { xpToNext } from '../../config';
 import type { Entity, WorldState } from '../../types';
 
 function world(entities: Entity[]): WorldState {
   return {
+    mapId: 'test',
     map: demoMap(10, 10),
+    features: [],
+    exits: [],
     entities: Object.fromEntries(entities.map((e) => [e.id, e])),
     groups: {},
     playerId: 'p1',
     seq: 0,
+    rng: 1,
+    spawnClockMs: 0,
     tickCount: 0,
   };
 }

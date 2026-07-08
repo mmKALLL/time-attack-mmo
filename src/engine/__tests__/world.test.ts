@@ -30,6 +30,14 @@ describe('world reducer', () => {
     expect(s1.entities[s1.playerId].cell).toEqual(start);
     expect(s1.entities[s1.playerId].activeSkillIndex).toBe(0);
   });
+  it('stepping onto a portal tile travels to the linked map', () => {
+    const s0 = createDemoWorld();
+    const ex = s0.exits[0];
+    const fromLeft = ex.cell.x <= 2; // portal near the west edge
+    s0.entities[s0.playerId].cell = { x: ex.cell.x + (fromLeft ? 1 : -1), y: ex.cell.y };
+    const s1 = tick(s0, [{ type: 'move', dir: fromLeft ? 'left' : 'right' }], 50);
+    expect(s1.mapId).toBe(ex.toMap);
+  });
   it('demo world has a 3-hero party and enemies', () => {
     const s = createDemoWorld();
     const facts = Object.values(s.entities).map((e) => e.faction);

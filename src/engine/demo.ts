@@ -1,11 +1,14 @@
-import type { Entity, WorldState } from '../types';
+import type { TileMap, WorldState } from '../types';
 import { makeEntity } from './entities';
-import { demoMap, PARTY_SPAWN, ENEMY_SPAWN, MONSTERS } from '../data';
+import { PARTY_SPAWN } from '../data';
+import { START_MAP } from '../data-map';
+import { DEFAULT_SEED } from '../config';
+import { travelTo } from './maps';
+
+const EMPTY_MAP: TileMap = { width: 1, height: 1, tiles: ['floor'] };
 
 export function createDemoWorld(): WorldState {
-  const map = demoMap(30, 17);
-
-  const heroes: Entity[] = PARTY_SPAWN.map((p) =>
+  const heroes = PARTY_SPAWN.map((p) =>
     makeEntity({
       id: p.id,
       faction: p.faction,
@@ -17,29 +20,20 @@ export function createDemoWorld(): WorldState {
     }),
   );
 
-  const enemies: Entity[] = ENEMY_SPAWN.map((spec, i) => {
-    const m = MONSTERS[spec.monster];
-    return makeEntity({
-      id: 'e' + i,
-      faction: 'enemy',
-      name: m.name,
-      sprite: m.sprite,
-      cell: { ...spec.cell },
-      level: spec.level,
-      jobId: m.id,
-      growth: m.growth,
-      skills: m.skills,
-      elite: m.elite,
-    });
-  });
-
-  const all = [...heroes, ...enemies];
-  return {
-    map,
-    entities: Object.fromEntries(all.map((e) => [e.id, e])),
+  const s: WorldState = {
+    mapId: START_MAP,
+    map: EMPTY_MAP,
+    features: [],
+    exits: [],
+    entities: Object.fromEntries(heroes.map((e) => [e.id, e])),
     groups: {},
     playerId: 'p1',
-    seq: 0,
+    seq: heroes.length,
+    rng: DEFAULT_SEED,
+    spawnClockMs: 0,
     tickCount: 0,
   };
+  // Generate the start map, place the party, and spawn its enemies.
+  travelTo(s, START_MAP);
+  return s;
 }
