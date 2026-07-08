@@ -70,6 +70,20 @@ export const MOVE_REPEAT_MS = 220; // held-key auto-repeat cadence for movement
 // stays framerate-independent (~70ms ≈ 4 frames at 60fps).
 export const MOVE_LERP_MS = 90;
 
+// ---------- Idle-enemy roaming ----------
+// Ungrouped, alive enemies lazily wander: they idle for a random delay in
+// [minDelayMs, maxDelayMs], then step a short sequence of [minTiles, maxTiles]
+// tiles in one direction (one tile every tileDelayMs), then idle again. Kept
+// slow and lazy so the world feels alive without enemies pacing frantically.
+// (See engine/roaming.ts. Enemies in a combat group stop roaming.)
+export const ENEMY_ROAM = {
+  minDelayMs: 2000, // shortest rest between move sequences
+  maxDelayMs: 8000, // longest rest between move sequences
+  minTiles: 1, // shortest wander (tiles per sequence)
+  maxTiles: 4, // longest wander (tiles per sequence)
+  tileDelayMs: 750, // time to walk one tile mid-sequence (matches a lazy stroll)
+} as const;
+
 // ---------- Primary-stat allocation (symmetric for players AND enemies) ----------
 // Points are spread by class archetype so every stat matters for every class
 // (all weights non-zero). Enemies allocate the same way by level, keeping a

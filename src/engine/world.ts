@@ -1,6 +1,7 @@
 import type { Input, WorldState } from '../types';
 import { moveOrStick, advanceCombat, groupOf } from './combat';
 import { exitAt, travelTo, advanceRespawns } from './maps';
+import { advanceRoaming } from './roaming';
 import { spendAttribute, levelUpSkill } from './progression';
 import { START_MAP } from '../data-map';
 import { step } from './grid';
@@ -55,6 +56,10 @@ export function tick(state: WorldState, inputs: Input[], dt: number): WorldState
   const s = structuredClone(state) as WorldState;
   s.hits = []; // combat text events for this tick only
   for (const input of inputs) applyInput(s, input);
+  // Roam AFTER input so idle enemies see the player's already-updated cell:
+  // they avoid it or bump it into combat, never co-occupying a tile the player
+  // moved into on the same frame.
+  advanceRoaming(s, dt);
   advanceCombat(s, dt);
   advanceRespawns(s, dt);
   s.tickCount += 1;

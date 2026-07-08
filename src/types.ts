@@ -115,6 +115,10 @@ export type Entity = {
   statuses: StatusEffect[]; // active DoTs/buffs/debuffs (empty in skeleton)
   attacksPerRound: number; // 1 normally; rogues stack 2–3 (Phase 2)
   elite?: boolean;
+  // Idle-enemy roaming state (serializable; see engine/roaming.ts). Ungrouped
+  // enemies alternate wait/move phases: `timerMs` counts down the current phase,
+  // `dir`/`tilesLeft` describe the in-progress move sequence. Lazily initialized.
+  roam?: { phase: 'wait' | 'move'; timerMs: number; dir: Direction; tilesLeft: number };
 };
 
 // ---------- Combat groups (sticky blocks) ----------
@@ -126,7 +130,7 @@ export type CombatGroup = {
 
 // ---------- Maps ----------
 export type MapId = string;
-export type Biome = 'forest' | 'deepForest' | 'lake' | 'town'; // aligned with the tileset quadrants, eventually add all of farmland / plains / forest / mythical misty forest / deep dark forest / lake / hill / mountain / tundra / snowy plains / snowy forest / cave / dungeon / village / town / city
+export type Biome = 'forest' | 'deepForest' | 'lake' | 'town'; // aligned with the tileset quadrants, eventually add all of farmland / plains / forest / mythical misty forest / deep dark forest / wet forest swamp / dry open swamp / lake / hill / mountain / tundra / snowy plains / snowy forest / cave / dungeon / village / town / city
 export type Compass = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 export type ObstacleSize = '1x1' | '1x3' | '3x1' | '3x3';
 
