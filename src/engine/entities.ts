@@ -51,6 +51,8 @@ export function makeEntity(params: {
     skills: kit.map(skillRuntime),
     activeSkillIndex: 0,
     castTimerMs: 0,
+    attrPoints: 0,
+    skillPoints: 0,
     statuses: [],
     attacksPerRound: 1,
     elite: params.elite,

@@ -1,8 +1,13 @@
 import type { CombatClass, Primaries, Stats } from './types';
 
 // ---------- Debug ----------
-export const DEBUG = false; // dev: start all skills at level 3 (else 0)
-export const START_SKILL_LEVEL = DEBUG ? 3 : 0;
+export const DEBUG = false; // dev: start skills at Lv2 (else Lv1)
+export const START_SKILL_LEVEL = DEBUG ? 2 : 1;
+// ---------- Leveling: points granted per level + skill-level caps ----------
+export const ATTR_POINTS_PER_LEVEL = 3;
+export const SKILL_POINTS_PER_LEVEL = 1;
+export const SKILL_CAP_BEGINNER = 5; // beginner skills cap at 5, later jobs at 10
+export const SKILL_CAP = 10;
 const isTest = import.meta.env?.MODE === 'test'; // deterministic maps/enemies under vitest
 export const DEFAULT_SEED = DEBUG || isTest ? 1337 : Math.floor(Math.random() * 1e7); // starting RNG seed for the demo world
 export const OBSTACLE_OVERLAY_ALPHA = 0.26; // red tint over obstacle-prop cells (0 to disable)

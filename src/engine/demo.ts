@@ -19,6 +19,13 @@ export function createDemoWorld(): WorldState {
       jobId: p.jobId,
     }),
   );
+  // Demo convenience: give the fresh player a starter pool so the character
+  // screen is immediately interactive (normally points accrue from leveling).
+  const player = heroes.find((h) => h.id === 'p1');
+  if (player) {
+    player.attrPoints = 12;
+    player.skillPoints = 4;
+  }
 
   const s: WorldState = {
     mapId: START_MAP,

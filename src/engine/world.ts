@@ -1,6 +1,7 @@
 import type { Input, WorldState } from '../types';
 import { moveOrStick, advanceCombat, groupOf } from './combat';
 import { exitAt, travelTo, advanceRespawns } from './maps';
+import { spendAttribute, levelUpSkill } from './progression';
 import { START_MAP } from '../data-map';
 import { step } from './grid';
 
@@ -16,6 +17,9 @@ function respawnAtStart(s: WorldState): void {
 }
 
 export function applyInput(s: WorldState, input: Input): void {
+  // Character-screen actions work regardless of combat/death state.
+  if (input.type === 'spendAttr') return spendAttribute(s, input.key);
+  if (input.type === 'levelUpSkill') return levelUpSkill(s, input.index);
   const player = s.entities[s.playerId];
   if (!player || player.hp <= 0) return; // dead players take no actions until respawn
   if (input.type === 'move') {
@@ -31,6 +35,14 @@ export function applyInput(s: WorldState, input: Input): void {
   } else if (input.type === 'selectSkill') {
     if (input.slot >= 0 && input.slot < player.skills.length) player.activeSkillIndex = input.slot;
   }
+}
+
+// Apply a single input outside the sim clock (character-screen allocation, which
+// runs while the game loop is paused). Pure: clones, mutates the copy, returns it.
+export function applyAction(state: WorldState, input: Input): WorldState {
+  const s = structuredClone(state) as WorldState;
+  applyInput(s, input);
+  return s;
 }
 
 // Pure reducer: clones once, mutates the copy via commands, returns it.

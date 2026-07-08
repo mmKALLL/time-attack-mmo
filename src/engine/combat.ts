@@ -1,9 +1,9 @@
 import type { Cell, CombatGroup, Direction, Entity, EntityId, WorldState } from '../types';
 import { DIRECTIONS, isWall, equals, key } from './grid';
-import { JOBS, getSkill, archetypeForJob, combatClassForJob } from '../data';
+import { getSkill, combatClassForJob } from '../data';
 import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude } from './skills';
-import { ARCHETYPE_WEIGHTS, CLASS_COMBAT, CRIT_MULT, allocatePrimaries, deriveStats, hitChance, rawDamage, xpReward, xpToNext, COMBAT_TICK_MS } from '../config';
+import { ATTR_POINTS_PER_LEVEL, CLASS_COMBAT, CRIT_MULT, SKILL_POINTS_PER_LEVEL, deriveStats, hitChance, rawDamage, xpReward, xpToNext, COMBAT_TICK_MS } from '../config';
 import { nextRand } from './rng';
 
 // ---------- Queries (never mutate) ----------
@@ -154,14 +154,15 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
 }
 
 // Level up a hero: bump level, re-allocate primaries for the new level, re-derive
-// stats, refill hp/mp (carry surplus XP). Manual allocation lands with the
-// allocation screen; until then heroes auto-allocate by their job archetype.
+// stats, refill hp/mp (carry surplus XP). Heroes now spend points manually on the
+// allocation screen, so each level grants attribute + skill points (primaries are
+// unchanged; level scaling still re-derives HP/MP/etc.).
 function levelUp(e: Entity): void {
-  const growth = JOBS[e.jobId]?.growth ?? 1;
   while (e.xp >= xpToNext(e.level)) {
     e.xp -= xpToNext(e.level);
     e.level += 1;
-    e.primaries = allocatePrimaries(ARCHETYPE_WEIGHTS[archetypeForJob(e.jobId)], e.level, growth);
+    e.attrPoints += ATTR_POINTS_PER_LEVEL;
+    e.skillPoints += SKILL_POINTS_PER_LEVEL;
     e.stats = deriveStats(e.primaries, e.level, combatClassForJob(e.jobId));
     e.hp = e.stats.maxHp;
     e.mp = e.stats.maxMp;

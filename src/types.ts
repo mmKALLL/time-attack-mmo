@@ -110,6 +110,8 @@ export type Entity = {
   skills: SkillRuntime[];
   activeSkillIndex: number; // hotkey slot 0..8
   castTimerMs: number; // per-entity auto-cast accumulator (attack speed varies by class)
+  attrPoints: number; // unspent attribute points (heroes; +3/level)
+  skillPoints: number; // unspent skill points (heroes; +1/level)
   statuses: StatusEffect[]; // active DoTs/buffs/debuffs (empty in skeleton)
   attacksPerRound: number; // 1 normally; rogues stack 2–3 (Phase 2)
   elite?: boolean;
@@ -195,4 +197,9 @@ export type WorldState = {
 };
 
 // ---------- Inputs ----------
-export type Input = { type: 'move'; dir: Direction } | { type: 'selectSkill'; slot: number }; // 0..8 => keys 1..9
+export type PrimaryKey = keyof Primaries;
+export type Input =
+  | { type: 'move'; dir: Direction }
+  | { type: 'selectSkill'; slot: number } // 0..8 => keys 1..9
+  | { type: 'spendAttr'; key: PrimaryKey } // raise a primary from the attribute pool
+  | { type: 'levelUpSkill'; index: number }; // raise a skill from the skill pool
