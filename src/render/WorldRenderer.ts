@@ -81,15 +81,17 @@ export class WorldRenderer {
   private bg = new Container();
   private fx = new Container();
   private actors = new Container();
+  private lights = new Container(); // dusk veil + additive torch glows (world-space)
   private floatLayer = new Container();
   private vignette: Sprite | null = null;
+  private glowTexture?: Texture;
   private texCache = new Map<string, Texture>();
   private atlasReady = new Map<string, Texture>(); // background-keyed enemy sheets
   private atlasLoading = new Set<string>();
   private plainReady = new Map<string, Texture>(); // map sheets, used as-is (no keying)
   private plainLoading = new Set<string>();
   private subCache = new Map<string, Texture>();
-  private bgFloorReady = false; // floor sheet loaded when the current bg was built
+  private bgTilesReady = false; // floor + obstacle sheets loaded when the current bg was built
   private prevHp = new Map<string, number>();
   private prevLevel = new Map<string, number>();
   private floats: Float[] = [];
@@ -97,7 +99,7 @@ export class WorldRenderer {
   private builtVignette = false;
 
   constructor(private app: Application) {
-    this.root.addChild(this.bg, this.fx, this.actors, this.floatLayer);
+    this.root.addChild(this.bg, this.fx, this.actors, this.lights, this.floatLayer);
     app.stage.addChild(this.root);
   }
 
@@ -222,12 +224,13 @@ export class WorldRenderer {
 
   private buildBg(world: WorldState) {
     this.buildVignette();
-    // Rebuilt when the map changes, and retried each frame until the floor sheet
-    // has loaded (so we swap the procedural fallback for the real biome art).
+    // Rebuilt when the map changes, and retried each frame until both tile sheets
+    // have loaded (so we swap the procedural fallback for the real biome art).
     const floor = this.plainAtlas(FLOOR_SHEET);
-    if (this.bgMapId === world.mapId && this.bgFloorReady) return;
+    const obst = this.plainAtlas(OBSTACLE_SHEET);
+    if (this.bgMapId === world.mapId && this.bgTilesReady) return;
     this.bgMapId = world.mapId;
-    this.bgFloorReady = !!floor;
+    this.bgTilesReady = !!(floor && obst);
     this.bg.removeChildren();
 
     const { width, height, tiles } = world.map;
@@ -242,15 +245,25 @@ export class WorldRenderer {
       for (let dy = 0; dy < oh; dy++) for (let dx = 0; dx < ow; dx++) obstacleCells.add(KEY(f.cell.x + dx, f.cell.y + dy));
     }
 
-    const g = new Graphics(); // walls + procedural-floor fallback
+    const g = new Graphics(); // dark wall base + procedural-floor fallback
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const px = x * CELL_PX;
         const py = y * CELL_PX;
         const solid = tiles[y * width + x] === 'wall' && !obstacleCells.has(KEY(x, y));
         if (solid) {
+          // walls are the biome's 1x1 obstacle prop over a dark base (so gaps read solid)
           g.rect(px, py, CELL_PX, CELL_PX).fill(COLORS.wallBottom);
-          g.rect(px, py, CELL_PX, CELL_PX * 0.55).fill(COLORS.wallTop);
+          const [wc, wr] = OBS_SRC['1x1'];
+          const tex = obst && this.mapSub(OBSTACLE_SHEET, qx + wc * CELL_PX, qy + wr * CELL_PX, CELL_PX, CELL_PX);
+          if (tex) {
+            const sp = new Sprite(tex);
+            sp.setSize(CELL_PX, CELL_PX);
+            sp.position.set(px, py);
+            this.bg.addChild(sp);
+          } else {
+            g.rect(px, py, CELL_PX, CELL_PX * 0.55).fill(COLORS.wallTop);
+          }
         } else if (floor) {
           // sample the biome quadrant's 4x4 field, tiling it across the map
           const tex = this.mapSub(FLOOR_SHEET, qx + (x % 4) * CELL_PX, qy + (y % 4) * CELL_PX, CELL_PX, CELL_PX);
@@ -267,7 +280,7 @@ export class WorldRenderer {
         }
       }
     }
-    this.bg.addChildAt(g, 0); // walls/fallback beneath the floor sprites
+    this.bg.addChildAt(g, 0); // bases/fallback beneath the tile sprites
   }
 
   // Vignette + warm tint overlay (Emberdeep): screen-anchored (added to the app
@@ -291,32 +304,65 @@ export class WorldRenderer {
     this.builtVignette = true;
   }
 
-  private drawFeatures(world: WorldState, frame: number) {
+  // Obstacle props (torches are handled by buildLights — they emit light only).
+  private drawFeatures(world: WorldState) {
     const ts = MAPS[world.mapId]?.gen.tileset ?? 'forest';
     const [qx, qy] = QUAD[ts];
     for (const f of world.features) {
-      if (f.kind === 'torch') {
-        const sp = new Sprite(this.tex('torch', frame));
-        sp.setSize(CELL_PX, CELL_PX);
-        sp.position.set(f.cell.x * CELL_PX, f.cell.y * CELL_PX);
-        this.actors.addChild(sp);
+      if (f.kind !== 'obstacle') continue;
+      const [col, row, ow, oh] = OBS_SRC[f.size];
+      const px = f.cell.x * CELL_PX;
+      const py = f.cell.y * CELL_PX;
+      const tex = this.mapSub(OBSTACLE_SHEET, qx + col * CELL_PX, qy + row * CELL_PX, ow * CELL_PX, oh * CELL_PX);
+      if (tex) {
+        const sp = new Sprite(tex);
+        sp.setSize(ow * CELL_PX, oh * CELL_PX);
+        sp.position.set(px, py);
+        this.fx.addChild(sp);
       } else {
-        const [col, row, ow, oh] = OBS_SRC[f.size];
-        const px = f.cell.x * CELL_PX;
-        const py = f.cell.y * CELL_PX;
-        const tex = this.mapSub(OBSTACLE_SHEET, qx + col * CELL_PX, qy + row * CELL_PX, ow * CELL_PX, oh * CELL_PX);
-        if (tex) {
-          const sp = new Sprite(tex);
-          sp.setSize(ow * CELL_PX, oh * CELL_PX);
-          sp.position.set(px, py);
-          this.fx.addChild(sp);
-        } else {
-          const g = new Graphics(); // fallback block until the obstacle sheet loads
-          g.rect(px + 3, py + 3, ow * CELL_PX - 6, oh * CELL_PX - 6).fill(0x2c2822);
-          g.rect(px + 3, py + 3, ow * CELL_PX - 6, (oh * CELL_PX - 6) * 0.45).fill(0x453f34);
-          this.fx.addChild(g);
-        }
+        const g = new Graphics(); // fallback block until the obstacle sheet loads
+        g.rect(px + 3, py + 3, ow * CELL_PX - 6, oh * CELL_PX - 6).fill(0x2c2822);
+        g.rect(px + 3, py + 3, ow * CELL_PX - 6, (oh * CELL_PX - 6) * 0.45).fill(0x453f34);
+        this.fx.addChild(g);
       }
+    }
+  }
+
+  // Warm radial falloff used for every torch light (built once, tinted by blend).
+  private glowTex(): Texture {
+    if (this.glowTexture) return this.glowTexture;
+    const S = 256;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = S;
+    const ctx = cv.getContext('2d')!;
+    const grad = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    grad.addColorStop(0, 'rgba(255,201,122,0.95)');
+    grad.addColorStop(0.4, 'rgba(238,150,70,0.45)');
+    grad.addColorStop(1, 'rgba(255,140,50,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, S, S);
+    this.glowTexture = Texture.from(cv);
+    return this.glowTexture;
+  }
+
+  // A gentle ambient dusk over the map, with an additive warm glow at each torch
+  // so torches read as pools of light without drawing the torch prop itself.
+  private buildLights(world: WorldState, elapsedMs: number) {
+    this.lights.removeChildren();
+    const veil = new Graphics();
+    veil.rect(0, 0, world.map.width * CELL_PX, world.map.height * CELL_PX).fill({ color: 0x0a0a12, alpha: 0.22 });
+    this.lights.addChild(veil);
+    const tex = this.glowTex();
+    for (const f of world.features) {
+      if (f.kind !== 'torch') continue;
+      const pulse = 0.85 + 0.15 * Math.sin(elapsedMs / 260 + (f.cell.x + f.cell.y));
+      const sp = new Sprite(tex);
+      sp.anchor.set(0.5);
+      sp.blendMode = 'add';
+      sp.setSize(CELL_PX * 3.4, CELL_PX * 3.4);
+      sp.alpha = pulse;
+      sp.position.set(f.cell.x * CELL_PX + CELL_PX / 2, f.cell.y * CELL_PX + CELL_PX / 2);
+      this.lights.addChild(sp);
     }
   }
 
@@ -342,7 +388,7 @@ export class WorldRenderer {
     const bob = frame ? -2 * UI : 0;
 
     this.drawPortals(world, elapsedMs);
-    this.drawFeatures(world, frame);
+    this.drawFeatures(world);
     const playerGroup = Object.values(world.groups).find((g) => g.memberIds.includes(world.playerId));
     if (playerGroup) {
       this.drawBlockOutline(world, playerGroup);
@@ -354,6 +400,7 @@ export class WorldRenderer {
       this.spawnFloatIfDamaged(e, elapsedMs);
       this.spawnLevelUpIfLeveled(e, elapsedMs);
     }
+    this.buildLights(world, elapsedMs); // dusk veil + torch glows over the scene
     // reap tracking maps for entities that no longer exist
     for (const id of [...this.prevHp.keys()]) if (!world.entities[id]) this.prevHp.delete(id);
     for (const id of [...this.prevLevel.keys()]) if (!world.entities[id]) this.prevLevel.delete(id);
