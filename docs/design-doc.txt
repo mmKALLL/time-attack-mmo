@@ -236,3 +236,14 @@ The obstacles have similar layout. However, for each biome, they have the follow
 
 ----
 
+The job advancement requirement levels are as follows:
+
+Level 10 - 1st job
+Level 30 - 2nd job
+Level 60 - 1st job in a merged class
+Level 80 - 2nd job in a merged class
+
+Skills should have a maximum of 5 points for beginners, and 10 points for all other classes. On level up, the player gains 3 attribute points and 1 skill point. When starting the game, the player has just 1 point in the first beginner skill (a basic attack).
+
+----
+

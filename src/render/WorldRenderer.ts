@@ -402,7 +402,7 @@ export class WorldRenderer {
       this.actors.addChild(sp);
     }
 
-    this.drawFacing(e, px, py);
+    if (e.faction !== 'enemy') this.drawFacing(e, px, py); // enemies show no facing arrow
     const inFight = Object.values(world.groups).some((g) => g.memberIds.includes(e.id));
     if (e.faction === 'enemy') this.drawHpPip(px, py, e);
     if (inFight) this.drawSquareTimer(world, e, px, py);

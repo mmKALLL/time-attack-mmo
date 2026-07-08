@@ -19,6 +19,7 @@ describe('world reducer', () => {
   });
   it('selectSkill switches the active slot and clamps to owned skills', () => {
     const s0 = createDemoWorld();
+    s0.entities.p1.skills = [0, 1, 2].map(() => ({ ...s0.entities.p1.skills[0] })); // give the lone player a few slots
     expect(tick(s0, [{ type: 'selectSkill', slot: 2 }], 50).entities.p1.activeSkillIndex).toBe(2);
     expect(tick(s0, [{ type: 'selectSkill', slot: 20 }], 50).entities.p1.activeSkillIndex).toBe(0);
   });
@@ -38,10 +39,11 @@ describe('world reducer', () => {
     const s1 = tick(s0, [{ type: 'move', dir: fromLeft ? 'left' : 'right' }], 50);
     expect(s1.mapId).toBe(ex.toMap);
   });
-  it('demo world has a 3-hero party and enemies', () => {
+  it('demo world has a lone player (no allies) and enemies', () => {
     const s = createDemoWorld();
     const facts = Object.values(s.entities).map((e) => e.faction);
-    expect(facts.filter((f) => f === 'player' || f === 'ally').length).toBe(3);
+    expect(facts.filter((f) => f === 'player').length).toBe(1);
+    expect(facts.filter((f) => f === 'ally').length).toBe(0);
     expect(facts.filter((f) => f === 'enemy').length).toBeGreaterThan(0);
   });
 });

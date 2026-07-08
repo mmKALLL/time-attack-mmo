@@ -12,10 +12,10 @@ const heroIds = (s: WorldState) =>
 const enemyCount = (s: WorldState) => Object.values(s.entities).filter((e) => e.faction === 'enemy').length;
 
 describe('maps & transitions', () => {
-  it('starts in START_MAP with a 3-hero party, spawned enemies, and generated exits', () => {
+  it('starts in START_MAP with the lone player, spawned enemies, and generated exits', () => {
     const s = createDemoWorld();
     expect(s.mapId).toBe(START_MAP);
-    expect(heroIds(s)).toHaveLength(3);
+    expect(heroIds(s)).toHaveLength(1);
     expect(enemyCount(s)).toBeGreaterThan(0);
     expect(s.exits).toHaveLength(MAPS[START_MAP].connections.length);
   });

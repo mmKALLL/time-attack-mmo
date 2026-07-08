@@ -203,12 +203,9 @@ export const JOBS: Record<string, JobNode> = {
 // Asset-based enemies (race/class/tier with spritesheet art) live in ./data-enemy.ts.
 
 // ============================================================================
-// Demo scenario — party + a nearby enemy cluster the player can walk into.
+// Start scenario — a lone level-1 Beginner. (Allies were dropped for the
+// prototype; the player begins with a single point in Strike, see engine/demo.)
 // ============================================================================
-export const PARTY_SPAWN = [
-  { id: 'p1', name: 'Ravyn', sprite: 'ranger', jobId: 'flameRanger', level: 24, faction: 'player' as const, cell: { x: 6, y: 8 } },
-  { id: 'p2', name: 'Sable', sprite: 'knight', jobId: 'nimbleKnight', level: 23, faction: 'ally' as const, cell: { x: 5, y: 8 } },
-  { id: 'p3', name: 'Orrin', sprite: 'wizard', jobId: 'cinderSage', level: 24, faction: 'ally' as const, cell: { x: 5, y: 9 } },
-];
+export const PARTY_SPAWN = [{ id: 'p1', name: 'Ravyn', sprite: 'ranger', jobId: 'beginner', level: 1, faction: 'player' as const, cell: { x: 6, y: 8 } }];
 
 // Map data (biomes, tiles, portals, spawns) lives in ./data-map.ts.
