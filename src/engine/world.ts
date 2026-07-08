@@ -29,7 +29,7 @@ export function applyInput(s: WorldState, input: Input): void {
     if (!groupOf(s, player.id)) {
       const exit = exitAt(s, step(player.cell, input.dir));
       if (exit) {
-        travelTo(s, exit.toMap, s.mapId);
+        travelTo(s, exit.toMap, s.mapId, input.dir); // arrive continuing the same way we walked in
         return;
       }
     }

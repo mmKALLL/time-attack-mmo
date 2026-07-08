@@ -1,9 +1,9 @@
-import type { Cell, MapExit, MapId, WorldState } from '../types';
+import type { Cell, Direction, MapExit, MapId, WorldState } from '../types';
 import { MAPS } from '../data-map';
 import { ENEMIES, enemyPrimaries } from '../data-enemy';
 import { ENEMY_CLASS_COMBAT, enemyStatMult } from '../config';
 import { makeEntity } from './entities';
-import { isWall, equals, key } from './grid';
+import { DIRECTIONS, isWall, equals, key } from './grid';
 import { randInt, pick } from './rng';
 import { generateMap } from './map-generator';
 import { DEFAULT_SEED } from '../config';
@@ -89,7 +89,7 @@ export function spawnEnemies(s: WorldState, amount: number): void {
 
 // Enter `toMap`: generate its geometry, keep the party (carrying their state),
 // place them at the portal back to `fromMap` (or the map's entry), fill enemies.
-export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId): void {
+export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId, arrivalDir?: Direction): void {
   const def = MAPS[toMap];
   if (!def) return;
   const gen = generateMap(def, mapSeed(toMap));
@@ -104,8 +104,10 @@ export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId): void {
   if (fromMap) {
     const back = gen.exits.find((e) => e.toMap === fromMap);
     if (back) {
+      // Step one tile off the portal, preferably continuing the way we walked in.
+      const forward = arrivalDir ? { x: back.cell.x + DIRECTIONS[arrivalDir].dx, y: back.cell.y + DIRECTIONS[arrivalDir].dy } : undefined;
       const inw = inward(back.cell, s.map.width, s.map.height);
-      if (!isWall(s.map, inw)) arrival = inw;
+      arrival = forward && !isWall(s.map, forward) ? forward : !isWall(s.map, inw) ? inw : back.cell;
     }
   }
   arrival = nearestFloor(s, arrival); // never land inside an obstacle/wall
