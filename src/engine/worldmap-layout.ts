@@ -16,7 +16,7 @@ export const DESIGN_H = 1860;
 // from World Map.dc.html, the source of truth). Field-map chains and the Lieksa
 // dungeon chain are derived from these anchors below.
 const TOWN_ANCHOR: Record<string, { x: number; y: number }> = {
-  mantyharju: { x: 785, y: 1524 },
+  mantyharju: { x: 785, y: 1520 }, // nudged 4px up to sit on the painted icon
   savonlinna: { x: 937, y: 1451 },
   varkaus: { x: 860, y: 1380 },
   jyvaskyla: { x: 699, y: 1392 },

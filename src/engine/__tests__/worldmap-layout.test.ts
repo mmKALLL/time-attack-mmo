@@ -5,7 +5,7 @@ import { MAPS, START_MAP } from '../../data-map';
 // Anchor table from the design handoff (World Map.dc.html): the towns painted on
 // the parchment. Field/dungeon chains derive from these, so we only pin towns.
 const TOWN_ANCHOR: Record<string, { x: number; y: number }> = {
-  mantyharju: { x: 785, y: 1524 },
+  mantyharju: { x: 785, y: 1520 },
   savonlinna: { x: 937, y: 1451 },
   varkaus: { x: 860, y: 1380 },
   jyvaskyla: { x: 699, y: 1392 },

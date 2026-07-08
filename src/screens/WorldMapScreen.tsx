@@ -104,13 +104,15 @@ export function WorldMapScreen() {
                 const known = disc.has(n.id);
                 const here = n.id === mapId;
 
-                // The parchment already shows every location, so we draw no marker —
-                // except the party's current map (a ring, so you can spot yourself
-                // even mid-chain). Only discovered towns get an invisible click
-                // target + hover glow.
-                if (!n.isTown || !known) {
-                  return here ? <HereRing key={n.id} x={n.x} y={n.y} r={20} /> : null;
+                // The parchment already shows every location, so we draw no marker.
+                // The party's current map gets only a "you are here" ring — no
+                // fast-travel glow or click, since you can't travel to where you are.
+                if (here) {
+                  return <HereRing key={n.id} x={n.x} y={n.y} r={n.isTown ? 22 : 20} />;
                 }
+                // Everything else: only discovered towns are interactive (invisible
+                // click target + hover glow); undiscovered / field maps add nothing.
+                if (!n.isTown || !known) return null;
 
                 return (
                   <g
@@ -121,7 +123,6 @@ export function WorldMapScreen() {
                     onMouseLeave={() => setHovered((h) => (h === n.id ? null : h))}
                   >
                     {hovered === n.id && <circle className="wm-town-glow" cx={n.x} cy={n.y} r={24} />}
-                    {here && <HereRing x={n.x} y={n.y} r={22} />}
                     <circle className="wm-town-hit" cx={n.x} cy={n.y} r={30} />
                   </g>
                 );
