@@ -6,6 +6,7 @@ import { COMBAT_TICK_MS, xpToNext } from '../../config';
 import { shapeFor } from '../../engine/shapes';
 import { useGame } from '../../state/store';
 import { Sprites } from '../sprites';
+import { PLAYER_TILE_SRC, keyedSheet, playerTile } from '../player-art';
 import './hud.css';
 
 function SpriteCanvas({ name, size }: { name: string; size: number }) {
@@ -16,6 +17,32 @@ function SpriteCanvas({ name, size }: { name: string; size: number }) {
     Sprites.draw(ctx, name, 0, 0, 0, 'A', { cell: size, shadow: false });
   }, [name, size]);
   return <canvas ref={ref} width={size} height={size} style={{ imageRendering: 'pixelated' }} />;
+}
+
+// Portrait drawn from the keyed class art (matches the world sprite). Falls back
+// to the procedural sprite when a job has no portrait.
+function ClassPortrait({ jobId, size }: { jobId: string; size: number }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const tile = playerTile(jobId);
+    const canvas = ref.current;
+    if (!tile || !canvas) return;
+    let cancelled = false;
+    void keyedSheet(tile.filename).then((sheet) => {
+      if (cancelled || !sheet) return;
+      const ctx = canvas.getContext('2d')!;
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(sheet, tile.sx, tile.sy, PLAYER_TILE_SRC, PLAYER_TILE_SRC, 0, 0, size, size);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [jobId, size]);
+  return <canvas ref={ref} width={size} height={size} />;
+}
+
+function Portrait({ entity, size }: { entity: Entity; size: number }) {
+  return playerTile(entity.jobId) ? <ClassPortrait jobId={entity.jobId} size={size} /> : <SpriteCanvas name={entity.sprite} size={size} />;
 }
 
 function Bar({ kind, cur, max, label }: { kind: 'hp' | 'mp' | 'xp'; cur: number; max: number; label?: string }) {
@@ -85,7 +112,7 @@ function PartyFrames() {
         return (
           <div key={e.id} className={`member${e.id === world.playerId ? ' active' : ''}`}>
             <div className="portrait">
-              <SpriteCanvas name={e.sprite} size={44} />
+              <Portrait entity={e} size={44} />
               <span className="lvl">{e.level}</span>
             </div>
             <div>

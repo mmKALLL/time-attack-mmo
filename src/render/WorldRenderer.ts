@@ -4,6 +4,7 @@ import { getSkill } from '../data';
 import { MAPS } from '../data-map';
 import { shapeFor } from '../engine/shapes';
 import { tileRect, tileLayout } from '../asset-tiles';
+import { PLAYER_TILE_SRC, keyedSheet, playerTile } from './player-art';
 
 // Enemy spritesheets under assets/ — Vite gives us their served URLs.
 const ASSET_URLS = import.meta.glob('../../assets/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
@@ -46,38 +47,16 @@ function keyOutBackground(img: ImageData) {
   }
 }
 
-// Player sheets sit on a flat neutral-gray background (sampled from the top-left
-// pixel) rather than white. Keying it needs care: the gray overlaps silver armor,
-// so (1) only zero flat *neutral* bg-colored pixels (bow gaps etc.) — colored
-// sprite bodies survive — and (2) flood-fill the open background + soft edges
-// from the borders, where blends toward the sprite are safe to clear.
-function keyOutCornerBg(img: ImageData) {
+// Enemy sheets have a faint dark "cross" along the quadrant seams (at the image
+// mid-lines). Sprites never span quadrants, so clear a band around both centers.
+function clearQuadrantCross(img: ImageData, half = 7) {
   const { data, width, height } = img;
-  const br = data[0];
-  const bgc = data[1];
-  const bb = data[2];
-  const near = (i: number, tol: number) => Math.abs(data[i] - br) <= tol && Math.abs(data[i + 1] - bgc) <= tol && Math.abs(data[i + 2] - bb) <= tol;
-  const neutral = (i: number) => Math.abs(data[i] - data[i + 1]) < 10 && Math.abs(data[i + 1] - data[i + 2]) < 10;
-
-  for (let i = 0; i < data.length; i += 4) if (near(i, 16) && neutral(i)) data[i + 3] = 0;
-
-  const visited = new Uint8Array(width * height);
-  const stack: number[] = [];
-  for (let x = 0; x < width; x++) stack.push(x, (height - 1) * width + x);
-  for (let y = 0; y < height; y++) stack.push(y * width, y * width + width - 1);
-  while (stack.length) {
-    const p = stack.pop()!;
-    if (visited[p]) continue;
-    visited[p] = 1;
-    const i = p * 4;
-    if (data[i + 3] !== 0 && !near(i, 42)) continue;
-    data[i + 3] = 0;
-    const x = p % width;
-    const y = (p / width) | 0;
-    if (x + 1 < width) stack.push(p + 1);
-    if (x - 1 >= 0) stack.push(p - 1);
-    if (y + 1 < height) stack.push(p + width);
-    if (y - 1 >= 0) stack.push(p - width);
+  const cx = width / 2;
+  const cy = height / 2;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (Math.abs(x - cx) < half || Math.abs(y - cy) < half) data[(y * width + x) * 4 + 3] = 0;
+    }
   }
 }
 import { ANIM_FRAME_MS, CAMERA_ZOOM_PCT, CELL_PX, COLORS, COMBAT_TICK_MS, DAMAGE_FLOAT_MS, DESIGN_H, DESIGN_W, FLOOR_CHECKER_SIZE, OBSTACLE_OVERLAY_ALPHA } from '../config';
@@ -106,18 +85,6 @@ const OBS_SRC: Record<ObstacleSize, [number, number, number, number]> = {
   '3x1': [1, 0, 3, 1],
   '1x3': [0, 1, 1, 3],
   '3x3': [1, 1, 3, 3],
-};
-
-// Player art: a 4x4 grid of 512px class portraits (downscaled to one cell), plus
-// a standalone image for the Beginner. Index = reading order in the sheet.
-const PLAYER_SHEET = 'player-classes.png';
-const PLAYER_BEGINNER = 'player-classes-beginner.png';
-const PLAYER_TILE_SRC = 512;
-const PLAYER_CLASS_INDEX: Record<string, number> = {
-  fighter: 0, knight: 1, paladin: 2, duelist: 3,
-  archer: 4, hunter: 5, sniper: 6, ranger: 7,
-  magician: 8, arcanist: 9, wizard: 10, druid: 11,
-  rogue: 12, assassin: 13, shadower: 14, ninja: 15,
 };
 
 type Float = { text: Text; born: number; x: number; y: number };
@@ -178,6 +145,7 @@ export class WorldRenderer {
     ctx.drawImage(img, 0, 0);
     const data = ctx.getImageData(0, 0, cv.width, cv.height);
     keyOutBackground(data);
+    clearQuadrantCross(data);
     ctx.putImageData(data, 0, 0);
     this.atlasReady.set(filename, Texture.from(cv));
   }
@@ -262,20 +230,8 @@ export class WorldRenderer {
 
   // Player class sheets: key out the neutral-gray background, then serve tiles.
   private async loadPlayerAtlas(filename: string) {
-    const url = assetUrl(filename);
-    if (!url) return;
-    const img = new Image();
-    img.src = url;
-    await img.decode();
-    const cv = document.createElement('canvas');
-    cv.width = img.width;
-    cv.height = img.height;
-    const ctx = cv.getContext('2d')!;
-    ctx.drawImage(img, 0, 0);
-    const data = ctx.getImageData(0, 0, cv.width, cv.height);
-    keyOutCornerBg(data);
-    ctx.putImageData(data, 0, 0);
-    this.pAtlasReady.set(filename, Texture.from(cv));
+    const cv = await keyedSheet(filename); // shared gray-keyed canvas (also used by HUD)
+    if (cv) this.pAtlasReady.set(filename, Texture.from(cv));
   }
 
   private playerAtlas(filename: string): Texture | undefined {
@@ -303,19 +259,14 @@ export class WorldRenderer {
   // when the job has no portrait (e.g. a fusion) so the caller falls back to the
   // procedural sprite; true means "uses class art" even while it's still loading.
   private drawPlayerAsset(e: Entity, px: number, py: number, bob: number): boolean {
-    let tex: Texture | undefined;
-    if (e.jobId === 'beginner') {
-      tex = this.playerSub(PLAYER_BEGINNER, 0, 0, PLAYER_TILE_SRC);
-    } else {
-      const idx = PLAYER_CLASS_INDEX[e.jobId];
-      if (idx === undefined) return false;
-      tex = this.playerSub(PLAYER_SHEET, (idx % 4) * PLAYER_TILE_SRC, Math.floor(idx / 4) * PLAYER_TILE_SRC, PLAYER_TILE_SRC);
-    }
+    const t = playerTile(e.jobId);
+    if (!t) return false;
+    const tex = this.playerSub(t.filename, t.sx, t.sy, PLAYER_TILE_SRC);
     if (tex) {
       const sp = new Sprite(tex);
       sp.setSize(CELL_PX, CELL_PX); // downscale the 512px portrait to one cell
       sp.anchor.set(0.5, 1); // bottom-center on the cell
-      if (e.facing === 'left') sp.scale.x = -Math.abs(sp.scale.x);
+      if (e.facing === 'left' || e.facing === 'up') sp.scale.x = -Math.abs(sp.scale.x); // face left on up too
       sp.position.set(px + CELL_PX / 2, py + CELL_PX + bob);
       this.actors.addChild(sp);
     }
@@ -531,6 +482,11 @@ export class WorldRenderer {
     for (const ex of world.exits) {
       const pulse = 0.7 + 0.3 * Math.sin(elapsedMs / 360 + (ex.cell.x + ex.cell.y));
       this.addGlow(ex.cell.x * CELL_PX + CELL_PX / 2, ex.cell.y * CELL_PX + CELL_PX / 2, 3.2, 0x7fe6dd, pulse);
+    }
+    // faint 1-tile red glow marking each enemy
+    for (const e of Object.values(world.entities)) {
+      if (e.faction !== 'enemy') continue;
+      this.addGlow(e.cell.x * CELL_PX + CELL_PX / 2, e.cell.y * CELL_PX + CELL_PX / 2, 1.5, 0xff5a5a, 0.22);
     }
   }
 

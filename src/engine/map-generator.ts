@@ -79,6 +79,15 @@ export function generateMap(def: MapDef, seed: number): GeneratedMap {
   const targets = [entry, ...exits.map((e) => e.cell), ...rooms.map(center)];
   const reachable = () => allReachable(tiles, W, H, entry, targets);
 
+  // Corridor cells = floor outside every room rect. Obstacles must avoid them and
+  // their mouths (the 1-tile ring), so a corridor is never blocked or narrowed.
+  const inAnyRoom = (x: number, y: number) => rooms.some((r) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
+  const isCorridor = (x: number, y: number) => inb(x, y) && tiles[idx(x, y)] === 'floor' && !inAnyRoom(x, y);
+  const touchesCorridor = (x: number, y: number, ow: number, oh: number) => {
+    for (let j = y - 1; j <= y + oh; j++) for (let i = x - 1; i <= x + ow; i++) if (isCorridor(i, j)) return true;
+    return false;
+  };
+
   // --- obstacles (baked as wall; reverted if they break reachability) ---
   const features: MapFeature[] = [];
   for (let n = 0; n < def.gen.obstacleCount; n++) {
@@ -88,6 +97,8 @@ export function generateMap(def: MapDef, seed: number): GeneratedMap {
     if (room.w < ow + 2 || room.h < oh + 2) continue; // keep a walkable ring
     const x = randInt(g, room.x + 1, room.x + room.w - ow - 1);
     const y = randInt(g, room.y + 1, room.y + room.h - oh - 1);
+    if (entry.x >= x && entry.x < x + ow && entry.y >= y && entry.y < y + oh) continue; // never bury the spawn
+    if (touchesCorridor(x, y, ow, oh)) continue; // keep corridors + their mouths clear
     const saved: [number, number][] = [];
     for (let j = y; j < y + oh; j++) for (let i = x; i < x + ow; i++) {
       saved.push([i, j]);

@@ -27,6 +27,21 @@ function inward(cell: Cell, w: number, h: number): Cell {
   return { x: cell.x + dx, y: cell.y + dy };
 }
 
+// Nearest non-wall cell (spiral out) — a safety net so a spawn point is never
+// inside an obstacle/wall.
+function nearestFloor(s: WorldState, c: Cell): Cell {
+  if (!isWall(s.map, c)) return c;
+  const rmax = Math.max(s.map.width, s.map.height);
+  for (let r = 1; r < rmax; r++)
+    for (let dy = -r; dy <= r; dy++)
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue; // ring perimeter only
+        const n = { x: c.x + dx, y: c.y + dy };
+        if (!isWall(s.map, n)) return n;
+      }
+  return c;
+}
+
 function randomFreeCell(s: WorldState, occupied: Set<string>, avoid: Cell): Cell | undefined {
   const { width, height } = s.map;
   for (let tries = 0; tries < 80; tries++) {
@@ -92,6 +107,7 @@ export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId): void {
       if (!isWall(s.map, inw)) arrival = inw;
     }
   }
+  arrival = nearestFloor(s, arrival); // never land inside an obstacle/wall
 
   const heroes = Object.values(s.entities).filter((e) => e.faction !== 'enemy');
   const occupied = new Set<string>();
