@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { Entity, Offset } from '../../types';
 import { JOBS, getSkill, describeSkill } from '../../data';
 import { MAPS } from '../../data-map';
-import { COMBAT_TICK_MS, xpToNext } from '../../config';
+import { xpToNext } from '../../config';
 import { shapeFor } from '../../engine/shapes';
 import { useGame } from '../../state/store';
 import { Sprites } from '../sprites';
@@ -167,38 +167,24 @@ function Hotbar() {
   );
 }
 
-function AutoCast() {
-  const world = useGame((s) => s.world);
-  const group = Object.values(world.groups).find((g) => g.memberIds.includes(world.playerId));
-  const frac = group ? group.timerMs / COMBAT_TICK_MS : 0;
-  const remaining = (1 - frac) * 100;
+// Color key for the world overlays. (The auto-cast box was removed; the per-
+// combatant cast timers on the sprites carry that information.)
+function Legend() {
   return (
-    <>
-      <div className="panel legend">
-        <div className="sw">
-          <span className="chip" style={{ background: 'rgba(232,124,44,0.3)', border: '1px solid #f4922e' }} />
-          Current attack radius
-        </div>
-        <div className="sw">
-          <span className="chip" style={{ border: '1px dashed rgba(240,150,70,0.7)' }} />
-          Previewed / selected skill
-        </div>
-        <div className="sw">
-          <span className="chip" style={{ border: '1px solid rgba(226,231,240,0.5)' }} />
-          Moving block (stuck together)
-        </div>
+    <div className="panel legend">
+      <div className="sw">
+        <span className="chip" style={{ background: 'rgba(232,124,44,0.3)', border: '1px solid #f4922e' }} />
+        Current attack radius
       </div>
-      <div className="panel autocast">
-        <div className="sq">
-          <i style={{ height: `${remaining}%` }} />
-        </div>
-        <div className="txt">
-          <b>AUTO-CAST</b>
-          <br />
-          Both sides act every 1.5s
-        </div>
+      <div className="sw">
+        <span className="chip" style={{ border: '1px dashed rgba(240,150,70,0.7)' }} />
+        Previewed / selected skill
       </div>
-    </>
+      <div className="sw">
+        <span className="chip" style={{ border: '1px solid rgba(226,231,240,0.5)' }} />
+        Moving block (stuck together)
+      </div>
+    </div>
   );
 }
 
@@ -209,7 +195,7 @@ export function Hud() {
       <FocusTarget />
       <PartyFrames />
       <Hotbar />
-      <AutoCast />
+      <Legend />
     </div>
   );
 }

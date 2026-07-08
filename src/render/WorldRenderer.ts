@@ -87,7 +87,7 @@ const OBS_SRC: Record<ObstacleSize, [number, number, number, number]> = {
   '3x3': [1, 1, 3, 3],
 };
 
-type Float = { text: Text; born: number; x: number; y: number };
+type Float = { text: Text; born: number; x: number; y: number; driftX: number };
 
 // Draws the Emberdeep combat world imperatively from engine state. No React here.
 export class WorldRenderer {
@@ -109,8 +109,9 @@ export class WorldRenderer {
   private subCache = new Map<string, Texture>();
   private bgTilesReady = false; // floor + obstacle sheets loaded when the current bg was built
   private propCells = new Set<string>(); // cells carrying an obstacle prop (wall ring + features)
-  private prevHp = new Map<string, number>();
   private prevLevel = new Map<string, number>();
+  private lastFloatTick = -1; // tickCount whose hit events were already floated
+  private lastFlip = new Map<string, boolean>(); // horizontal flip persists across up/down moves
   private floats: Float[] = [];
   private bgMapId: string | undefined; // tiles are rebuilt when the map changes
   private builtVignette = false;
@@ -263,10 +264,15 @@ export class WorldRenderer {
     if (!t) return false;
     const tex = this.playerSub(t.filename, t.sx, t.sy, PLAYER_TILE_SRC);
     if (tex) {
+      // Only left/right change the horizontal flip; up/down keep the last one.
+      let flip = this.lastFlip.get(e.id) ?? false;
+      if (e.facing === 'left') flip = true;
+      else if (e.facing === 'right') flip = false;
+      this.lastFlip.set(e.id, flip);
       const sp = new Sprite(tex);
       sp.setSize(CELL_PX, CELL_PX); // downscale the 512px portrait to one cell
       sp.anchor.set(0.5, 1); // bottom-center on the cell
-      if (e.facing === 'left' || e.facing === 'up') sp.scale.x = -Math.abs(sp.scale.x); // face left on up too
+      if (flip) sp.scale.x = -Math.abs(sp.scale.x);
       sp.position.set(px + CELL_PX / 2, py + CELL_PX + bob);
       this.actors.addChild(sp);
     }
@@ -456,10 +462,10 @@ export class WorldRenderer {
     return this.glowTexture;
   }
 
-  private addGlow(layer: Container, cx: number, cy: number, wCells: number, tint: number, alpha: number, hCells = wCells) {
+  private addGlow(layer: Container, cx: number, cy: number, wCells: number, tint: number, alpha: number, hCells = wCells, additive = true) {
     const sp = new Sprite(this.glowTex());
     sp.anchor.set(0.5);
-    sp.blendMode = 'add';
+    sp.blendMode = additive ? 'add' : 'normal'; // normal so dark tints still register
     sp.tint = tint;
     sp.alpha = alpha;
     sp.setSize(CELL_PX * wCells, CELL_PX * hCells);
@@ -475,7 +481,7 @@ export class WorldRenderer {
       if (e.faction !== 'enemy') continue;
       const cx = e.cell.x * CELL_PX + CELL_PX / 2;
       const cy = e.cell.y * CELL_PX + CELL_PX * 0.45; // over the sprite body
-      this.addGlow(this.fx, cx, cy, ENEMY_GLOW.wCells, ENEMY_GLOW.color, ENEMY_GLOW.intensity, ENEMY_GLOW.hCells);
+      this.addGlow(this.fx, cx, cy, ENEMY_GLOW.wCells, ENEMY_GLOW.color, ENEMY_GLOW.intensity, ENEMY_GLOW.hCells, false);
     }
   }
 
@@ -529,12 +535,11 @@ export class WorldRenderer {
 
     for (const e of Object.values(world.entities)) {
       this.drawEntity(world, e, frame, bob);
-      this.spawnFloatIfDamaged(e, elapsedMs);
       this.spawnLevelUpIfLeveled(e, elapsedMs);
     }
+    this.spawnHitFloats(world, elapsedMs); // damage/crit/heal/miss numbers from the tick
     this.buildLights(world, elapsedMs); // dusk veil + torch glows over the scene
     // reap tracking maps for entities that no longer exist
-    for (const id of [...this.prevHp.keys()]) if (!world.entities[id]) this.prevHp.delete(id);
     for (const id of [...this.prevLevel.keys()]) if (!world.entities[id]) this.prevLevel.delete(id);
 
     this.updateFloats(elapsedMs);
@@ -557,7 +562,7 @@ export class WorldRenderer {
       const y = e.cell.y * CELL_PX - 10 * UI;
       t.position.set(x, y);
       this.floatLayer.addChild(t);
-      this.floats.push({ text: t, born: elapsedMs, x, y });
+      this.floats.push({ text: t, born: elapsedMs, x, y, driftX: 0 });
     }
     this.prevLevel.set(e.id, e.level);
   }
@@ -591,8 +596,8 @@ export class WorldRenderer {
   // Small yellow arrowhead near the character showing its facing direction.
   private drawFacing(e: Entity, px: number, py: number) {
     const [dx, dy] = FACING[e.facing];
-    const cx = px + CELL_PX / 2 + dx * 24 * UI;
-    const cy = py + CELL_PX / 2 + dy * 24 * UI;
+    const cx = px + CELL_PX / 2 + dx * 30 * UI; // ~0.6 arrow-lengths further out
+    const cy = py + CELL_PX / 2 + dy * 30 * UI;
     const perpx = -dy;
     const perpy = dx;
     const a = 6 * UI;
@@ -679,28 +684,40 @@ export class WorldRenderer {
     this.fx.addChild(g);
   }
 
-  private spawnFloatIfDamaged(e: Entity, elapsedMs: number) {
-    const prev = this.prevHp.get(e.id);
-    if (prev !== undefined && e.hp !== prev) {
-      const delta = e.hp - prev;
-      const heal = delta > 0;
+  // Spawn floating combat numbers from the latest tick's hit events. Keyed on
+  // tickCount so repeated renders of the same world don't double-spawn. Crits are
+  // larger + red; misses are a light-grey "MISS"; heals green; hits off-white.
+  // Numbers landing near the same spot within 0.2s stack ~2em upward, and each
+  // drifts horizontally away from its attacker.
+  private spawnHitFloats(world: WorldState, elapsedMs: number) {
+    if (world.tickCount === this.lastFloatTick) return;
+    this.lastFloatTick = world.tickCount;
+    const em = 16 * UI;
+    for (const h of world.hits) {
+      const crit = h.kind === 'crit';
+      const miss = h.kind === 'miss';
+      const text = miss ? 'MISS' : h.kind === 'heal' ? `+${h.amount}` : `${h.amount}`;
+      const fill = miss ? 0xcfd3da : crit ? 0xff5040 : h.kind === 'heal' ? COLORS.healText : COLORS.normalText;
       const t = new Text({
-        text: heal ? `+${delta}` : `${-delta}`,
+        text,
         style: {
           fontFamily: '"Press Start 2P", monospace',
-          fontSize: 16 * UI,
-          fill: heal ? COLORS.healText : COLORS.normalText,
+          fontSize: (crit ? 26 : miss ? 14 : 16) * UI,
+          fill,
           stroke: { color: 0x000000, width: 4 * UI },
         },
       });
       t.anchor.set(0.5);
-      const x = e.cell.x * CELL_PX + CELL_PX / 2 + ((Math.abs(delta) % 7) - 3) * UI;
-      const y = e.cell.y * CELL_PX + 12 * UI;
+      const x = h.cell.x * CELL_PX + CELL_PX / 2;
+      // stack numbers that appeared near here in the last 0.2s, 2em apart
+      const stack = this.floats.filter((f) => elapsedMs - f.born < 200 && Math.abs(f.x - x) < CELL_PX).length;
+      const y = h.cell.y * CELL_PX + 12 * UI - stack * 2 * em;
+      const away = h.from ? Math.sign(h.cell.x - h.from.x) : 0;
+      const driftX = (away || (stack % 2 ? 1 : -1)) * 26 * UI; // drift away from the attacker
       t.position.set(x, y);
       this.floatLayer.addChild(t);
-      this.floats.push({ text: t, born: elapsedMs, x, y });
+      this.floats.push({ text: t, born: elapsedMs, x, y, driftX });
     }
-    this.prevHp.set(e.id, e.hp);
   }
 
   private updateFloats(elapsedMs: number) {
@@ -712,6 +729,7 @@ export class WorldRenderer {
       }
       const p = age / DAMAGE_FLOAT_MS;
       f.text.y = f.y - 62 * UI * p;
+      f.text.x = f.x + f.driftX * p; // drift horizontally away from the attacker
       f.text.alpha = p > 0.75 ? 1 - (p - 0.75) / 0.25 : 1;
       return true;
     });

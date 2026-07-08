@@ -25,6 +25,7 @@ export function applyInput(s: WorldState, input: Input): void {
 // This exact signature is what a future authoritative server would run.
 export function tick(state: WorldState, inputs: Input[], dt: number): WorldState {
   const s = structuredClone(state) as WorldState;
+  s.hits = []; // combat text events for this tick only
   for (const input of inputs) applyInput(s, input);
   advanceCombat(s, dt);
   advanceRespawns(s, dt);

@@ -111,14 +111,15 @@ export function advanceCombat(s: WorldState, dt: number): void {
 
 // Roll one attack: check hit (accuracy vs dodge), roll damage in [minDmg,maxDmg],
 // apply the skill multiplier and target defense, then a chance to crit. Uses the
-// world's seeded RNG so replays/networking stay deterministic. 0 = a miss.
-function resolveAttack(s: WorldState, caster: Entity, target: Entity, mult: number): number {
-  if (nextRand(s) > hitChance(caster.stats.accuracy, target.stats.dodge)) return 0;
+// world's seeded RNG so replays/networking stay deterministic.
+function resolveAttack(s: WorldState, caster: Entity, target: Entity, mult: number): { amount: number; crit: boolean; miss: boolean } {
+  if (nextRand(s) > hitChance(caster.stats.accuracy, target.stats.dodge)) return { amount: 0, crit: false, miss: true };
   const { minDmg, maxDmg } = caster.stats;
   const rolled = minDmg + nextRand(s) * Math.max(0, maxDmg - minDmg);
-  let dmg = rawDamage(rolled, mult, target.stats.def);
-  if (nextRand(s) < caster.stats.crit / 100) dmg = Math.round(dmg * CRIT_MULT);
-  return dmg;
+  let amount = rawDamage(rolled, mult, target.stats.def);
+  const crit = nextRand(s) < caster.stats.crit / 100;
+  if (crit) amount = Math.round(amount * CRIT_MULT);
+  return { amount, crit, miss: false };
 }
 
 function fireSkills(s: WorldState, g: CombatGroup): void {
@@ -131,10 +132,16 @@ function fireSkills(s: WorldState, g: CombatGroup): void {
     const mag = magnitude(skill, rt.level);
     for (const t of skillTargets(caster, skill, living, rt.level)) {
       if (skill.kind === 'heal') {
-        if (mag > 0) t.hp = Math.min(t.stats.maxHp, t.hp + Math.round(caster.stats.maxDmg * mag));
+        if (mag > 0) {
+          const heal = Math.round(caster.stats.maxDmg * mag);
+          t.hp = Math.min(t.stats.maxHp, t.hp + heal);
+          s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: 'heal', amount: heal });
+        }
       } else if (skill.params.dmg) {
         // attack + damaging debuffs; pure buffs/debuffs/DoTs are inert until Phase 2.
-        t.hp = Math.max(0, t.hp - resolveAttack(s, caster, t, mag));
+        const r = resolveAttack(s, caster, t, mag);
+        t.hp = Math.max(0, t.hp - r.amount);
+        s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
       }
     }
     caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));

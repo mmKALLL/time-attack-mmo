@@ -170,6 +170,11 @@ export type MapDef = {
   spawns: SpawnRule[];
 };
 
+// Combat text events produced by a tick (damage/crit/heal/miss), for the renderer
+// to spawn floating numbers. Carries the cell so a killing blow still shows after
+// the target is removed. Reset each tick; consumed by tickCount.
+export type HitEvent = { cell: Cell; from?: Cell; kind: 'damage' | 'crit' | 'heal' | 'miss'; amount: number };
+
 // ---------- World ----------
 export type WorldState = {
   mapId: MapId;
@@ -183,6 +188,7 @@ export type WorldState = {
   rng: number; // seeded PRNG state (deterministic)
   spawnClockMs: number; // accumulates toward the next respawn wave
   tickCount: number;
+  hits: HitEvent[]; // combat text events from the latest tick
 };
 
 // ---------- Inputs ----------

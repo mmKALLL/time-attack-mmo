@@ -6,9 +6,6 @@ export const START_SKILL_LEVEL = DEBUG ? 3 : 0;
 const isTest = import.meta.env?.MODE === 'test'; // deterministic maps/enemies under vitest
 export const DEFAULT_SEED = DEBUG || isTest ? 1337 : Math.floor(Math.random() * 1e7); // starting RNG seed for the demo world
 export const OBSTACLE_OVERLAY_ALPHA = 0.26; // red tint over obstacle-prop cells (0 to disable)
-// Elliptical glow behind each enemy. wCells/hCells are in tiles (h > w hugs a
-// standing sprite); intensity is the additive alpha (0 disables).
-export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.7, intensity: 0.28 };
 
 // ---------- Display / geometry ----------
 export const DESIGN_W = 1920;
@@ -18,6 +15,10 @@ export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
 export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
 export const CAMERA_ZOOM_PCT = 40; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
+// Elliptical glow behind each enemy. wCells/hCells are in tiles (h > w hugs a
+// standing sprite); intensity is the additive alpha (0 disables).
+// export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.7, intensity: 0.5 };
+export const ENEMY_GLOW = { color: 0x1a1a1a, wCells: 1.5, hCells: 2, intensity: 0.8 };
 
 // ---------- Timing ----------
 export const SIM_TICK_MS = 50; // fixed simulation step (divides STEP_MS evenly)
@@ -82,14 +83,14 @@ function critCurve(base: number): number {
 // Power is a class-weighted blend of physical + magical (beginner 50/50); the
 // class also sets how far minDmg sits below maxDmg.
 export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beginner'): Stats {
-  const physical = p.str * 4 + p.dex * 2 + p.vit;
-  const magical = p.int * 4 + p.dex * 2 + p.vit;
+  const physical = p.str * 4 + p.dex * 2;
+  const magical = p.int * 4 + p.dex * 2;
   const { phys, minDamageRatio } = CLASS_COMBAT[cls];
   const power = phys * physical + (1 - phys) * magical;
-  const accuracy = p.dex * 2 + p.vit + p.int;
+  const accuracy = p.dex * 2;
   return {
     maxHp: p.vit * 30 + p.str * 5 + level * 10 + 15,
-    maxMp: p.int * 8 + p.dex * 2 + level * 2 - 2,
+    maxMp: p.int * 8 + level * 2 - 2,
     minDmg: Math.round(power * minDamageRatio),
     maxDmg: Math.round(power),
     def: p.vit * 2 + p.str,
@@ -100,7 +101,7 @@ export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beg
 }
 
 // ---------- Damage / accuracy ----------
-export const CRIT_MULT = 1.6;
+export const CRIT_MULT = 1.8; // crit deals 180% damage
 // Hit rate = 1.2 - dodge/accuracy (5x accuracy over dodge => guaranteed hit).
 export function hitChance(accuracy: number, dodge: number): number {
   if (accuracy <= 0) return 0.05;
@@ -118,7 +119,7 @@ export function xpToNext(level: number): number {
 }
 // XP granted for defeating an enemy of the given level.
 export function xpReward(enemyLevel: number): number {
-  return Math.round(15 * Math.pow(1.25, enemyLevel - 1));
+  return Math.round(15 * Math.pow(1.15, enemyLevel - 1));
 }
 
 // ---------- Combat world palette (Direction A "Emberdeep") ----------
