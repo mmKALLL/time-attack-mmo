@@ -4,15 +4,15 @@
   position: fixed;
   inset: 0;
   overflow: hidden;
-  display: grid;
-  place-items: center;
   background: radial-gradient(1200px 700px at 30% -10%, #1a1e28, #0a0b0f 68%);
 }
 .sa-root {
   width: 1920px;
   height: 1080px;
-  position: relative;
-  transform-origin: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
   font-family: Spectral, Georgia, serif;
   color: #e9ddc4;
   user-select: none;

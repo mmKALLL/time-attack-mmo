@@ -1,10 +1,24 @@
 import { describe, it, expect } from 'vitest';
+import type { WorldState } from '../../types';
 import { createDemoWorld } from '../demo';
 import { spendAttribute, levelUpSkill, skillCap } from '../progression';
 
+// A fresh level-1 player has no points; grant some (as leveling would) to test.
+function withPoints(): WorldState {
+  const s = createDemoWorld();
+  s.entities.p1.attrPoints = 12;
+  s.entities.p1.skillPoints = 4;
+  return s;
+}
+
 describe('progression: spending points', () => {
-  it('spends an attribute point, raising the primary + re-deriving stats', () => {
+  it('a fresh level-1 player has no points to spend', () => {
     const s = createDemoWorld();
+    expect(s.entities.p1.attrPoints).toBe(0);
+    expect(s.entities.p1.skillPoints).toBe(0);
+  });
+  it('spends an attribute point, raising the primary + re-deriving stats', () => {
+    const s = withPoints();
     const p = s.entities.p1;
     const before = { vit: p.primaries.vit, pts: p.attrPoints, maxHp: p.stats.maxHp };
     spendAttribute(s, 'vit');
@@ -21,7 +35,7 @@ describe('progression: spending points', () => {
     expect(p.primaries.str).toBe(str);
   });
   it('raises a skill level and spends a skill point, capped by the skill', () => {
-    const s = createDemoWorld();
+    const s = withPoints();
     const p = s.entities.p1;
     const rt = p.skills[0];
     const lvl = rt.level;
