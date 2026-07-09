@@ -298,3 +298,11 @@ Magic Claw - 3x1 (non-piercing), 12 mp, 2 hits, dmg: lin(0.6, 0.08)
 Cross Blast - hits player's diagonals, 16 mp, uses: 4, cooldown: lin(20, -1), dmg: lin(1, 0.15)
 Arcane Arc - 5-tile arc 3 tiles away, 22 mp, AoE (5s delay), dmg: lin(1.6, 0.2)
 Shocking Grasp - 1x1, 8 mp, slow: lin(0.25, 0.05), duration: lin(4, 0.4), cooldown: lin(30, -1), dmg: lin(1.4, 0.2)
+
+Rogue 1st job skills:
+
+Double Strike - 1x1, 6 mp, 2 hits, dmg: lin(0.8, 0.06)
+Venom Slash - 1x3, 10 mp, poison chance: 75%, uses: 2, cooldown: lin(30, -1), dmg: lin(1, 0.08)
+Hamstring - 3x1 (non-piercing), 16 mp, slow: lin(0.4, 0.02), duration: lin(4, 0.02), dmg: lin(0.8, 0.1)
+Life or Death - the player deals and receives +50% damage for lin(4, 0.04)s, cooldown: (20, -0.04)
+
