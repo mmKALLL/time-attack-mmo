@@ -3,7 +3,7 @@ import { DIRECTIONS, isWall, equals, key } from './grid';
 import { getSkill, combatClassForJob } from '../data';
 import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude } from './skills';
-import { ATTR_POINTS_PER_LEVEL, CLASS_COMBAT, CRIT_MULT, SKILL_POINTS_PER_LEVEL, deriveStats, hitChance, rawDamage, xpReward, xpToNext, COMBAT_TICK_MS } from '../config';
+import { ATTR_POINTS_PER_LEVEL, CLASS_COMBAT, CRIT_MULT, SKILL_POINTS_PER_LEVEL, deriveStats, hitChance, rawDamage, xpReward, xpToNext, COMBAT_TICK_MS, ENEMY_ATTACK_RANGE, ENEMY_APPROACH_MS } from '../config';
 import { nextRand } from './rng';
 
 // ---------- Queries (never mutate) ----------
@@ -15,6 +15,38 @@ export function membersOf(s: WorldState, g: CombatGroup): Entity[] {
 }
 export function enemyAt(s: WorldState, c: Cell): Entity | undefined {
   return Object.values(s.entities).find((e) => e.faction === 'enemy' && isAlive(e) && equals(e.cell, c));
+}
+
+// Chebyshev distance (max axis): the range metric for enemy attacks — diagonals
+// count the same as orthogonals, so a 4-range mage hits a full 9x9 box.
+function chebyshevDistance(a: Cell, b: Cell): number {
+  return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+}
+
+// The nearest living hero (faction !== 'enemy') in `enemy`'s group by Chebyshev
+// distance; ties broken by iteration order. Recomputed each tick so an enemy
+// retargets to a hero that has moved closer. Undefined if the enemy is ungrouped
+// or its group holds no living heroes.
+export function nearestHero(s: WorldState, enemy: Entity): Entity | undefined {
+  const g = groupOf(s, enemy.id);
+  if (!g) return undefined;
+  let best: Entity | undefined;
+  let bestDist = Infinity;
+  for (const m of membersOf(s, g)) {
+    if (m.faction === 'enemy' || !isAlive(m)) continue;
+    const dist = chebyshevDistance(enemy.cell, m.cell);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = m;
+    }
+  }
+  return best;
+}
+
+// True if any entity other than `selfId` occupies `c` (walls handled separately).
+// Mirrors the occupancy the player's ungrouped move respects (roaming.occupiedBy).
+function occupiedBy(s: WorldState, c: Cell, selfId: EntityId): boolean {
+  return Object.values(s.entities).some((e) => e.id !== selfId && isAlive(e) && equals(e.cell, c));
 }
 
 // ---------- Commands (mutate `s` in place) ----------
@@ -55,7 +87,16 @@ export function moveOrStick(s: WorldState, id: EntityId, dir: Direction): void {
     .map((m) => ({ x: m.cell.x + off.dx, y: m.cell.y + off.dy }))
     .filter((c) => !footprint.has(key(c)));
 
-  if (leading.some((c) => isWall(s.map, c))) return; // wall blocks the whole group
+  if (leading.some((c) => isWall(s.map, c))) {
+    // Block jammed against a wall. Let the PLAYER (only) peel off toward its own
+    // next cell if that cell is walkable+empty, deforming the block to close
+    // distance so it isn't stuck permanently out of range. Allies never deform.
+    if (id === s.playerId) {
+      const ahead: Cell = { x: e.cell.x + off.dx, y: e.cell.y + off.dy };
+      if (!isWall(s.map, ahead) && !occupiedBy(s, ahead, id)) e.cell = ahead;
+    }
+    return;
+  }
   const memberIds = new Set(g.memberIds);
   const foes = leading.map((c) => enemyAt(s, c)).filter((f): f is Entity => !!f && !memberIds.has(f.id));
   if (foes.length) {
@@ -103,16 +144,65 @@ export function advanceCombat(s: WorldState, dt: number): void {
   for (const g of Object.values(s.groups)) {
     for (const m of membersOf(s, g)) {
       if (!isAlive(m)) continue;
+      // Enemies approach on their own 2s clock (once per tick), independent of
+      // the cast timer, so a slow attacker still creeps forward each frame.
+      if (m.faction === 'enemy') advanceApproach(s, m, dt);
       const interval = COMBAT_TICK_MS / (CLASS_COMBAT[m.combatClass]?.speed ?? 1);
       m.castTimerMs += dt;
       let guard = 0;
       while (m.castTimerMs >= interval && guard++ < 8) {
         m.castTimerMs -= interval;
-        castSkill(s, g, m);
+        // Heroes cast shape-based (unchanged). Enemies do a single-target hit on
+        // their nearest hero, gated by class attack range (Slice 1 — no AoE).
+        if (m.faction === 'enemy') enemyAttack(s, m);
+        else castSkill(s, g, m);
       }
     }
   }
   cleanupDead(s);
+}
+
+// One enemy attack on its own cast timer: hit the nearest living hero, but only
+// if it's within the class's static Chebyshev range. Reuses the exact damage path
+// of castSkill's attack branch (resolveAttack + magnitude + cooldown bookkeeping),
+// ignoring the skill's AoE shape this slice — one target only. Out of range: skip.
+function enemyAttack(s: WorldState, caster: Entity): void {
+  const rt = caster.skills[caster.activeSkillIndex];
+  if (!rt || !canCast(rt)) return;
+  const target = nearestHero(s, caster);
+  if (!target) return;
+  if (chebyshevDistance(caster.cell, target.cell) > ENEMY_ATTACK_RANGE[caster.combatClass]) return; // out of range: hold fire
+  const skill = getSkill(rt.skillId);
+  if (skill.params.dmg) {
+    const mag = magnitude(skill, rt.level);
+    const r = resolveAttack(s, caster, target, mag);
+    target.hp = Math.max(0, target.hp - r.amount);
+    s.hits.push({ cell: { ...target.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
+  }
+  caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
+}
+
+// Accumulate an out-of-range enemy's approach clock; when it fills, take ONE
+// greedy 4-way step toward its nearest hero and reset. In range: hold/reset the
+// timer so it never banks a step. The step is intentionally dumb — it moves only
+// if the cell straight ahead is walkable+empty, and never routes around a block.
+function advanceApproach(s: WorldState, enemy: Entity, dt: number): void {
+  const target = nearestHero(s, enemy);
+  if (!target || chebyshevDistance(enemy.cell, target.cell) <= ENEMY_ATTACK_RANGE[enemy.combatClass]) {
+    enemy.approachTimerMs = 0; // in range (or no target): don't creep, don't bank
+    return;
+  }
+  enemy.approachTimerMs = (enemy.approachTimerMs ?? 0) + dt;
+  if (enemy.approachTimerMs < ENEMY_APPROACH_MS) return;
+  enemy.approachTimerMs = 0;
+  // Greedy 4-way axis that most reduces distance to the target (same tie-break as
+  // dirFromDelta: horizontal wins on |dx| >= |dy|).
+  const dir = dirFromDelta(target.cell.x - enemy.cell.x, target.cell.y - enemy.cell.y);
+  const off = DIRECTIONS[dir];
+  const ahead: Cell = { x: enemy.cell.x + off.dx, y: enemy.cell.y + off.dy };
+  if (isWall(s.map, ahead) || occupiedBy(s, ahead, enemy.id)) return; // blocked ahead: skip (no pathfinding this slice)
+  enemy.facing = dir;
+  enemy.cell = ahead;
 }
 
 // Roll one attack: check hit (accuracy vs dodge), roll damage in [minDmg,maxDmg],

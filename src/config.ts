@@ -61,6 +61,22 @@ export const MOVE_REPEAT_MS = 220; // held-key auto-repeat cadence (screens/Dung
 // Draw-only glide for a one-tile step; logic cell updates instantly (render/WorldRenderer.ts).
 export const MOVE_LERP_MS = 90;
 
+// ---------- Enemy combat AI (engine/combat.ts) ----------
+// Static attack range per class, in Chebyshev tiles (max(|dx|,|dy|); diagonals
+// count). Fighters/rogues/leaders are melee (2); archers/mages are ranged (4).
+// An enemy attacks its nearest hero only when that hero is within this range.
+export const ENEMY_ATTACK_RANGE: Record<CombatClass, number> = {
+  beginner: 2,
+  fighter: 2,
+  archer: 4,
+  magician: 4,
+  rogue: 2,
+  leader: 2,
+};
+// While out of range, an enemy accumulates this many ms before taking one greedy
+// 4-way step toward its target (then resets). Intentionally slow/dumb approach.
+export const ENEMY_APPROACH_MS = 2000;
+
 // ---------- Idle-enemy roaming ----------
 // Ungrouped, alive enemies wander lazily (see engine/roaming.ts).
 export const ENEMY_ROAM = {

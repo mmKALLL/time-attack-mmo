@@ -110,6 +110,7 @@ export type Entity = {
   skills: SkillRuntime[];
   activeSkillIndex: number; // hotkey slot 0..8
   castTimerMs: number; // per-entity auto-cast accumulator (attack speed varies by class)
+  approachTimerMs?: number; // enemy-only: accumulates toward one greedy approach step while out of range (engine/combat.ts); lazily initialized
   attrPoints: number; // unspent attribute points (heroes; +3/level)
   skillPoints: number; // unspent skill points (heroes; +1/level)
   statuses: StatusEffect[]; // active DoTs/buffs/debuffs (empty in skeleton)
