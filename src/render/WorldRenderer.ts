@@ -898,7 +898,7 @@ export class WorldRenderer {
     const size = 12 * UI;
     const pad = 4 * UI;
     const bx = px + CELL_PX - size - pad;
-    const by = py + pad;
+    const by = py + CELL_PX - size - pad; // bottom-right, clear of the HP pip along the top edge
     const near = frac > 0.92;
     const isHero = e.faction !== 'enemy';
     const g = new Graphics();
