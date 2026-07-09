@@ -5,7 +5,6 @@ import { makeEntity } from '../entities';
 import { getSkill } from '../../data';
 import { demoMap } from '../../data-map';
 import { shapeFor } from '../shapes';
-import { ENEMY_TELEGRAPH_MS } from '../../config';
 import type { Cell, CombatClass, Entity, Skill, WorldState } from '../../types';
 
 // A 12x12 test arena (demoMap border walls). Seed defaults to a fixed value so
@@ -71,7 +70,7 @@ describe('telegraphed AoE (slice 2)', () => {
     const want = expectedTiles(getSkill('enemyHex'), s.entities.e1.skills[0].level, { x: 7, y: 5 }, { x: 5, y: 5 });
     expect([...tg.tiles].sort((a, b) => a.x - b.x || a.y - b.y)).toEqual(want.sort((a, b) => a.x - b.x || a.y - b.y));
     expect(hasCell(tg.tiles, { x: 5, y: 5 })).toBe(true); // marks the ground under the target
-    expect(tg.remainingMs).toBe(getSkill('enemyHex').telegraphMs ?? ENEMY_TELEGRAPH_MS); // per-skill wind-up
+    expect(tg.remainingMs).toBe(getSkill('enemyHex').telegraphMs); // per-skill wind-up
   });
 
   it('the marked tiles stay LOCKED after the caster moves', () => {
@@ -85,7 +84,7 @@ describe('telegraphed AoE (slice 2)', () => {
     expect(after).toEqual(before); // footprint never moves with the caster
   });
 
-  it('resolves after ENEMY_TELEGRAPH_MS: hits a hero still on a tile, misses one who stepped off', () => {
+  it('resolves after its telegraph time: hits a hero still on a tile, misses one who stepped off', () => {
     const stayer = hero('p1', { x: 5, y: 5 });
     const e = foe('e1', { x: 7, y: 5 }, 'enemyHex', 'magician');
     const s = world([stayer, e]);

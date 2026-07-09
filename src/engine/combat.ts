@@ -4,7 +4,7 @@ import { getSkill, combatClassForJob } from '../data';
 import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude } from './skills';
 import { shapeFor } from './shapes';
-import { ATTR_POINTS_PER_LEVEL, CLASS_COMBAT, CRIT_MULT, SKILL_POINTS_PER_LEVEL, deriveStats, hitChance, rawDamage, xpReward, xpToNext, COMBAT_TICK_MS, ENEMY_ATTACK_RANGE, ENEMY_APPROACH_MS, ENEMY_TELEGRAPH_MS } from '../config';
+import { ATTR_POINTS_PER_LEVEL, CLASS_COMBAT, CRIT_MULT, SKILL_POINTS_PER_LEVEL, deriveStats, hitChance, rawDamage, xpReward, xpToNext, COMBAT_TICK_MS, ENEMY_ATTACK_RANGE, ENEMY_APPROACH_MS } from '../config';
 import { nextRand } from './rng';
 
 // ---------- Queries (never mutate) ----------
@@ -216,7 +216,8 @@ function makeTelegraph(caster: Entity, target: Entity, skill: Skill, level: numb
   const offsets = shapeFor(skill, level, facingToward(caster, target));
   const tiles = anchorOnCell(offsets, target.cell);
   const src = damageSource(caster, mag);
-  return { tiles, remainingMs: skill.telegraphMs ?? ENEMY_TELEGRAPH_MS, from: { ...caster.cell }, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, mag: src.mult };
+  const dur = skill.telegraphMs ?? 0; // per-skill wind-up (AoE skills must define telegraphMs)
+  return { tiles, remainingMs: dur, totalMs: dur, from: { ...caster.cell }, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, mag: src.mult };
 }
 
 // Centre a set of shape offsets on `anchor`: shift by the offsets' bounding-box

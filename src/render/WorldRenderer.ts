@@ -71,7 +71,6 @@ import {
   DESIGN_W,
   DUSK_OVERLAY,
   ENEMY_GLOW,
-  ENEMY_TELEGRAPH_MS,
   FLOOR_CHECKER_SIZE,
   MOVE_LERP_MS,
   OBSTACLE_OVERLAY_ALPHA,
@@ -485,7 +484,7 @@ export class WorldRenderer {
     const g = new Graphics();
     for (const t of world.telegraphs) {
       // frac 0 (just cast) -> 1 (about to resolve); ramps the fill + border alpha.
-      const frac = Math.max(0, Math.min(1, 1 - t.remainingMs / ENEMY_TELEGRAPH_MS));
+      const frac = t.totalMs > 0 ? Math.max(0, Math.min(1, 1 - t.remainingMs / t.totalMs)) : 1;
       // Flash faster the closer it is to detonating (period shrinks from ~200 to ~90ms).
       const flash = 0.5 + 0.5 * Math.sin(elapsedMs / (200 - 110 * frac));
       const fillAlpha = 0.16 + 0.34 * frac + 0.12 * frac * flash;

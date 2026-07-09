@@ -76,11 +76,6 @@ export const ENEMY_ATTACK_RANGE: Record<CombatClass, number> = {
 // While out of range, an enemy accumulates this many ms before taking one greedy
 // 4-way step toward its target (then resets). Intentionally slow/dumb approach.
 export const ENEMY_APPROACH_MS = 2000;
-// Lead time before a telegraphed AoE (mage/rogue/leader) resolves — the window
-// the player has to walk off the marked tiles and dodge. ~1500ms ≈ one combat
-// round (COMBAT_TICK_MS), long enough to read the danger overlay and step clear.
-// A single global for now; per-skill "1–3 round" variety can key off the skill later.
-export const ENEMY_TELEGRAPH_MS = 1500;
 
 // ---------- Idle-enemy roaming ----------
 // Ungrouped, alive enemies wander lazily (see engine/roaming.ts).

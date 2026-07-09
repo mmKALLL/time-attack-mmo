@@ -59,7 +59,7 @@ export type Skill = {
   shapeKind: ShapeKind;
   params: SkillParams;
   triggerMs?: number; // auto-cast interval; multiple of STEP_MS (250), default 1500
-  telegraphMs?: number; // AoE wind-up before it resolves (enemy AoE); falls back to ENEMY_TELEGRAPH_MS
+  telegraphMs?: number; // AoE wind-up (ms) before it resolves; required in practice on enemy AoE skills
   uses?: number; // cooldown charges (distinct from the {uses}/{hits} display params)
   cooldownMs: number;
   cooldownType: CooldownType;
@@ -196,6 +196,7 @@ export type HitEvent = { cell: Cell; from?: Cell; kind: 'damage' | 'crit' | 'hea
 export type Telegraph = {
   tiles: Cell[]; // locked absolute map cells the AoE will strike
   remainingMs: number; // countdown to resolution (the dodge window)
+  totalMs: number; // full wind-up (= the skill's telegraphMs); lets the renderer escalate the warning
   from: Cell; // caster's cell at cast (hit-event origin, for float drift)
   // Frozen attacker damage inputs (mirror caster.stats + class power + skill mag).
   accuracy: number;
