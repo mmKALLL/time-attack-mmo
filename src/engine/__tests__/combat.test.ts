@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { moveOrStick, advanceCombat, groupOf, enemyAt } from '../combat';
+import { moveOrStick, advanceCombat, castInterval, groupOf, enemyAt } from '../combat';
+import { getSkill } from '../../data-skills';
 import { makeEntity } from '../entities';
 import { demoMap } from '../../data-map';
 import { xpToNext } from '../../config';
@@ -135,6 +136,33 @@ describe('growing the block', () => {
     moveOrStick(s, 'p1', 'right'); // leading edge hits e2 -> stick, no translation
     expect(groupOf(s, 'p1')?.memberIds.sort()).toEqual(['e1', 'e2', 'p1']);
     expect(s.entities.p1.cell).toEqual({ x: 3, y: 3 });
+  });
+});
+
+describe('MP cost (card #22)', () => {
+  it('spends the skill MP cost on cast', () => {
+    const p = hero({ x: 3, y: 3 });
+    p.facing = 'right';
+    p.activeSkillIndex = p.skills.findIndex((r) => r.skillId === 'stab');
+    const e = rat('e1', { x: 4, y: 3 });
+    const s = world([p, e]);
+    s.groups = { g0: { id: 'g0', memberIds: ['p1', 'e1'] } };
+    p.mp = 10;
+    advanceCombat(s, castInterval(p)); // exactly one Stab cast
+    expect(s.entities.p1.mp).toBe(10 - (getSkill('stab').mpCost ?? 0));
+  });
+  it('gates the cast (no MP spent) and jumps off the unaffordable skill', () => {
+    const p = hero({ x: 3, y: 3 });
+    p.facing = 'right';
+    const stabIdx = p.skills.findIndex((r) => r.skillId === 'stab');
+    p.activeSkillIndex = stabIdx;
+    const e = rat('e1', { x: 4, y: 3 });
+    const s = world([p, e]);
+    s.groups = { g0: { id: 'g0', memberIds: ['p1', 'e1'] } };
+    p.mp = 0; // can't afford Stab
+    advanceCombat(s, 1500);
+    expect(s.entities.p1.mp).toBe(0); // nothing spent
+    expect(s.entities.p1.activeSkillIndex).not.toBe(stabIdx); // auto-selected a usable (free) skill
   });
 });
 

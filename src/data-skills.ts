@@ -26,6 +26,7 @@ function sk(s: {
   element: SkillElement;
   shapeKind: ShapeKind;
   params?: SkillParams;
+  mpCost?: number; // MP spent per cast (heroes only)
   trigger?: number; // auto-cast interval, in seconds
   triggerMs?: number; // legacy: same, in ms
   telegraphMs?: number;
@@ -56,8 +57,8 @@ export const SKILLS: Record<string, Skill[]> = {
   // --- Tier 0 ---
   beginner: [
     sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'point', params: { dmg: lin(1.0, 0.1) } }),
-    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.08) } }),
-    sk({ id: 'recover', name: 'Recover', description: 'Restore {healPercentage} of max HP (cooldown: {cooldown}).', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { healPercentage: flat(0.5) }, uses: 1, cooldown: lin(165, -15) }),
+    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.08) }, mpCost: 4 }),
+    sk({ id: 'recover', name: 'Recover', description: 'Restore {healPercentage} of max HP (cooldown: {cooldown}).', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { healPercentage: flat(0.5) }, uses: 1, cooldown: lin(150, -15), mpCost: 20 }),
   ],
 
   // --- Fighter ---

@@ -60,6 +60,7 @@ export type Skill = {
   element: SkillElement; // third tag
   shapeKind: ShapeKind;
   params: SkillParams;
+  mpCost?: number; // MP spent per cast (heroes only; enemies don't pay MP), default 0
   triggerMs?: number; // auto-cast interval; multiple of STEP_MS (250), default 1500
   telegraphMs?: number; // AoE wind-up (ms) before it resolves; required in practice on enemy AoE skills
   uses?: number; // cooldown charges (distinct from the {uses}/{hits} display params)

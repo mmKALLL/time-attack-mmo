@@ -1,4 +1,4 @@
-import type { Cell, CombatGroup, Direction, Entity, EntityId, Offset, ShapeKind, Skill, Telegraph, WorldState } from '../types';
+import type { Cell, CombatGroup, Direction, Entity, EntityId, Offset, ShapeKind, Skill, SkillRuntime, Telegraph, WorldState } from '../types';
 import { DIRECTIONS, isWall, equals, key } from './grid';
 import { combatClassForJob } from '../data';
 import { getSkill } from '../data-skills';
@@ -208,9 +208,17 @@ export function advanceArming(s: WorldState, dt: number): void {
   if (player.castTimerMs < interval) return; // still winding up
   player.castTimerMs -= interval;
 
+  const mpCost = skill.mpCost ?? 0;
+  if (player.mp < mpCost) {
+    player.armed = false; // can't afford the armed skill: drop it and switch to a usable one
+    autoSelectUsableSkill(s);
+    return;
+  }
+
   // Heal/self skills fire on the player themselves — no enemy needed (mirrors
   // castSkill's heal branch), so Recover works out of combat.
   if (skill.kind === 'heal') {
+    player.mp -= mpCost;
     const heal = Math.round(player.stats.maxDmg * (skill.params.heal?.(rt.level) ?? 0)) + Math.round(player.stats.maxHp * (skill.params.healPercentage?.(rt.level) ?? 0));
     if (heal > 0) {
       player.hp = Math.min(player.stats.maxHp, player.hp + heal);
@@ -234,6 +242,7 @@ export function advanceArming(s: WorldState, dt: number): void {
     player.armed = false; // whiff: nothing in range — no cooldown consumed
     return;
   }
+  player.mp -= mpCost;
   const mag = magnitude(skill, rt.level);
   for (const foe of foes) {
     if (skill.params.dmg) {
@@ -390,9 +399,10 @@ function resolveAttack(s: WorldState, caster: Entity, target: Entity, mult: numb
 function autoSelectUsableSkill(s: WorldState): void {
   const player = s.entities[s.playerId];
   if (!player) return;
+  const usable = (rt: SkillRuntime) => canCast(rt) && player.mp >= (getSkill(rt.skillId).mpCost ?? 0);
   const active = player.skills[player.activeSkillIndex];
-  if (active && canCast(active)) return;
-  const next = player.skills.findIndex((rt) => canCast(rt));
+  if (active && usable(active)) return;
+  const next = player.skills.findIndex(usable);
   if (next >= 0) player.activeSkillIndex = next;
 }
 
@@ -400,6 +410,12 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
   const rt = caster.skills[caster.activeSkillIndex];
   if (!rt || !canCast(rt)) return;
   const skill = getSkill(rt.skillId);
+  const mpCost = skill.mpCost ?? 0;
+  if (caster.mp < mpCost) {
+    if (caster.id === s.playerId) autoSelectUsableSkill(s); // can't afford: jump off it to a usable skill
+    return;
+  }
+  caster.mp -= mpCost;
   const mag = magnitude(skill, rt.level);
   // Heals/buffs target allies in the block; attacks target enemies in the footprint.
   // A damaging AoE sweeps its whole footprint — catching enemies not yet in the block
