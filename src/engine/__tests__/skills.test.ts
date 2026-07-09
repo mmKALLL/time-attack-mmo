@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude, targetsAllies } from '../skills';
 import { makeEntity } from '../entities';
-import { getSkill } from '../../data';
+import { getSkill } from '../../data-skills';
 import type { Entity, Faction } from '../../types';
 
 function at(id: string, faction: Faction, cell: { x: number; y: number }): Entity {

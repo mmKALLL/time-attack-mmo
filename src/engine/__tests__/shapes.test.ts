@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { shapeFor, rotate } from '../shapes';
-import { getSkill } from '../../data';
+import { getSkill } from '../../data-skills';
 
 describe('shapeFor', () => {
   it('self / party shapes are fixed regardless of level', () => {

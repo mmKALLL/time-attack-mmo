@@ -1,6 +1,6 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import type { Biome, CombatGroup, Entity, ObstacleSize, TilesetName, WorldState } from '../types';
-import { getSkill } from '../data';
+import { getSkill } from '../data-skills';
 import { MAPS } from '../data-map';
 import { shapeFor } from '../engine/shapes';
 import { tileRect, tileLayout } from '../asset-tiles';

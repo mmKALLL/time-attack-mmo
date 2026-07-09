@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Skill } from '../types';
-import { JOBS, SKILLS, SKILL_INDEX, PARTY_SPAWN } from '../data';
+import { JOBS, PARTY_SPAWN } from '../data';
+import { SKILLS, SKILL_INDEX } from '../data-skills';
 import { MAPS, START_MAP, demoMap } from '../data-map';
 import { ENEMIES } from '../data-enemy';
 

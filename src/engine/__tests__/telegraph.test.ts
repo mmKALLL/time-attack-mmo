@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { advanceCombat, advanceTelegraphs, stick } from '../combat';
 import { tick } from '../world';
 import { makeEntity } from '../entities';
-import { getSkill } from '../../data';
+import { getSkill } from '../../data-skills';
 import { demoMap } from '../../data-map';
 import { shapeFor } from '../shapes';
 import type { Cell, CombatClass, Entity, Skill, WorldState } from '../../types';

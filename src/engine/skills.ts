@@ -1,5 +1,5 @@
 import type { Entity, Skill, SkillRuntime } from '../types';
-import { getSkill } from '../data';
+import { getSkill } from '../data-skills';
 import { areEnemies } from './entities';
 import { key } from './grid';
 import { shapeFor } from './shapes';

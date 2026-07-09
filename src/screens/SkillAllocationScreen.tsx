@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Entity, Primaries, PrimaryKey, Skill } from '../types';
 import { useGame } from '../state/store';
-import { JOBS, SKILLS, describeSkill, getSkill } from '../data';
+import { JOBS } from '../data';
+import { SKILLS, describeSkill, getSkill } from '../data-skills';
 import { CLASS_COMBAT, deriveStats, xpToNext } from '../config';
 import { shapeFor } from '../engine/shapes';
 import { skillCap } from '../engine/progression';

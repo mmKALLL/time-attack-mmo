@@ -1,5 +1,5 @@
 import type { EnemyAsset, Primaries, Skill } from './types';
-import { getSkill } from './data';
+import { getSkill } from './data-skills';
 import { ARCHETYPE_WEIGHTS, ENEMY_CLASS_ARCHETYPE, allocatePrimaries } from './config';
 
 // ============================================================================

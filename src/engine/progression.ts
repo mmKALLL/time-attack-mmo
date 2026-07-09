@@ -1,5 +1,5 @@
 import type { PrimaryKey, WorldState } from '../types';
-import { SKILLS } from '../data';
+import { SKILLS } from '../data-skills';
 import { SKILL_CAP, SKILL_CAP_BEGINNER, deriveStats } from '../config';
 
 // Beginner skills cap at 5; every other job's skills cap at 10.

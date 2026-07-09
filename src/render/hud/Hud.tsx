@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { Entity, Offset } from '../../types';
-import { JOBS, getSkill, describeSkill } from '../../data';
+import { JOBS } from '../../data';
+import { getSkill, describeSkill } from '../../data-skills';
 import { MAPS } from '../../data-map';
 import { xpToNext } from '../../config';
 import { shapeFor } from '../../engine/shapes';

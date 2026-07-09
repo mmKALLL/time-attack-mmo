@@ -1,5 +1,6 @@
 import type { JobId, Skill } from '../types';
-import { JOBS, SKILLS } from '../data';
+import { JOBS } from '../data';
+import { SKILLS } from '../data-skills';
 
 export function canUnlock(jobId: JobId, attained: JobId[]): boolean {
   const job = JOBS[jobId];

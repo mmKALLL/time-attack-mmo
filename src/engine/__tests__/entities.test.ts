@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeEntity, isAlive, areEnemies } from '../entities';
-import { SKILLS } from '../../data';
+import { SKILLS } from '../../data-skills';
 
 const hero = makeEntity({ id: 'p1', faction: 'player', name: 'Hero', sprite: 'ranger', cell: { x: 1, y: 1 }, level: 25, jobId: 'beginner' });
 const rat = makeEntity({ id: 'e1', faction: 'enemy', name: 'Rat', sprite: 'slime', cell: { x: 2, y: 1 }, level: 25, jobId: 'beginner' });

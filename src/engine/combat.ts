@@ -1,6 +1,7 @@
 import type { Cell, CombatGroup, Direction, Entity, EntityId, Offset, ShapeKind, Skill, Telegraph, WorldState } from '../types';
 import { DIRECTIONS, isWall, equals, key } from './grid';
-import { getSkill, combatClassForJob } from '../data';
+import { combatClassForJob } from '../data';
+import { getSkill } from '../data-skills';
 import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude } from './skills';
 import { shapeFor } from './shapes';
