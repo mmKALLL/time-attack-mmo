@@ -33,6 +33,19 @@ export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.5, intensity
 // export const ENEMY_GLOW = { color: 0x111111, wCells: 1.2, hCells: 1.7, intensity: 0.8, pulseMs: 0 };
 // Additive torch glow (cells = diameter in tiles).
 export const TORCH_GLOW = { color: 0xffc27a, cells: 7, intensity: 0.5, pulseMs: 8000 };
+// Celebratory level-up burst on a character (render/WorldRenderer.ts): flash +
+// golden pillar + expanding rings + rotating starburst rays + rising sparkles +
+// a popped "LEVEL UP!" banner. Tuned live; colors are the game's ember/gold.
+export const LEVELUP_FX = {
+  durationMs: 1400, // total lifetime of one burst (flash..banner fade)
+  coreColor: 0xffffff, // the initial flash + brightest cores
+  goldColor: 0xffce6b, // pillar / rays / banner glow (COLORS.emberHi)
+  warmColor: 0xe08a3a, // warm accent on outer rings (COLORS.ember)
+  pillarCells: 3.2, // pillar height, in tiles, rising from the character
+  ringCount: 3, // staggered expanding halos at the feet/torso
+  rayCount: 12, // starburst spokes radiating from the character
+  particleCount: 16, // rising twinkling sparkle glints (capped, no per-frame textures)
+} as const;
 // Ambient "dusk" veil over the map, per biome (alpha 0 = none).
 export const DUSK_OVERLAY: Record<Biome, { color: number; alpha: number }> = {
   town: { color: 0x0a0a12, alpha: 0 },

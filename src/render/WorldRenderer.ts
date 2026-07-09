@@ -72,13 +72,14 @@ import {
   DUSK_OVERLAY,
   ENEMY_GLOW,
   FLOOR_CHECKER_SIZE,
+  LEVELUP_FX,
   MOVE_LERP_MS,
   OBSTACLE_OVERLAY_ALPHA,
   TORCH_GLOW,
   VIGNETTE,
 } from '../config';
 import { Sprites } from './sprites';
-import { lerp, shouldSnap } from './tween';
+import { backOvershoot, easeOutCubic, lerp, shouldSnap } from './tween';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
 const FACING: Record<string, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -115,12 +116,35 @@ type Float = { text: Text; born: number; x: number; y: number; driftX: number };
 // only.
 type MoveTween = { fromX: number; fromY: number; toX: number; toY: number; elapsed: number; cellX: number; cellY: number };
 
+// One rising sparkle glint in a level-up burst. Authored once at spawn, then
+// animated purely as a function of the burst's age: `ax`/`ay` are its drift
+// velocity (px over the lifetime), `size` its base scale, `twinkleHz`/`phase`
+// its flicker. `sp` is the Sprite (reuses the shared radial glow texture).
+type LevelUpGlint = { sp: Sprite; ax: number; ay: number; size: number; twinkleHz: number; phase: number };
+// An active level-up burst anchored on a character. `born` is its spawn clock;
+// `cx`/`cy` the anchor (the character's INTERPOLATED torso, captured at spawn so
+// the burst stays put even if the entity later moves/despawns). `root` holds all
+// its display objects; the named layers are re-drawn each frame from the age.
+type LevelUpFx = {
+  born: number;
+  cx: number;
+  cy: number;
+  root: Container;
+  flash: Sprite; // bright radial pop on trigger (reuses the shared glow texture)
+  pillar: Sprite; // tall additive column of golden light
+  rings: Graphics; // expanding concentric halos, redrawn each frame
+  rays: Graphics; // rotating starburst spokes, redrawn each frame
+  glints: LevelUpGlint[]; // rising twinkling particles
+  banner: Text; // popped "LEVEL UP!" words
+};
+
 // Draws the Emberdeep combat world imperatively from engine state. No React here.
 export class WorldRenderer {
   readonly root = new Container();
   private bg = new Container();
   private fx = new Container();
   private actors = new Container();
+  private levelUpFx = new Container(); // celebratory level-up bursts, above the actors
   private lights = new Container(); // dusk veil + additive torch glows (world-space)
   private floatLayer = new Container();
   private vignette: Sprite | null = null;
@@ -141,11 +165,12 @@ export class WorldRenderer {
   private tweens = new Map<string, MoveTween>(); // per-entity glide from old to new cell (draw-only)
   private prevElapsed = -1; // last render's elapsedMs, to derive the frame's dt
   private floats: Float[] = [];
+  private levelUps: LevelUpFx[] = []; // active level-up bursts, aged out by elapsedMs
   private bgMapId: string | undefined; // tiles are rebuilt when the map changes
   private vignetteBiome: Biome | null = null; // vignette is rebuilt when the biome changes
 
   constructor(private app: Application) {
-    this.root.addChild(this.bg, this.fx, this.actors, this.lights, this.floatLayer);
+    this.root.addChild(this.bg, this.fx, this.actors, this.levelUpFx, this.lights, this.floatLayer);
     app.stage.addChild(this.root);
   }
 
@@ -621,7 +646,7 @@ export class WorldRenderer {
     for (const e of Object.values(world.entities)) {
       const { px, py } = at(e);
       this.drawEntity(world, e, frame, bob, px, py);
-      this.spawnLevelUpIfLeveled(e, elapsedMs);
+      this.spawnLevelUpIfLeveled(e, px, py, elapsedMs);
     }
     this.spawnHitFloats(world, elapsedMs); // damage/crit/heal/miss numbers from the tick
     this.buildLights(world, elapsedMs); // dusk veil + torch glows over the scene
@@ -630,28 +655,154 @@ export class WorldRenderer {
     for (const id of [...this.tweens.keys()]) if (!world.entities[id]) this.tweens.delete(id);
 
     this.updateFloats(elapsedMs);
+    this.updateLevelUps(elapsedMs); // advance/animate active bursts; reap finished ones
   }
 
-  private spawnLevelUpIfLeveled(e: Entity, elapsedMs: number) {
+  // Detect a level gain (reusing the prevLevel map) and, on the frame it happens,
+  // spawn the celebratory burst anchored on the character's INTERPOLATED torso
+  // (px/py are this frame's glide top-left) so it sits on the sprite mid-glide.
+  private spawnLevelUpIfLeveled(e: Entity, px: number, py: number, elapsedMs: number) {
     const prev = this.prevLevel.get(e.id);
     if (prev !== undefined && e.level > prev) {
-      const t = new Text({
-        text: 'LEVEL UP!',
-        style: {
-          fontFamily: '"Press Start 2P", monospace',
-          fontSize: 26 * UI,
-          fill: COLORS.emberHi,
-          stroke: { color: 0x000000, width: 4 * UI },
-        },
-      });
-      t.anchor.set(0.5);
-      const x = e.cell.x * CELL_PX + CELL_PX / 2;
-      const y = e.cell.y * CELL_PX - 10 * UI;
-      t.position.set(x, y);
-      this.floatLayer.addChild(t);
-      this.floats.push({ text: t, born: elapsedMs, x, y, driftX: 0 });
+      this.spawnLevelUp(px + CELL_PX / 2, py + CELL_PX * 0.55, elapsedMs); // torso anchor
     }
     this.prevLevel.set(e.id, e.level);
+  }
+
+  // Build one level-up burst's display objects up front (no per-frame allocation):
+  // flash, golden pillar, ring/ray Graphics we redraw in place each frame, a fixed
+  // fan of sparkle glints, and the popped banner. All ride a per-burst `root`
+  // container positioned at the anchor, so animating is local to that origin.
+  private spawnLevelUp(cx: number, cy: number, elapsedMs: number) {
+    const root = new Container();
+    root.position.set(cx, cy);
+    root.blendMode = 'add'; // whole burst reads as light; the banner opts back to normal below
+
+    // Bright flash: a soft radial pop that snaps in and fades within the first beat.
+    const flash = new Sprite(this.glowTex());
+    flash.anchor.set(0.5);
+    flash.tint = LEVELUP_FX.coreColor;
+
+    // Pillar: a tall, narrow additive column of golden light rising from the feet.
+    const pillar = new Sprite(this.glowTex());
+    pillar.anchor.set(0.5, 1); // grow upward from the torso anchor
+    pillar.tint = LEVELUP_FX.goldColor;
+
+    const rings = new Graphics(); // expanding concentric halos, redrawn each frame
+    const rays = new Graphics(); // rotating starburst spokes, redrawn each frame
+
+    // Sparkle glints: a fixed fan authored once; each drifts up-and-out + twinkles.
+    const glints: LevelUpGlint[] = [];
+    for (let i = 0; i < LEVELUP_FX.particleCount; i++) {
+      const sp = new Sprite(this.glowTex());
+      sp.anchor.set(0.5);
+      sp.tint = i % 3 === 0 ? LEVELUP_FX.coreColor : LEVELUP_FX.goldColor; // some white, mostly gold
+      // biased upward (angle near straight-up); fan out ~1 cell horizontally, rise 1.6..2.6 cells
+      const ang = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.5;
+      const spread = 0.4 + Math.random() * 0.9;
+      glints.push({
+        sp,
+        ax: Math.cos(ang) * CELL_PX * spread,
+        ay: -CELL_PX * (1.6 + Math.random()), // always rise
+        size: (0.16 + Math.random() * 0.18) * CELL_PX,
+        twinkleHz: 6 + Math.random() * 8,
+        phase: Math.random() * Math.PI * 2,
+      });
+      root.addChild(sp);
+    }
+
+    // Banner: keep the words, but celebratory — gold fill, dark stroke, its own
+    // normal blend (additive text on a bright pillar would wash out) and a pop.
+    const banner = new Text({
+      text: 'LEVEL UP!',
+      style: {
+        fontFamily: '"Press Start 2P", monospace',
+        fontSize: 24 * UI,
+        fill: LEVELUP_FX.goldColor,
+        stroke: { color: 0x2a1500, width: 5 * UI },
+        dropShadow: { color: LEVELUP_FX.warmColor, blur: 8 * UI, distance: 0, alpha: 0.9 },
+      },
+    });
+    banner.anchor.set(0.5);
+    banner.blendMode = 'normal';
+
+    root.addChild(pillar, rings, rays, flash, banner); // flash + banner read on top
+    this.levelUpFx.addChild(root);
+    this.levelUps.push({ born: elapsedMs, cx, cy, root, flash, pillar, rings, rays, glints, banner });
+  }
+
+  // Advance every active burst as a pure function of its age (0..1 over durationMs),
+  // then destroy + remove the ones that have finished. Redraws the ring/ray
+  // Graphics in place (clear + re-fill) — no new display objects per frame.
+  private updateLevelUps(elapsedMs: number) {
+    const D = LEVELUP_FX.durationMs;
+    this.levelUps = this.levelUps.filter((fx) => {
+      const age = elapsedMs - fx.born;
+      if (age >= D) {
+        fx.root.destroy({ children: true });
+        return false;
+      }
+      const p = age / D; // 0 -> just spawned, 1 -> about to end
+
+      // Flash: snaps to full in ~0.1, gone by ~0.35. Big soft radial pop that keeps
+      // expanding as it fades (size from fp, alpha from fadeF — never a 0-size sprite).
+      const fp = Math.min(1, p / 0.1);
+      const fadeF = p < 0.1 ? 1 : Math.max(0, 1 - (p - 0.1) / 0.25);
+      const flashSize = CELL_PX * (1.4 + 1.6 * fp);
+      fx.flash.setSize(flashSize, flashSize);
+      fx.flash.alpha = fadeF;
+
+      // Pillar: shoots up over the first ~0.35 (eased), holds, fades out by the end.
+      const grow = easeOutCubic(Math.min(1, p / 0.35));
+      const pillarFade = p < 0.65 ? 0.85 : Math.max(0, 0.85 * (1 - (p - 0.65) / 0.35));
+      fx.pillar.setSize(CELL_PX * 0.7, CELL_PX * LEVELUP_FX.pillarCells * grow);
+      fx.pillar.alpha = pillarFade;
+
+      // Rings: N staggered halos, each expanding (eased) + fading over its own window.
+      fx.rings.clear();
+      for (let i = 0; i < LEVELUP_FX.ringCount; i++) {
+        const start = i * 0.14; // stagger the rings' launches
+        const rp = (p - start) / (1 - start);
+        if (rp <= 0 || rp >= 1) continue;
+        const rad = easeOutCubic(rp) * CELL_PX * (1.1 + i * 0.55);
+        const a = (1 - rp) * 0.9;
+        const color = i === LEVELUP_FX.ringCount - 1 ? LEVELUP_FX.warmColor : LEVELUP_FX.goldColor;
+        fx.rings.ellipse(0, 0, rad, rad * 0.42).stroke({ width: (7 - i) * UI * (1 - rp) + 1, color, alpha: a });
+      }
+
+      // Rays: a starburst that expands, rotates slightly, and fades out early-ish.
+      fx.rays.clear();
+      const rayLen = easeOutCubic(Math.min(1, p / 0.4)) * CELL_PX * 1.6;
+      const rayA = Math.max(0, 1 - p / 0.7) * 0.8;
+      if (rayA > 0.001) {
+        const spin = p * 0.6; // gentle rotation over the life
+        for (let i = 0; i < LEVELUP_FX.rayCount; i++) {
+          const a = spin + (i / LEVELUP_FX.rayCount) * Math.PI * 2;
+          const x = Math.cos(a) * rayLen;
+          const y = Math.sin(a) * rayLen * 0.6; // squash vertically (ground-plane feel)
+          fx.rays.moveTo(0, 0).lineTo(x, y);
+        }
+        fx.rays.stroke({ width: 3 * UI, color: LEVELUP_FX.coreColor, alpha: rayA });
+      }
+
+      // Glints: rise + fan out (eased) and twinkle; small, capped, fade near the end.
+      const gp = easeOutCubic(p);
+      const glintFade = p < 0.7 ? 1 : Math.max(0, 1 - (p - 0.7) / 0.3);
+      for (const g of fx.glints) {
+        const twinkle = 0.55 + 0.45 * Math.sin(age * 0.001 * g.twinkleHz * Math.PI * 2 + g.phase);
+        g.sp.position.set(g.ax * gp, g.ay * gp);
+        g.sp.setSize(g.size, g.size);
+        g.sp.alpha = glintFade * twinkle;
+      }
+
+      // Banner: pops in with a scale overshoot in the first ~0.3, rises gently, then
+      // fades out over the last third. Sits above the pillar.
+      const pop = backOvershoot(Math.min(1, p / 0.3));
+      fx.banner.scale.set(pop);
+      fx.banner.position.set(0, -CELL_PX * (1.05 + 0.35 * easeOutCubic(p)));
+      fx.banner.alpha = p < 0.66 ? 1 : Math.max(0, 1 - (p - 0.66) / 0.34);
+      return true;
+    });
   }
 
   // Interpolated pixel top-left for an entity this frame. The logic cell updates
