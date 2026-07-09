@@ -344,7 +344,7 @@ function levelUp(e: Entity): void {
     e.skillPoints += SKILL_POINTS_PER_LEVEL;
     e.stats = deriveStats(e.primaries, e.level, combatClassForJob(e.jobId));
     e.hp = e.stats.maxHp;
-    e.mp = e.stats.maxMp;
+    // MP does NOT refill on level up — only in towns (card #7). maxMp may rise; current mp stays.
   }
 }
 

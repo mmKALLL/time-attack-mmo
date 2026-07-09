@@ -50,6 +50,18 @@ describe('maps & transitions', () => {
     travelTo(s, START_MAP, s.mapId); // re-entering an already-discovered map adds nothing
     expect(s.discovered.length).toBe(before);
   });
+  it('fully heals MP on entering a town, but not on entering a field map', () => {
+    const s = createDemoWorld();
+    const p = s.entities[s.playerId];
+    const field = s.exits[0].toMap; // first field map out of the start town
+    p.mp = 0;
+    travelTo(s, field, s.mapId); // into a field → MP untouched
+    expect(s.entities[s.playerId].mp).toBe(0);
+    travelTo(s, START_MAP, s.mapId); // back into a town → MP full
+    const back = s.entities[s.playerId];
+    expect(back.mp).toBe(back.stats.maxMp);
+    expect(back.stats.maxMp).toBeGreaterThan(0);
+  });
   it('never exceeds a spawn rule’s maxAmount', () => {
     const s = createDemoWorld();
     expect(enemyCount(s)).toBeLessThanOrEqual(MAPS[s.mapId].spawns[0].maxAmount);
