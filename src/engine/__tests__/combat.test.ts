@@ -113,6 +113,21 @@ describe('xp & level-ups', () => {
   });
 });
 
+describe('Recover skill (card #8)', () => {
+  it('instantly restores 50% of max HP, then goes on a 2s cooldown', () => {
+    const p = hero({ x: 3, y: 3 });
+    const e = rat('e1', { x: 9, y: 3 }); // out of the rat's reach (range 2) so it never hits back
+    const s = world([p, e]);
+    s.groups = { g0: { id: 'g0', memberIds: ['p1', 'e1'] } }; // in combat, but at range
+    const rec = p.skills.findIndex((r) => r.skillId === 'recover');
+    p.activeSkillIndex = rec;
+    p.hp = 1;
+    advanceCombat(s, 1500); // hero auto-casts its active skill (Recover)
+    expect(p.hp).toBeGreaterThanOrEqual(Math.round(p.stats.maxHp * 0.5)); // ~50% max HP restored
+    expect(p.skills[rec].cooldownLeftMs).toBeGreaterThan(0); // 2s cooldown started
+  });
+});
+
 describe('growing the block', () => {
   it('adds a second enemy when the group bumps into it instead of translating', () => {
     const s = world([hero({ x: 3, y: 3 }), rat('e1', { x: 4, y: 3 }), rat('e2', { x: 5, y: 3 })]);

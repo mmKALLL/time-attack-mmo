@@ -44,7 +44,7 @@ export type CooldownType = 'passive' | 'active';
 // returned number is a MULTIPLIER on the character's normal damage calc; other
 // params (pct/dur/tiles/...) return their literal per-level value.
 export type SkillParamFunction = (level: number) => number;
-export type ParamName = 'dmg' | 'heal' | 'pct' | 'dur' | 'tiles' | 'hits' | 'uses' | 'targets' | 'delay';
+export type ParamName = 'dmg' | 'heal' | 'healPercentage' | 'pct' | 'dur' | 'tiles' | 'hits' | 'uses' | 'targets' | 'delay';
 export type SkillParams = Partial<Record<ParamName, SkillParamFunction>>;
 
 export type SkillKind = 'attack' | 'heal' | 'buff' | 'debuff' | 'dot';

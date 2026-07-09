@@ -41,7 +41,7 @@ export const SKILLS: Record<string, Skill[]> = {
   beginner: [
     sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'point', params: { dmg: lin(1.0, 0.1) } }),
     sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.1) } }),
-    sk({ id: 'recover', name: 'Recover', description: 'Heal for 50% of max HP, cooldown {dur}s.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { dur: lin(180, -15) }, triggerMs: 2000 }),
+    sk({ id: 'recover', name: 'Recover', description: 'Instantly restore {healPercentage} of max HP.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { healPercentage: flat(0.5) }, uses: 1, cooldownMs: 2000 }),
   ],
 
   // --- Fighter ---
@@ -169,6 +169,7 @@ export function describeSkill(skill: Skill, level: number, atk?: number): string
     if (!fn) return `{${name}}`;
     const v = fn(level);
     if (name === 'dmg' || name === 'heal') return atk != null ? String(Math.round(atk * v)) : `×${v.toFixed(2)}`;
+    if (name === 'healPercentage') return `${Math.round(v * 100)}%`; // fraction of max HP -> "50%"
     if (name === 'dur' || name === 'delay') return String(Math.round(v * 10) / 10);
     return String(Math.round(v));
   });

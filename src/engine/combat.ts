@@ -317,8 +317,10 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
   const mag = magnitude(skill, rt.level);
   for (const t of skillTargets(caster, skill, living, rt.level)) {
     if (skill.kind === 'heal') {
-      if (mag > 0) {
-        const heal = Math.round(caster.stats.maxDmg * mag);
+      // Power heal (heal param x maxDmg) + a flat % of the target's max HP
+      // (healPercentage param — e.g. Recover restores 50% of max HP).
+      const heal = Math.round(caster.stats.maxDmg * (skill.params.heal?.(rt.level) ?? 0)) + Math.round(t.stats.maxHp * (skill.params.healPercentage?.(rt.level) ?? 0));
+      if (heal > 0) {
         t.hp = Math.min(t.stats.maxHp, t.hp + heal);
         s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: 'heal', amount: heal });
       }
