@@ -34,4 +34,23 @@ describe('map generator', () => {
       }
     }
   });
+  it('never overlaps obstacle footprints, so no prop has a walkable hole', () => {
+    const DIMS: Record<string, [number, number]> = { '1x1': [1, 1], '1x3': [1, 3], '3x1': [3, 1], '3x3': [3, 3] };
+    for (const seed of [1, 2, 3, 42, 99, 12345, 55555, 8, 17]) {
+      const g = generateMap(def, seed);
+      const claimed = new Set<string>();
+      for (const f of g.features) {
+        if (f.kind !== 'obstacle') continue;
+        const [ow, oh] = DIMS[f.size];
+        for (let dy = 0; dy < oh; dy++)
+          for (let dx = 0; dx < ow; dx++) {
+            const cx = f.cell.x + dx;
+            const cy = f.cell.y + dy;
+            expect(claimed.has(`${cx},${cy}`), `overlap at ${cx},${cy} seed ${seed}`).toBe(false);
+            claimed.add(`${cx},${cy}`);
+            expect(g.tiles.tiles[cy * g.tiles.width + cx]).toBe('wall'); // whole footprint is solid
+          }
+      }
+    }
+  });
 });

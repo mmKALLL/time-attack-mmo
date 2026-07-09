@@ -99,6 +99,11 @@ export function generateMap(def: MapDef, seed: number): GeneratedMap {
     const y = randInt(g, room.y + 1, room.y + room.h - oh - 1);
     if (entry.x >= x && entry.x < x + ow && entry.y >= y && entry.y < y + oh) continue; // never bury the spawn
     if (touchesCorridor(x, y, ow, oh)) continue; // keep corridors + their mouths clear
+    // Reject overlap with any existing wall/obstacle: a partial overlap that later
+    // reverts to floor would punch a walkable hole inside an already-placed prop.
+    let clear = true;
+    for (let j = y; j < y + oh; j++) for (let i = x; i < x + ow; i++) if (tiles[idx(i, j)] !== 'floor') clear = false;
+    if (!clear) continue;
     const saved: [number, number][] = [];
     for (let j = y; j < y + oh; j++) for (let i = x; i < x + ow; i++) {
       saved.push([i, j]);
