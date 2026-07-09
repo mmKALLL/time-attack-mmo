@@ -261,6 +261,20 @@ leader: 20% vit, rest randomly
 Class differentiation in terms of attack shapes:
 
 Fighter: adjacent enemies, 4 tiles/8 tiles, 1x3 in front
-Archer: long lines
+Archer: long lines. Some of them cover the space right in front of them, others don't (especially for snipers).
 Magician: 3x3, cones, weird shapes like 1,0 + 3,-1 + 3,1
 Rogue: mix of all kinds of shapes; balanced thanks to lower minimum damage
+
+There can also be differentiation of "costs" of skills within a single class:
+
+MP cost, cooldown, number of uses before cooldown, delay until next skill, and range. For example, there might be a skill you can use as much as you have MP for, another with cooldown but no MP cost, and one with no costs but also limited range.
+
+Generally:
+
+Fighter: has one MP skill that is very strong for mobbing
+Archer: can't hit right in front without using MP, or needs to "waste" turns pushing enemies into place
+Magician: lots of cooldowns and trickier shapes to make up for high MP
+Rogue: relatively _short_ delays and cooldowns to make them technical; also some MP costs
+
+----
+
