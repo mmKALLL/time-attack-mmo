@@ -71,6 +71,7 @@ import {
   DESIGN_W,
   DUSK_OVERLAY,
   ENEMY_GLOW,
+  ENEMY_TELEGRAPH_MS,
   FLOOR_CHECKER_SIZE,
   MOVE_LERP_MS,
   OBSTACLE_OVERLAY_ALPHA,
@@ -475,6 +476,31 @@ export class WorldRenderer {
     }
   }
 
+  // Danger overlay for pending telegraphed AoEs (engine/combat.ts): each locked
+  // tile glows red/orange and INTENSIFIES as its resolution nears (remainingMs→0),
+  // with a quickening flash in the final stretch so the imminent hit reads clearly.
+  // Drawn into fx (below actors, above the floor), matching the collision overlay.
+  private drawTelegraphs(world: WorldState, elapsedMs: number) {
+    if (!world.telegraphs.length) return;
+    const g = new Graphics();
+    for (const t of world.telegraphs) {
+      // frac 0 (just cast) -> 1 (about to resolve); ramps the fill + border alpha.
+      const frac = Math.max(0, Math.min(1, 1 - t.remainingMs / ENEMY_TELEGRAPH_MS));
+      // Flash faster the closer it is to detonating (period shrinks from ~200 to ~90ms).
+      const flash = 0.5 + 0.5 * Math.sin(elapsedMs / (200 - 110 * frac));
+      const fillAlpha = 0.16 + 0.34 * frac + 0.12 * frac * flash;
+      const strokeAlpha = 0.5 + 0.45 * frac;
+      const fill = frac < 0.66 ? 0xff8c1a : 0xff3020; // orange warning -> red imminent
+      for (const c of t.tiles) {
+        const px = c.x * CELL_PX;
+        const py = c.y * CELL_PX;
+        g.rect(px + 1, py + 1, CELL_PX - 2, CELL_PX - 2).fill({ color: fill, alpha: fillAlpha });
+        g.rect(px + 1, py + 1, CELL_PX - 2, CELL_PX - 2).stroke({ width: 2 + 2 * frac, color: 0xffce6b, alpha: strokeAlpha });
+      }
+    }
+    this.fx.addChild(g);
+  }
+
   // Translucent red over cells that carry an obstacle prop (the wall ring +
   // feature obstacles) so blockers stand out against the floor.
   private drawCollisionOverlay() {
@@ -587,6 +613,7 @@ export class WorldRenderer {
     this.drawPortals(world, elapsedMs);
     this.drawFeatures(world);
     this.drawCollisionOverlay(); // above walls/obstacles, below actors
+    this.drawTelegraphs(world, elapsedMs); // pending dodgeable AoEs, escalating toward resolution
     this.drawEnemyGlow(world, elapsedMs, pos); // elliptical red glow behind each enemy
     const playerGroup = Object.values(world.groups).find((g) => g.memberIds.includes(world.playerId));
     if (playerGroup) this.drawBlockOutline(world, playerGroup);

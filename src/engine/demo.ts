@@ -34,6 +34,7 @@ export function createDemoWorld(): WorldState {
     spawnClockMs: 0,
     tickCount: 0,
     hits: [],
+    telegraphs: [],
   };
   // Generate the start map, place the party, and spawn its enemies.
   travelTo(s, START_MAP);

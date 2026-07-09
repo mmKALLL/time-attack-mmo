@@ -1,5 +1,5 @@
 import type { Input, WorldState } from '../types';
-import { moveOrStick, advanceCombat, groupOf } from './combat';
+import { moveOrStick, advanceCombat, advanceTelegraphs, groupOf } from './combat';
 import { exitAt, travelTo, advanceRespawns } from './maps';
 import { advanceRoaming } from './roaming';
 import { spendAttribute, levelUpSkill } from './progression';
@@ -61,6 +61,10 @@ export function tick(state: WorldState, inputs: Input[], dt: number): WorldState
   // moved into on the same frame.
   advanceRoaming(s, dt);
   advanceCombat(s, dt);
+  // Resolve telegraphed AoEs AFTER input+combat: a hero's move this tick (applied
+  // at the top) is already reflected, so stepping off a marked tile dodges the hit.
+  // A telegraph planted this same tick won't resolve yet (its full lead time remains).
+  advanceTelegraphs(s, dt);
   advanceRespawns(s, dt);
   s.tickCount += 1;
   return s;

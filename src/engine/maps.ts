@@ -100,6 +100,7 @@ export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId, arrivalDi
   s.exits = gen.exits;
   s.groups = {};
   s.spawnClockMs = 0;
+  s.telegraphs = []; // telegraphs are map-local: drop any pending AoEs on a map change
 
   let arrival = gen.entry;
   if (fromMap) {

@@ -186,6 +186,25 @@ export type MapDef = {
 // the target is removed. Reset each tick; consumed by tickCount.
 export type HitEvent = { cell: Cell; from?: Cell; kind: 'damage' | 'crit' | 'heal' | 'miss'; amount: number };
 
+// A telegraphed, dodgeable AoE (engine/combat.ts). On cast the footprint is
+// snapped to ABSOLUTE map cells (centered on the target hero's cell) and LOCKED —
+// it never moves again, even if the caster/block is dragged. After `remainingMs`
+// it resolves, hitting whichever heroes still stand on `tiles`. The damage snapshot
+// is taken at cast time so the hit rolls the same way `resolveAttack` does even if
+// the caster dies during the delay. Serializable (plain data; threads through tick).
+export type Telegraph = {
+  tiles: Cell[]; // locked absolute map cells the AoE will strike
+  remainingMs: number; // countdown to resolution (the dodge window)
+  from: Cell; // caster's cell at cast (hit-event origin, for float drift)
+  // Frozen attacker damage inputs (mirror caster.stats + class power + skill mag).
+  accuracy: number;
+  minDmg: number;
+  maxDmg: number;
+  power: number; // CLASS_COMBAT[class].power
+  crit: number; // crit chance %
+  mag: number; // skill damage multiplier = magnitude(skill, level)
+};
+
 // ---------- World ----------
 export type WorldState = {
   mapId: MapId;
@@ -201,6 +220,7 @@ export type WorldState = {
   spawnClockMs: number; // accumulates toward the next respawn wave
   tickCount: number;
   hits: HitEvent[]; // combat text events from the latest tick
+  telegraphs: Telegraph[]; // pending dodgeable AoEs on the current map (map-local)
 };
 
 // ---------- Inputs ----------

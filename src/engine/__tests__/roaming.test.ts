@@ -22,6 +22,7 @@ function world(entities: Entity[], opts: { exits?: MapExit[]; rng?: number } = {
     spawnClockMs: 0,
     tickCount: 0,
     hits: [],
+    telegraphs: [],
   };
 }
 const hero = (cell: Cell) => makeEntity({ id: 'p1', faction: 'player', name: 'Hero', sprite: 'ranger', cell, level: 20, jobId: 'beginner' });

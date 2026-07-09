@@ -20,6 +20,7 @@ function world(entities: Entity[]): WorldState {
     spawnClockMs: 0,
     tickCount: 0,
     hits: [],
+    telegraphs: [],
   };
 }
 const hero = (cell: { x: number; y: number }) => makeEntity({ id: 'p1', faction: 'player', name: 'Hero', sprite: 'ranger', cell, level: 20, jobId: 'beginner' });

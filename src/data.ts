@@ -40,8 +40,8 @@ export const SKILLS: Record<string, Skill[]> = {
   // --- Tier 0 ---
   beginner: [
     sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'point', params: { dmg: lin(1.0, 0.2) } }),
-    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.12) } }),
-    sk({ id: 'recover', name: 'Recover', description: 'Heal for 50% of max HP, cooldown {dur}s.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { dur: lin(180, -10) }, triggerMs: 2000 }),
+    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.15) } }),
+    sk({ id: 'recover', name: 'Recover', description: 'Heal for 50% of max HP, cooldown {dur}s.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { dur: lin(180, -15) }, triggerMs: 2000 }),
   ],
 
   // --- Fighter ---
@@ -142,9 +142,9 @@ export const SKILLS: Record<string, Skill[]> = {
   // --- Generic enemy skills by class (fighter/archer/mage/rogue/leader) ---
   enemyClass: [
     sk({ id: 'enemyStrike', name: 'Strike', description: 'Strike a foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'melee', params: { dmg: lin(1.0, 0.1) } }),
-    sk({ id: 'enemyShot', name: 'Shot', description: 'Loose a shot down a line for {dmg}.', kind: 'attack', target: 'line', element: 'neutral', shapeKind: 'line', params: { dmg: lin(0.9, 0.1), tiles: lin(3, 0.3) } }),
+    sk({ id: 'enemyShot', name: 'Shot', description: 'Loose a shot at a foe for {dmg}.', kind: 'attack', target: 'ranged', element: 'neutral', shapeKind: 'point', params: { dmg: lin(0.9, 0.1) } }),
     sk({ id: 'enemyHex', name: 'Hex', description: 'Blast {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'arcane', shapeKind: 'area', params: { dmg: lin(1.1, 0.12), tiles: flat(4) }, triggerMs: 1750 }),
-    sk({ id: 'enemyGouge', name: 'Gouge', description: 'Gouge a foe for {dmg}.', kind: 'attack', target: 'point', element: 'poison', shapeKind: 'point', params: { dmg: lin(1.2, 0.12) }, triggerMs: 1000 }),
+    sk({ id: 'enemyGouge', name: 'Gouge', description: 'Gouge {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'poison', shapeKind: 'area', params: { dmg: lin(1.2, 0.12), tiles: flat(3) }, triggerMs: 1000 }),
     sk({ id: 'enemyRuin', name: 'Ruin', description: 'Devastate {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'steel', shapeKind: 'area', params: { dmg: lin(1.5, 0.18), tiles: flat(6) }, cooldownMs: 4000 }),
   ],
 };
@@ -207,11 +207,25 @@ export const JOBS: Record<string, JobNode> = {
 // Base classes set the archetype; second classes inherit their base's lean.
 const JOB_ARCHETYPE: Record<string, Archetype> = {
   beginner: 'balanced',
-  fighter: 'str', knight: 'str', paladin: 'str', duelist: 'str',
-  archer: 'dex', hunter: 'dex', sniper: 'dex', ranger: 'dex',
-  magician: 'int', arcanist: 'int', wizard: 'int', druid: 'int',
-  rogue: 'dex', assassin: 'dex', shadower: 'dex', ninja: 'dex',
-  flameRanger: 'int', nimbleKnight: 'balanced', cinderSage: 'int',
+  fighter: 'str',
+  knight: 'str',
+  paladin: 'str',
+  duelist: 'str',
+  archer: 'dex',
+  hunter: 'dex',
+  sniper: 'dex',
+  ranger: 'dex',
+  magician: 'int',
+  arcanist: 'int',
+  wizard: 'int',
+  druid: 'int',
+  rogue: 'dex',
+  assassin: 'dex',
+  shadower: 'dex',
+  ninja: 'dex',
+  flameRanger: 'int',
+  nimbleKnight: 'balanced',
+  cinderSage: 'int',
 };
 export function archetypeForJob(jobId: string): Archetype {
   return JOB_ARCHETYPE[jobId] ?? 'balanced';
@@ -221,11 +235,25 @@ export function archetypeForJob(jobId: string): Archetype {
 // class in a base's line inherits the base's combat class.
 const JOB_COMBAT_CLASS: Record<string, CombatClass> = {
   beginner: 'beginner',
-  fighter: 'fighter', knight: 'fighter', paladin: 'fighter', duelist: 'fighter',
-  archer: 'archer', hunter: 'archer', sniper: 'archer', ranger: 'archer',
-  magician: 'magician', arcanist: 'magician', wizard: 'magician', druid: 'magician',
-  rogue: 'rogue', assassin: 'rogue', shadower: 'rogue', ninja: 'rogue',
-  flameRanger: 'magician', nimbleKnight: 'fighter', cinderSage: 'magician',
+  fighter: 'fighter',
+  knight: 'fighter',
+  paladin: 'fighter',
+  duelist: 'fighter',
+  archer: 'archer',
+  hunter: 'archer',
+  sniper: 'archer',
+  ranger: 'archer',
+  magician: 'magician',
+  arcanist: 'magician',
+  wizard: 'magician',
+  druid: 'magician',
+  rogue: 'rogue',
+  assassin: 'rogue',
+  shadower: 'rogue',
+  ninja: 'rogue',
+  flameRanger: 'magician',
+  nimbleKnight: 'fighter',
+  cinderSage: 'magician',
 };
 export function combatClassForJob(jobId: string): CombatClass {
   return JOB_COMBAT_CLASS[jobId] ?? 'beginner';
