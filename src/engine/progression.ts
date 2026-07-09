@@ -1,6 +1,6 @@
 import type { PrimaryKey, WorldState } from '../types';
 import { SKILLS } from '../data-skills';
-import { SKILL_CAP, SKILL_CAP_BEGINNER, deriveStats } from '../config';
+import { SKILL_CAP, SKILL_CAP_BEGINNER, deriveStats } from '../config-stats';
 
 // Beginner skills cap at 5; every other job's skills cap at 10.
 export function skillCap(skillId: string): number {

@@ -1,5 +1,5 @@
 import type { CombatClass, JobNode } from './types';
-import type { Archetype } from './config';
+import type { Archetype } from './config-stats';
 
 // Skill data (SKILLS, SKILL_INDEX, getSkill, describeSkill) lives in ./data-skills.ts.
 

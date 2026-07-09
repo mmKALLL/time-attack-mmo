@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { deriveStats, allocatePrimaries, ARCHETYPE_WEIGHTS, hitChance, rawDamage, xpToNext, xpReward } from '../config';
+import { deriveStats, allocatePrimaries, ARCHETYPE_WEIGHTS, hitChance, rawDamage } from '../config-stats';
+import { xpToNext, xpReward } from '../config';
 import type { Primaries } from '../types';
 
 const sum = (p: Primaries) => p.str + p.dex + p.int + p.vit;

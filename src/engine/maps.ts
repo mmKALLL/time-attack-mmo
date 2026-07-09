@@ -1,7 +1,7 @@
 import type { Cell, Direction, MapExit, MapId, WorldState } from '../types';
 import { MAPS } from '../data-map';
 import { ENEMIES, enemyPrimaries } from '../data-enemy';
-import { ENEMY_CLASS_COMBAT, enemyStatMult } from '../config';
+import { ENEMY_CLASS_COMBAT, enemyStatMult } from '../config-stats';
 import { makeEntity } from './entities';
 import { DIRECTIONS, isWall, equals, key } from './grid';
 import { randInt, pick } from './rng';

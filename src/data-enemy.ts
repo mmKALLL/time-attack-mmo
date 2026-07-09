@@ -1,6 +1,6 @@
 import type { EnemyAsset, Primaries, Skill } from './types';
 import { getSkill } from './data-skills';
-import { ARCHETYPE_WEIGHTS, ENEMY_CLASS_ARCHETYPE, allocatePrimaries } from './config';
+import { ARCHETYPE_WEIGHTS, ENEMY_CLASS_ARCHETYPE, allocatePrimaries } from './config-stats';
 
 // ============================================================================
 // Asset-based enemies. Each race occupies one quadrant of a 2048x2048 sheet;

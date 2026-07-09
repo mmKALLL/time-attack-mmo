@@ -1,6 +1,6 @@
 import type { Cell, CombatClass, EnemyAsset, Entity, EntityId, Faction, JobId, Primaries, Skill, SkillRuntime } from '../types';
 import { JOBS, archetypeForJob, combatClassForJob } from '../data';
-import { ARCHETYPE_WEIGHTS, allocatePrimaries, deriveStats, scaleStats, START_SKILL_LEVEL } from '../config';
+import { ARCHETYPE_WEIGHTS, allocatePrimaries, deriveStats, scaleStats, START_SKILL_LEVEL } from '../config-stats';
 import { kitOf } from './jobs';
 
 export function skillRuntime(skill: Skill): SkillRuntime {
@@ -53,8 +53,8 @@ export function makeEntity(params: {
     skills: kit.map(skillRuntime),
     activeSkillIndex: 0,
     castTimerMs: 0,
-    attrPoints: 0,
-    skillPoints: 0,
+    attrPoints: 3,
+    skillPoints: 1,
     statuses: [],
     attacksPerRound: 1,
     elite: params.elite,

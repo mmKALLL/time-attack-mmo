@@ -63,7 +63,6 @@ import {
   ANIM_FRAME_MS,
   CAMERA_ZOOM_PERCENT,
   CELL_PX,
-  CLASS_COMBAT,
   COLORS,
   COMBAT_TICK_MS,
   DAMAGE_FLOAT_MS,
@@ -78,6 +77,7 @@ import {
   TORCH_GLOW,
   VIGNETTE,
 } from '../config';
+import { CLASS_COMBAT } from '../config-stats';
 import { Sprites } from './sprites';
 import { backOvershoot, easeOutCubic, lerp, shouldSnap } from './tween';
 
