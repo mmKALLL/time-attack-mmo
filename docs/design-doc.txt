@@ -306,3 +306,4 @@ Venom Slash - 1x3, 10 mp, poison chance: 75%, uses: 2, cooldown: lin(30, -1), dm
 Hamstring - 3x1 (non-piercing), 16 mp, slow: lin(0.4, 0.02), duration: lin(4, 0.02), dmg: lin(0.8, 0.1)
 Life or Death - the player deals and receives +50% damage for lin(4, 0.04)s, cooldown: (20, -0.04)
 
+----
