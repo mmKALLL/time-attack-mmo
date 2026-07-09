@@ -262,7 +262,7 @@ Class differentiation in terms of attack shapes:
 
 Fighter: adjacent enemies, 4 tiles/8 tiles, 1x3 in front
 Archer: long lines. Some of them cover the space right in front of them, others don't (especially for snipers).
-Magician: 3x3, cones, weird shapes like 1,0 + 3,-1 + 3,1
+Magician: 3x3, cones, distanced arcs, weird shapes like (1,0 + 3,-1 + 3,1)
 Rogue: mix of all kinds of shapes; balanced thanks to lower minimum damage
 
 There can also be differentiation of "costs" of skills within a single class:
@@ -277,4 +277,18 @@ Magician: lots of cooldowns and trickier shapes to make up for high MP
 Rogue: relatively _short_ delays and cooldowns to make them technical; also some MP costs
 
 ----
+
+Fighter 1st job skills:
+
+Power Strike - 1x1, uses: 3, cooldown: 15s, dmg: lin(1.5, 0.25)
+Cleave - 6 mp, 1x3 in front, dmg: lin(0.8, 0.12)
+Spin Slash - 14 mp, 8 adjacent tiles, dmg: lin(1.1, 0.15)
+Bracing Guard - block physical damage components for 5s, cooldown: lin(20, -1)
+
+Archer 1st job skills:
+
+Arrow Strike - 4x1 (non-piercing) 1 tile away, dmg: lin(1, 0.15)
+Piercing Shot - 4x1, 10 mp, dmg: lin(0.8, 0.15)
+Scatter Shot - 1x3 two tiles away, 16 mp, dmg(1.2, 0.2)
+Power Knockback - 1x1, pushes enemy up to 3 tiles back, uses: 2, cooldown: lin(30, -1), dmg: lin(1.4, 0.2)
 
