@@ -71,7 +71,7 @@ describe('telegraphed AoE (slice 2)', () => {
     const want = expectedTiles(getSkill('enemyHex'), s.entities.e1.skills[0].level, { x: 7, y: 5 }, { x: 5, y: 5 });
     expect([...tg.tiles].sort((a, b) => a.x - b.x || a.y - b.y)).toEqual(want.sort((a, b) => a.x - b.x || a.y - b.y));
     expect(hasCell(tg.tiles, { x: 5, y: 5 })).toBe(true); // marks the ground under the target
-    expect(tg.remainingMs).toBe(ENEMY_TELEGRAPH_MS);
+    expect(tg.remainingMs).toBe(getSkill('enemyHex').telegraphMs ?? ENEMY_TELEGRAPH_MS); // per-skill wind-up
   });
 
   it('the marked tiles stay LOCKED after the caster moves', () => {
@@ -95,7 +95,7 @@ describe('telegraphed AoE (slice 2)', () => {
     expect(hasCell(tg.tiles, { x: 5, y: 5 })).toBe(true);
 
     const hpBefore = s.entities.p1.hp;
-    advanceTelegraphs(s, ENEMY_TELEGRAPH_MS); // count down to resolution
+    advanceTelegraphs(s, tg.remainingMs); // count down to resolution (skill's telegraph time)
     expect(s.telegraphs).toHaveLength(0); // consumed
     expect(s.entities.p1.hp).toBeLessThan(hpBefore); // still standing on a marked tile → hit
 
@@ -109,7 +109,7 @@ describe('telegraphed AoE (slice 2)', () => {
     for (const c of [{ x: 10, y: 10 }, { x: 9, y: 9 }, { x: 2, y: 2 }]) if (!hasCell(marked, c)) { safe = c; break; }
     s2.entities.p1.cell = safe!;
     const hp2 = s2.entities.p1.hp;
-    advanceTelegraphs(s2, ENEMY_TELEGRAPH_MS);
+    advanceTelegraphs(s2, s2.telegraphs[0].remainingMs);
     expect(s2.entities.p1.hp).toBe(hp2); // stepped off → dodged, no damage
   });
 
@@ -128,7 +128,7 @@ describe('telegraphed AoE (slice 2)', () => {
     s.entities.p2.cell = { ...tiles[1] };
     const hp1 = s.entities.p1.hp;
     const hp2 = s.entities.p2.hp;
-    advanceTelegraphs(s, ENEMY_TELEGRAPH_MS);
+    advanceTelegraphs(s, s.telegraphs[0].remainingMs);
     expect(s.entities.p1.hp).toBeLessThan(hp1);
     expect(s.entities.p2.hp).toBeLessThan(hp2);
   });
@@ -156,7 +156,7 @@ describe('telegraphed AoE (slice 2)', () => {
       const s = world([hero('p1', { x: 5, y: 5 }), foe('e1', { x: 7, y: 5 }, 'enemyHex', 'magician')], 4242);
       stick(s, 'p1', 'e1');
       advanceCombat(s, CAST_MS);
-      advanceTelegraphs(s, ENEMY_TELEGRAPH_MS);
+      advanceTelegraphs(s, s.telegraphs[0].remainingMs);
       return s.entities.p1.hp;
     };
     expect(run()).toBe(run()); // same seed → identical damage
@@ -178,5 +178,15 @@ describe('telegraphed AoE (slice 2)', () => {
     const s2 = tick(s, [{ type: 'move', dir }], 50); // move first, then the telegraph resolves
     expect(hasCell(marked, s2.entities.p1.cell)).toBe(false); // stepped off every marked cell
     expect(s2.entities.p1.hp).toBe(hpBefore); // dodged: move applied before the AoE resolved
+  });
+
+  it('falls back to a basic Strike when the primary skill is on cooldown', () => {
+    const s = world([hero('p1', { x: 5, y: 5 }), foe('e1', { x: 6, y: 5 }, 'enemyRuin', 'leader')]); // AoE primary, melee-range at dist 1
+    stick(s, 'p1', 'e1');
+    s.entities.e1.skills[0].cooldownLeftMs = 30000; // primary (Ruin) on cooldown
+    const hp = s.entities.p1.hp;
+    advanceCombat(s, CAST_MS); // primary unavailable → single-target Strike, not an AoE
+    expect(s.telegraphs).toHaveLength(0); // fallback plants no telegraph
+    expect(s.entities.p1.hp).toBeLessThan(hp); // dealt instant single-target damage
   });
 });

@@ -177,23 +177,27 @@ function isAoESkill(skill: Skill): boolean {
 // (mage/rogue/leader) instead PLANT a telegraph on the ground under the target and
 // resolve later (slice 2). Either way the cast is consumed (afterCast bookkeeping).
 function enemyAttack(s: WorldState, caster: Entity): void {
-  const rt = caster.skills[caster.activeSkillIndex];
-  if (!rt || !canCast(rt)) return;
   const target = nearestHero(s, caster);
   if (!target) return;
   if (chebyshevDistance(caster.cell, target.cell) > ENEMY_ATTACK_RANGE[caster.combatClass]) return; // out of range: hold fire
-  const skill = getSkill(rt.skillId);
+  // Use the active skill when it's ready; otherwise fall back to a basic Strike so a
+  // cooling-down mage/rogue/leader still jabs each round. The primary's cooldown keeps
+  // ticking (tickCooldowns) and resumes when ready; the fallback consumes nothing.
+  const primary = caster.skills[caster.activeSkillIndex];
+  const usePrimary = !!primary && canCast(primary);
+  const skill = usePrimary ? getSkill(primary.skillId) : getSkill('enemyStrike');
+  const level = primary?.level ?? 1;
   if (skill.params.dmg) {
-    const mag = magnitude(skill, rt.level);
+    const mag = magnitude(skill, level);
     if (isAoESkill(skill)) {
-      s.telegraphs.push(makeTelegraph(caster, target, skill, rt.level, mag));
+      s.telegraphs.push(makeTelegraph(caster, target, skill, level, mag));
     } else {
       const r = resolveAttack(s, caster, target, mag);
       target.hp = Math.max(0, target.hp - r.amount);
       s.hits.push({ cell: { ...target.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
     }
   }
-  caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
+  if (usePrimary) caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
 }
 
 // The direction from `caster` to `target`, so the footprint aims at the hero. AI
@@ -212,7 +216,7 @@ function makeTelegraph(caster: Entity, target: Entity, skill: Skill, level: numb
   const offsets = shapeFor(skill, level, facingToward(caster, target));
   const tiles = anchorOnCell(offsets, target.cell);
   const src = damageSource(caster, mag);
-  return { tiles, remainingMs: ENEMY_TELEGRAPH_MS, from: { ...caster.cell }, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, mag: src.mult };
+  return { tiles, remainingMs: skill.telegraphMs ?? ENEMY_TELEGRAPH_MS, from: { ...caster.cell }, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, mag: src.mult };
 }
 
 // Centre a set of shape offsets on `anchor`: shift by the offsets' bounding-box

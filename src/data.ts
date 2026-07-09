@@ -24,6 +24,7 @@ function sk(s: {
   shapeKind: ShapeKind;
   params?: SkillParams;
   triggerMs?: number;
+  telegraphMs?: number;
   uses?: number;
   cooldownMs?: number;
   cooldownType?: CooldownType;
@@ -143,9 +144,9 @@ export const SKILLS: Record<string, Skill[]> = {
   enemyClass: [
     sk({ id: 'enemyStrike', name: 'Strike', description: 'Strike a foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'melee', params: { dmg: lin(1.0, 0.1) } }),
     sk({ id: 'enemyShot', name: 'Shot', description: 'Loose a shot at a foe for {dmg}.', kind: 'attack', target: 'ranged', element: 'neutral', shapeKind: 'point', params: { dmg: lin(0.9, 0.1) } }),
-    sk({ id: 'enemyHex', name: 'Hex', description: 'Blast {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'arcane', shapeKind: 'area', params: { dmg: lin(1.1, 0.12), tiles: flat(4) }, triggerMs: 1750 }),
-    sk({ id: 'enemyGouge', name: 'Gouge', description: 'Gouge {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'poison', shapeKind: 'area', params: { dmg: lin(1.2, 0.12), tiles: flat(3) }, triggerMs: 1000 }),
-    sk({ id: 'enemyRuin', name: 'Ruin', description: 'Devastate {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'steel', shapeKind: 'area', params: { dmg: lin(1.5, 0.18), tiles: flat(6) }, cooldownMs: 4000 }),
+    sk({ id: 'enemyHex', name: 'Hex', description: 'Blast {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'arcane', shapeKind: 'area', params: { dmg: lin(1.4, 0.12), tiles: flat(4) }, triggerMs: 1750, telegraphMs: 4000 }),
+    sk({ id: 'enemyGouge', name: 'Gouge', description: 'Gouge {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'poison', shapeKind: 'area', params: { dmg: lin(1.4, 0.12), tiles: flat(3) }, triggerMs: 1000, uses: 2, cooldownMs: 5000, telegraphMs: 3000 }),
+    sk({ id: 'enemyRuin', name: 'Ruin', description: 'Devastate {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'steel', shapeKind: 'area', params: { dmg: lin(1.8, 0.2), tiles: flat(12) }, cooldownMs: 10000, telegraphMs: 5000 }),
   ],
 };
 

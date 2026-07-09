@@ -59,6 +59,7 @@ export type Skill = {
   shapeKind: ShapeKind;
   params: SkillParams;
   triggerMs?: number; // auto-cast interval; multiple of STEP_MS (250), default 1500
+  telegraphMs?: number; // AoE wind-up before it resolves (enemy AoE); falls back to ENEMY_TELEGRAPH_MS
   uses?: number; // cooldown charges (distinct from the {uses}/{hits} display params)
   cooldownMs: number;
   cooldownType: CooldownType;
