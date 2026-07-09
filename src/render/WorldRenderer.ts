@@ -92,6 +92,7 @@ const glowPulse = (pulseMs: number, elapsedMs: number, phase: number) => (pulseM
 // quadrants hold one prop per footprint size (1x1 corner, 3x1 top, 1x3 left,
 // 3x3 center). Quadrant order: forest, lake / deepForest, town.
 const FLOOR_SHEET = 'tiles-floor.png';
+const FLOOR_SHEET_LAKE = 'tiles-floor-lake.png'; // dedicated lake floor: a 2x2 sheet (512x512) of CELL_PX tiles
 const OBSTACLE_SHEET = 'tiles-obstacles.png';
 const QUAD_PX = CELL_PX * 4; // one biome quadrant spans 4x4 cells
 const QUAD: Record<TilesetName, [number, number]> = {
@@ -351,7 +352,14 @@ export class WorldRenderer {
     this.buildVignette(world);
     // Rebuilt when the map changes, and retried each frame until both tile sheets
     // have loaded (so we swap the procedural fallback for the real biome art).
-    const floor = this.plainAtlas(FLOOR_SHEET);
+    const ts = MAPS[world.mapId]?.gen.tileset ?? 'forest';
+    // Lake floor ships as a dedicated 2x2 sheet (512x512); every other biome tiles
+    // a 4x4 quadrant of the shared floor sheet.
+    const lake = ts === 'lake';
+    const floorSheet = lake ? FLOOR_SHEET_LAKE : FLOOR_SHEET;
+    const [qx, qy]: [number, number] = lake ? [0, 0] : QUAD[ts];
+    const grid = lake ? 2 : 4;
+    const floor = this.plainAtlas(floorSheet);
     const obst = this.plainAtlas(OBSTACLE_SHEET);
     if (this.bgMapId === world.mapId && this.bgTilesReady) return;
     this.bgMapId = world.mapId;
@@ -359,8 +367,6 @@ export class WorldRenderer {
     this.bg.removeChildren();
 
     const { width, height } = world.map;
-    const ts = MAPS[world.mapId]?.gen.tileset ?? 'forest';
-    const [qx, qy] = QUAD[ts];
 
     // Track which cells carry a prop (feature obstacles + the wall ring) for the
     // collision overlay. Feature obstacles occupy their whole footprint.
@@ -379,7 +385,7 @@ export class WorldRenderer {
         const px = x * CELL_PX;
         const py = y * CELL_PX;
         if (floor) {
-          const tex = this.mapSub(FLOOR_SHEET, qx + (x % 4) * CELL_PX, qy + (y % 4) * CELL_PX, CELL_PX, CELL_PX);
+          const tex = this.mapSub(floorSheet, qx + (x % grid) * CELL_PX, qy + (y % grid) * CELL_PX, CELL_PX, CELL_PX);
           if (tex) {
             const sp = new Sprite(tex);
             sp.setSize(CELL_PX, CELL_PX);
