@@ -137,6 +137,14 @@ function orientCombatants(s: WorldState): void {
   }
 }
 
+// The per-entity cast/wind-up interval (ms): the class base speed × the entity's
+// attack-speed stat scale COMBAT_TICK_MS. Shared by the in-combat auto-cast
+// (advanceCombat) and the out-of-combat ranged wind-up (advanceArming) so both
+// clocks fill at the same rate.
+export function castInterval(e: Entity): number {
+  return COMBAT_TICK_MS / ((CLASS_COMBAT[e.combatClass]?.speed ?? 1) * (e.stats.attackSpeed / 100));
+}
+
 // Advance combat clocks + resolve auto-casts for every group.
 export function advanceCombat(s: WorldState, dt: number): void {
   for (const e of Object.values(s.entities)) e.skills = tickCooldowns(e, dt);
@@ -149,7 +157,7 @@ export function advanceCombat(s: WorldState, dt: number): void {
       // Enemies approach on their own 2s clock (once per tick), independent of
       // the cast timer, so a slow attacker still creeps forward each frame.
       if (m.faction === 'enemy') advanceApproach(s, m, dt);
-      const interval = COMBAT_TICK_MS / ((CLASS_COMBAT[m.combatClass]?.speed ?? 1) * (m.stats.attackSpeed / 100));
+      const interval = castInterval(m);
       m.castTimerMs += dt;
       let guard = 0;
       while (m.castTimerMs >= interval && guard++ < 8) {
@@ -170,6 +178,54 @@ export function advanceCombat(s: WorldState, dt: number): void {
 const AOE_SHAPES: ReadonlySet<ShapeKind> = new Set<ShapeKind>(['line', 'arc', 'area', 'cross']);
 function isAoESkill(skill: Skill): boolean {
   return AOE_SHAPES.has(skill.shapeKind);
+}
+
+// Out-of-combat ranged fire: when the player has ARMED a skill (a hotkey pressed
+// while ungrouped — see world.applyInput), wind it up on the same clock as an
+// in-combat cast and, when it fills, fire the active skill's shape at the enemies
+// it covers, ENGAGING (sticking) them. Called from tick() AFTER advanceCombat so a
+// stick this frame is picked up by combat next frame. Player-only, alive-only.
+export function advanceArming(s: WorldState, dt: number): void {
+  const player = s.entities[s.playerId];
+  if (!player || !isAlive(player) || !player.armed) return;
+  // Combat took over (we bumped/were bumped into a group): let auto-cast drive.
+  if (groupOf(s, player.id)) {
+    player.armed = false;
+    return;
+  }
+  const rt = player.skills[player.activeSkillIndex];
+  if (!rt || !canCast(rt)) return; // on cooldown: hold the wind-up until it's ready
+  const skill = getSkill(rt.skillId);
+  const interval = castInterval(player);
+  player.castTimerMs += dt;
+  if (player.castTimerMs < interval) return; // still winding up
+  player.castTimerMs -= interval;
+
+  // Absolute cells the shape covers this frame (offsets oriented to facing + cell).
+  const cells = new Set(shapeFor(skill, rt.level, player.facing).map((o) => key({ x: player.cell.x + o.dx, y: player.cell.y + o.dy })));
+  let foes = Object.values(s.entities).filter((e) => e.faction === 'enemy' && isAlive(e) && cells.has(key(e.cell)));
+  // Piercing is derived from the shape: AoE footprints hit everything they cover;
+  // single-target shapes (self/melee/point) strike only the nearest covered foe.
+  if (!isAoESkill(skill) && foes.length > 1) {
+    let nearest = foes[0];
+    for (const f of foes) if (chebyshevDistance(player.cell, f.cell) < chebyshevDistance(player.cell, nearest.cell)) nearest = f;
+    foes = [nearest];
+  }
+  if (!foes.length) {
+    player.armed = false; // whiff: nothing in range — no cooldown consumed
+    return;
+  }
+  const mag = magnitude(skill, rt.level);
+  for (const foe of foes) {
+    if (skill.params.dmg) {
+      const r = resolveAttack(s, player, foe, mag);
+      foe.hp = Math.max(0, foe.hp - r.amount);
+      s.hits.push({ cell: { ...foe.cell }, from: { ...player.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
+    }
+    stick(s, player.id, foe.id); // engage: combat auto-cast takes over next frame
+  }
+  player.skills = player.skills.map((r, i) => (i === player.activeSkillIndex ? afterCast(r, skill) : r));
+  player.armed = false;
 }
 
 // One enemy attack on its own cast timer: target the nearest living hero, but only

@@ -932,16 +932,18 @@ export class WorldRenderer {
     const rt = player.skills[player.activeSkillIndex];
     const skill = rt && getSkill(rt.skillId);
     if (!skill) return;
-    // Support skills (buffs blue, terrain/heals green) always show their footprint;
-    // attacks only while in combat. Pulse harder as a cast nears.
+    // Show the footprint only when the shot is live: the player is ARMED (winding up
+    // an out-of-combat ranged fire) OR already in a combat group. Idle out of combat
+    // (not armed, not grouped) draws nothing. Pulse harder as a cast/wind-up nears.
     const group = Object.values(world.groups).find((gr) => gr.memberIds.includes(world.playerId));
+    if (!group && !player.armed) return;
     const isBuff = skill.kind === 'buff';
     const isTerrain = skill.kind === 'heal';
-    if (!group && !isBuff && !isTerrain) return; // attacks hidden out of combat
     const fill = isBuff ? 0x4a8fe0 : isTerrain ? 0x54c56a : COLORS.attackCurrentFill;
     const stroke = isBuff ? 0x86b6f2 : isTerrain ? 0x8fe0a0 : COLORS.attackCurrentBorder;
     const interval = COMBAT_TICK_MS / (CLASS_COMBAT[player.combatClass]?.speed ?? 1);
-    const frac = group ? Math.min(1, player.castTimerMs / interval) : 0;
+    // Both the in-combat cast timer and the armed wind-up accumulate in castTimerMs.
+    const frac = group || player.armed ? Math.min(1, player.castTimerMs / interval) : 0;
     const pulse = 0.14 + 0.18 * frac + 0.05 * Math.sin(elapsedMs / 120);
     const g = new Graphics();
     for (const o of shapeFor(skill, rt.level, player.facing)) {

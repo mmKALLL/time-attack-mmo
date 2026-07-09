@@ -1,5 +1,5 @@
 import type { Input, WorldState } from '../types';
-import { moveOrStick, advanceCombat, advanceTelegraphs, groupOf } from './combat';
+import { moveOrStick, advanceCombat, advanceArming, advanceTelegraphs, groupOf } from './combat';
 import { exitAt, travelTo, advanceRespawns } from './maps';
 import { advanceRoaming } from './roaming';
 import { spendAttribute, levelUpSkill } from './progression';
@@ -38,7 +38,15 @@ export function applyInput(s: WorldState, input: Input): void {
     }
     moveOrStick(s, s.playerId, input.dir);
   } else if (input.type === 'selectSkill') {
-    if (input.slot >= 0 && input.slot < player.skills.length) player.activeSkillIndex = input.slot;
+    if (input.slot < 0 || input.slot >= player.skills.length) return;
+    player.activeSkillIndex = input.slot;
+    // In a combat group: just swap the active skill (auto-cast is unchanged) — no arming.
+    // Out of combat: ARM a ranged fire-and-engage (resolved by advanceArming). Only reset
+    // the wind-up when arming fresh (previously unarmed); re-pressing while already armed
+    // swaps the skill mid-wind-up without dropping the timer.
+    if (groupOf(s, player.id)) return;
+    if (!player.armed) player.castTimerMs = 0;
+    player.armed = true;
   }
 }
 
@@ -61,6 +69,10 @@ export function tick(state: WorldState, inputs: Input[], dt: number): WorldState
   // moved into on the same frame.
   advanceRoaming(s, dt);
   advanceCombat(s, dt);
+  // Out-of-combat ranged fire: wind up + fire an ARMED skill at enemies its shape
+  // covers, engaging them. AFTER advanceCombat so an engage this frame is combat's
+  // to drive next frame; BEFORE telegraphs so a stick lands before AoEs resolve.
+  advanceArming(s, dt);
   // Resolve telegraphed AoEs AFTER input+combat: a hero's move this tick (applied
   // at the top) is already reflected, so stepping off a marked tile dodges the hit.
   // A telegraph planted this same tick won't resolve yet (its full lead time remains).
