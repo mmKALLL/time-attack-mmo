@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { Entity, Primaries, PrimaryKey, Skill } from '../types';
 import { useGame } from '../state/store';
 import { JOBS } from '../data';
-import { SKILLS, describeSkill, getSkill } from '../data-skills';
+import { SKILLS, describeSkillParts, getSkill } from '../data-skills';
 import { CLASS_COMBAT, deriveStats } from '../config-stats';
 import { xpToNext } from '../config';
 import { shapeFor } from '../engine/shapes';
@@ -119,6 +120,36 @@ function SkillIcon({ skill, size }: { skill: Skill; size: number }) {
     x.restore();
   }, [color, kind]);
   return <canvas ref={ref} width={48} height={48} style={{ width: size, height: size, imageRendering: 'pixelated' }} />;
+}
+
+// Skill description with highlighted pixel-font numbers; on preview, changed numbers show cur → next.
+function SkillDesc({ skill, curLv, previewing, atk, ecol }: { skill: Skill; curLv: number; previewing: boolean; atk: number; ecol: string }) {
+  const base = describeSkillParts(skill, curLv, atk);
+  const next = previewing ? describeSkillParts(skill, curLv + 1, atk) : null;
+  const numStyle: CSSProperties = { fontFamily: "'Press Start 2P', monospace", fontSize: 10, position: 'relative', top: 2, lineHeight: 1, display: 'inline-block' };
+  return (
+    <span>
+      {base.map((part, i) => {
+        if ('t' in part) return <span key={i}>{part.t}</span>;
+        const nextPart = next?.[i];
+        const changed = nextPart && 'v' in nextPart && nextPart.v !== part.v;
+        if (changed) {
+          return (
+            <span key={i} style={numStyle}>
+              <span style={{ color: '#8f8674' }}>{part.v}</span>
+              <span style={{ color: '#7a7360' }}> → </span>
+              <span style={{ color: '#8fe0a0' }}>{nextPart.v}</span>
+            </span>
+          );
+        }
+        return (
+          <b key={i} style={{ ...numStyle, color: ecol }}>
+            {part.v}
+          </b>
+        );
+      })}
+    </span>
+  );
 }
 
 function Portrait({ jobId }: { jobId: string }) {
@@ -519,7 +550,9 @@ export function SkillAllocationScreen() {
                                 {sk.kind} · {sk.element}
                               </span>
                             </div>
-                            <div style={{ fontSize: 13.5, lineHeight: '19px', color: previewing ? '#ffd27a' : '#cdc3aa', marginTop: 4 }}>{describeSkill(sk, lvl, power)}</div>
+                            <div style={{ fontSize: 13.5, lineHeight: '19px', color: '#cdc3aa', marginTop: 4 }}>
+                              <SkillDesc skill={sk} curLv={effSkillLv(i)} previewing={previewing} atk={power} ecol={ecol} />
+                            </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
                               {Array.from({ length: cap }).map((_, k) => {
                                 const filled = k < lvl;

@@ -36,8 +36,7 @@ function sk(s: {
 }): Skill {
   const { cooldown, cooldownMs, trigger, triggerMs, params = {}, ...rest } = s;
   // Precedence: the `cooldown` shorthand > an explicit params.cooldown > legacy cooldownMs.
-  const cooldownParam =
-    cooldown != null ? (typeof cooldown === 'function' ? cooldown : flat(cooldown)) : (params.cooldown ?? (cooldownMs != null ? flat(cooldownMs / 1000) : undefined));
+  const cooldownParam = cooldown != null ? (typeof cooldown === 'function' ? cooldown : flat(cooldown)) : (params.cooldown ?? (cooldownMs != null ? flat(cooldownMs / 1000) : undefined));
   const trgMs = trigger != null ? Math.round(trigger * 1000) : triggerMs;
   return {
     cooldownType: 'passive',
@@ -58,7 +57,7 @@ export const SKILLS: Record<string, Skill[]> = {
   beginner: [
     sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'point', params: { dmg: lin(1.0, 0.1) } }),
     sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.08) } }),
-    sk({ id: 'recover', name: 'Recover', description: 'Restore {healPercentage} of max HP (cooldown: {cooldown}s).', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { healPercentage: flat(0.5) }, uses: 1, cooldown: lin(180, -12) }),
+    sk({ id: 'recover', name: 'Recover', description: 'Restore {healPercentage} of max HP (cooldown: {cooldown}).', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { healPercentage: flat(0.5) }, uses: 1, cooldown: lin(165, -15) }),
   ],
 
   // --- Fighter ---
@@ -178,17 +177,40 @@ export function getSkill(id: string): Skill {
   return s;
 }
 
-// Interpolate a description at a level. dmg/heal render as a computed number when
+// Format one resolved param value. dmg/heal render as a computed number when
 // `atk` is supplied, else as a ×multiplier.
+function formatParam(name: ParamName, v: number, atk?: number): string {
+  if (name === 'dmg' || name === 'heal') return atk != null ? String(Math.round(atk * v)) : `×${v.toFixed(2)}`;
+  if (name === 'healPercentage') return `${Math.round(v * 100)}%`; // fraction of max HP -> "50%"
+  if (name === 'cooldown') return `${+v.toFixed(1)}s`; // seconds -> "18s" / "1.4s"
+  if (name === 'dur' || name === 'delay') return String(Math.round(v * 10) / 10);
+  return String(Math.round(v));
+}
+
+// A description split into literal text (t) and formatted value (name + v) parts.
+export type DescPart = { t: string } | { name: ParamName; v: string };
+
+// Interpolate a description at a level into parts, so callers can render values distinctly.
+export function describeSkillParts(skill: Skill, level: number, atk?: number): DescPart[] {
+  const parts: DescPart[] = [];
+  const re = /\{(\w+)\}/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(skill.description))) {
+    if (m.index > last) parts.push({ t: skill.description.slice(last, m.index) });
+    const name = m[1] as ParamName;
+    const fn = skill.params[name];
+    if (fn) parts.push({ name, v: formatParam(name, fn(level), atk) });
+    else parts.push({ t: `{${name}}` });
+    last = m.index + m[0].length;
+  }
+  if (last < skill.description.length) parts.push({ t: skill.description.slice(last) });
+  return parts;
+}
+
+// Interpolate a description at a level to a plain string (parts joined).
 export function describeSkill(skill: Skill, level: number, atk?: number): string {
-  return skill.description.replace(/\{(\w+)\}/g, (_, name: string) => {
-    const fn = skill.params[name as ParamName];
-    if (!fn) return `{${name}}`;
-    const v = fn(level);
-    if (name === 'dmg' || name === 'heal') return atk != null ? String(Math.round(atk * v)) : `×${v.toFixed(2)}`;
-    if (name === 'healPercentage') return `${Math.round(v * 100)}%`; // fraction of max HP -> "50%"
-    if (name === 'cooldown') return `${+v.toFixed(1)}s`; // seconds -> "18s" / "1.4s"
-    if (name === 'dur' || name === 'delay') return String(Math.round(v * 10) / 10);
-    return String(Math.round(v));
-  });
+  return describeSkillParts(skill, level, atk)
+    .map((p) => ('t' in p ? p.t : p.v))
+    .join('');
 }
