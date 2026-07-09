@@ -1,4 +1,5 @@
 import { useGame, type Scene } from '../state/store';
+import './app.css';
 import { DungeonScreen } from '../screens/DungeonScreen';
 import { WorldMapScreen } from '../screens/WorldMapScreen';
 import { ShopScreen } from '../screens/ShopScreen';
@@ -30,6 +31,7 @@ const NAV: { scene: Scene; label: string }[] = [
 export default function App() {
   const scene = useGame((s) => s.scene);
   const setScene = useGame((s) => s.setScene);
+  const highlights = useGame((s) => s.highlights);
   const Screen = SCREENS[scene];
   // The full-screen character / world-map views own their whole canvas (incl. the
   // top-right), so hide the debug nav there — each has its own "Return" control.
@@ -54,6 +56,7 @@ export default function App() {
           <button
             key={n.scene}
             onClick={() => setScene(n.scene)}
+            className={highlights[n.scene] ? 'nav-glow' : undefined}
             style={{
               fontFamily: 'var(--font-header)',
               fontSize: 12,
