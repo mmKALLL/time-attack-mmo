@@ -128,6 +128,7 @@ type LevelUpGlint = { sp: Sprite; ax: number; ay: number; size: number; twinkleH
 // its display objects; the named layers are re-drawn each frame from the age.
 type LevelUpFx = {
   born: number;
+  entityId: string; // the character the burst rides, so it follows their glide
   cx: number;
   cy: number;
   root: Container;
@@ -666,7 +667,7 @@ export class WorldRenderer {
     for (const id of [...this.tweens.keys()]) if (!world.entities[id]) this.tweens.delete(id);
 
     this.updateFloats(elapsedMs);
-    this.updateLevelUps(elapsedMs); // advance/animate active bursts; reap finished ones
+    this.updateLevelUps(elapsedMs, pos); // advance/animate active bursts (following their character); reap finished ones
   }
 
   // Detect a level gain (reusing the prevLevel map) and, on the frame it happens,
@@ -675,7 +676,7 @@ export class WorldRenderer {
   private spawnLevelUpIfLeveled(e: Entity, px: number, py: number, elapsedMs: number) {
     const prev = this.prevLevel.get(e.id);
     if (prev !== undefined && e.level > prev) {
-      this.spawnLevelUp(px + CELL_PX / 2, py + CELL_PX * 0.55, elapsedMs); // torso anchor
+      this.spawnLevelUp(e.id, px + CELL_PX / 2, py + CELL_PX * 0.55, elapsedMs); // torso anchor
     }
     this.prevLevel.set(e.id, e.level);
   }
@@ -684,7 +685,7 @@ export class WorldRenderer {
   // flash, golden pillar, ring/ray Graphics we redraw in place each frame, a fixed
   // fan of sparkle glints, and the popped banner. All ride a per-burst `root`
   // container positioned at the anchor, so animating is local to that origin.
-  private spawnLevelUp(cx: number, cy: number, elapsedMs: number) {
+  private spawnLevelUp(entityId: string, cx: number, cy: number, elapsedMs: number) {
     const root = new Container();
     root.position.set(cx, cy);
     root.blendMode = 'add'; // whole burst reads as light; the banner opts back to normal below
@@ -739,13 +740,13 @@ export class WorldRenderer {
 
     root.addChild(pillar, rings, rays, flash, banner); // flash + banner read on top
     this.levelUpFx.addChild(root);
-    this.levelUps.push({ born: elapsedMs, cx, cy, root, flash, pillar, rings, rays, glints, banner });
+    this.levelUps.push({ born: elapsedMs, entityId, cx, cy, root, flash, pillar, rings, rays, glints, banner });
   }
 
   // Advance every active burst as a pure function of its age (0..1 over durationMs),
   // then destroy + remove the ones that have finished. Redraws the ring/ray
   // Graphics in place (clear + re-fill) — no new display objects per frame.
-  private updateLevelUps(elapsedMs: number) {
+  private updateLevelUps(elapsedMs: number, pos: Map<string, { px: number; py: number }>) {
     const D = LEVELUP_FX.durationMs;
     this.levelUps = this.levelUps.filter((fx) => {
       const age = elapsedMs - fx.born;
@@ -754,6 +755,10 @@ export class WorldRenderer {
         return false;
       }
       const p = age / D; // 0 -> just spawned, 1 -> about to end
+
+      // Follow the character as it glides; fall back to the spawn anchor if it despawned.
+      const ep = pos.get(fx.entityId);
+      if (ep) fx.root.position.set(ep.px + CELL_PX / 2, ep.py + CELL_PX * 0.55);
 
       // Flash: snaps to full in ~0.1, gone by ~0.35. Big soft radial pop that keeps
       // expanding as it fades (size from fp, alpha from fadeF — never a 0-size sprite).
