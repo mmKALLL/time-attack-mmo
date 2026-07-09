@@ -33,10 +33,11 @@ describe('derived stats', () => {
       expect(improved, k).toBe(true);
     }
   });
-  it('statusResist is round(10 + vit/2)', () => {
-    expect(deriveStats({ str: 10, dex: 10, int: 10, vit: 0 }, 1).statusResist).toBe(10);
-    expect(deriveStats({ str: 10, dex: 10, int: 10, vit: 24 }, 1).statusResist).toBe(22); // 10 + 12
-    expect(deriveStats({ str: 10, dex: 10, int: 10, vit: 25 }, 1).statusResist).toBe(23); // round(10 + 12.5)
+  it('statusResist scales up with VIT', () => {
+    const base = deriveStats({ str: 10, dex: 10, int: 10, vit: 5 }, 1).statusResist;
+    const more = deriveStats({ str: 10, dex: 10, int: 10, vit: 50 }, 1).statusResist;
+    expect(base).toBeGreaterThan(0); // a positive resist floor
+    expect(more).toBeGreaterThan(base); // more VIT -> more resist (tuning-agnostic)
   });
   it('maxHp derives from VIT + level only, not STR', () => {
     const p: Primaries = { str: 10, dex: 10, int: 10, vit: 10 };

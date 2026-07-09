@@ -176,7 +176,7 @@ export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beg
     accuracy,
     crit: critCurve(p.dex * 2 + p.int),
     dodge: accuracy * 0.25,
-    statusResist: Math.round(10 + p.vit / 2),
+    statusResist: Math.floor(10 + p.vit / 2 - 2),
     attackSpeed: 100 + 0.6 * p.dex - 3, // trigger-speed % (100 = normal); very gradual DEX scaling, base dex 5 = 100
   };
 }
