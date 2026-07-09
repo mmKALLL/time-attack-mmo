@@ -29,9 +29,19 @@ describe('derived stats', () => {
     for (const k of ['str', 'dex', 'int', 'vit'] as const) {
       const a = deriveStats(base, 20);
       const b = deriveStats({ ...base, [k]: base[k] + 20 }, 20);
-      const improved = b.maxHp > a.maxHp || b.maxMp > a.maxMp || b.maxDmg > a.maxDmg || b.def > a.def || b.accuracy > a.accuracy || b.crit > a.crit;
+      const improved = b.maxHp > a.maxHp || b.maxMp > a.maxMp || b.maxDmg > a.maxDmg || b.def > a.def || b.accuracy > a.accuracy || b.crit > a.crit || b.statusResist > a.statusResist;
       expect(improved, k).toBe(true);
     }
+  });
+  it('statusResist is round(10 + vit/2)', () => {
+    expect(deriveStats({ str: 10, dex: 10, int: 10, vit: 0 }, 1).statusResist).toBe(10);
+    expect(deriveStats({ str: 10, dex: 10, int: 10, vit: 24 }, 1).statusResist).toBe(22); // 10 + 12
+    expect(deriveStats({ str: 10, dex: 10, int: 10, vit: 25 }, 1).statusResist).toBe(23); // round(10 + 12.5)
+  });
+  it('maxHp derives from VIT + level only, not STR', () => {
+    const p: Primaries = { str: 10, dex: 10, int: 10, vit: 10 };
+    expect(deriveStats({ ...p, str: 100 }, 5).maxHp).toBe(deriveStats(p, 5).maxHp); // STR does not move maxHp
+    expect(deriveStats({ ...p, vit: 20 }, 5).maxHp).toBeGreaterThan(deriveStats(p, 5).maxHp); // VIT does
   });
 });
 

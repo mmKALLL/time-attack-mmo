@@ -168,7 +168,7 @@ export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beg
   const power = (phys * physical + (1 - phys) * magical) * 2;
   const accuracy = p.dex * 2;
   return {
-    maxHp: p.vit * 20 + p.str * 4 + level * 10 - 10,
+    maxHp: p.vit * 20 + level * 10 - 10,
     maxMp: p.int * 8 + level * 2 - 2,
     minDmg: Math.round(power * minDamageRatio),
     maxDmg: Math.round(power),
@@ -176,6 +176,7 @@ export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beg
     accuracy,
     crit: critCurve(p.dex * 2 + p.int),
     dodge: accuracy * 0.25,
+    statusResist: Math.round(10 + p.vit / 2),
   };
 }
 
@@ -191,6 +192,7 @@ export function scaleStats(s: Stats, mult: number): Stats {
     accuracy: Math.round(s.accuracy * mult),
     crit: s.crit * mult,
     dodge: s.dodge * mult,
+    statusResist: Math.round(s.statusResist * mult),
   };
 }
 

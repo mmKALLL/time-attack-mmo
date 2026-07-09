@@ -28,6 +28,7 @@ export type Stats = {
   accuracy: number; // vs the target's dodge -> hit chance
   crit: number; // crit chance %
   dodge: number;
+  statusResist: number; // % chance to resist status effects (read by the future status system)
 };
 
 // ---------- Status effects (Phase 2 systems; type present now) ----------

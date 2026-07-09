@@ -205,14 +205,14 @@ export function SkillAllocationScreen() {
   };
 
   // derived-stat rows (with hover preview old → next)
-  const statNumChange = (get: (s: typeof de) => number, dec?: boolean) => {
+  const statNumChange = (get: (s: typeof de) => number, dec?: boolean, pct?: boolean) => {
     const cur = get(de);
     const next = get(dPrev);
     const changed = !!statHover && Math.abs(next - cur) > 0.001;
-    const f = (v: number) => (dec ? v.toFixed(1) : fmt(v));
+    const f = (v: number) => (dec ? v.toFixed(1) : fmt(v)) + (pct ? '%' : '');
     return { cur, next, changed, f };
   };
-  const DERIVED: { label: string; get: (s: typeof de) => number; dec?: boolean }[] = [
+  const DERIVED: { label: string; get: (s: typeof de) => number; dec?: boolean; pct?: boolean }[] = [
     { label: 'Max damage', get: (s) => s.maxDmg },
     { label: 'Min damage', get: (s) => s.minDmg },
     { label: 'Max HP', get: (s) => s.maxHp },
@@ -221,6 +221,7 @@ export function SkillAllocationScreen() {
     { label: 'Crit rate', get: (s) => s.crit, dec: true },
     { label: 'Accuracy', get: (s) => s.accuracy },
     { label: 'Dodge', get: (s) => s.dodge, dec: true },
+    { label: 'Status Resist', get: (s) => s.statusResist, pct: true },
   ];
 
   const line = lineage(p.jobId);
@@ -440,7 +441,7 @@ export function SkillAllocationScreen() {
           </div>
           <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
             {DERIVED.map((d) => {
-              const { cur, next, changed, f } = statNumChange(d.get, d.dec);
+              const { cur, next, changed, f } = statNumChange(d.get, d.dec, d.pct);
               return (
                 <div key={d.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: 20, borderBottom: '1px dotted #2f3846', paddingBottom: 6 }}>
                   <span style={{ fontSize: 13, color: '#a99a7c' }}>{d.label}</span>
