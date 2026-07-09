@@ -13,6 +13,9 @@ const flat =
   () =>
     v;
 
+// Cooldown/trigger are authored in SECONDS. `cooldown` may be a fixed number or a
+// per-level function (level -> seconds, e.g. `lin(18, -2)` to shave 2s/level). Legacy
+// cooldownMs/triggerMs (in ms) still work for un-migrated calls.
 function sk(s: {
   id: string;
   name: string;
@@ -22,13 +25,30 @@ function sk(s: {
   element: SkillElement;
   shapeKind: ShapeKind;
   params?: SkillParams;
-  triggerMs?: number;
+  trigger?: number; // auto-cast interval, in seconds
+  triggerMs?: number; // legacy: same, in ms
   telegraphMs?: number;
   uses?: number;
-  cooldownMs?: number;
+  cooldown?: number | SkillParamFunction; // seconds — number = fixed, function = per-level
+  cooldownMs?: number; // legacy: fixed cooldown in ms
   cooldownType?: CooldownType;
 }): Skill {
-  return { params: {}, cooldownMs: 0, cooldownType: 'passive', ...s };
+  const { cooldown, cooldownMs, trigger, triggerMs, ...rest } = s;
+  const cooldownFn = typeof cooldown === 'function' ? cooldown : undefined;
+  const cdMs = cooldownFn
+    ? Math.round(cooldownFn(1) * 1000) // level-1 value backs the display/passive-tag reads
+    : typeof cooldown === 'number'
+      ? Math.round(cooldown * 1000)
+      : (cooldownMs ?? 0);
+  const trgMs = trigger != null ? Math.round(trigger * 1000) : triggerMs;
+  return {
+    params: {},
+    cooldownType: 'passive',
+    ...rest,
+    cooldownMs: cdMs,
+    ...(cooldownFn ? { cooldownFn } : {}),
+    ...(trgMs != null ? { triggerMs: trgMs } : {}),
+  };
 }
 
 // ============================================================================
@@ -41,7 +61,7 @@ export const SKILLS: Record<string, Skill[]> = {
   beginner: [
     sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'point', params: { dmg: lin(1.0, 0.1) } }),
     sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.08) } }),
-    sk({ id: 'recover', name: 'Recover', description: 'Instantly restore {healPercentage} of max HP.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { healPercentage: flat(0.5) }, uses: 1, cooldownMs: 18000 }),
+    sk({ id: 'recover', name: 'Recover', description: 'Restore {healPercentage} of max HP.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { healPercentage: lin(0.25, 0.05) }, uses: 1, cooldown: lin(18, -2) }),
   ],
 
   // --- Fighter ---

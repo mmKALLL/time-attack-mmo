@@ -69,6 +69,13 @@ describe('uses and cooldown bookkeeping', () => {
     expect(rt.usesLeft).toBe(getSkill('finishingBlow').uses);
     expect(canCast(rt)).toBe(false);
   });
+  it('a per-level cooldownFn (e.g. Recover) shortens the cooldown as the skill levels up', () => {
+    const recover = getSkill('recover');
+    expect(recover.cooldownFn).toBeDefined(); // authored via cooldown: lin(18, -2)
+    const cdAt = (level: number) => afterCast({ skillId: 'recover', level, usesLeft: 1, cooldownLeftMs: 0 }, recover).cooldownLeftMs;
+    expect(cdAt(1)).toBeGreaterThan(0);
+    expect(cdAt(5)).toBeLessThan(cdAt(1)); // higher level -> shorter cooldown (tuning-agnostic)
+  });
   it('passive cooldowns tick regardless of selection; active only while selected', () => {
     const e = makeEntity({ id: 'm', faction: 'player', name: 'm', sprite: 'wizard', cell: { x: 0, y: 0 }, level: 10, jobId: 'cinderSage' });
     e.skills = [

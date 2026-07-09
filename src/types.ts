@@ -64,6 +64,7 @@ export type Skill = {
   telegraphMs?: number; // AoE wind-up (ms) before it resolves; required in practice on enemy AoE skills
   uses?: number; // cooldown charges (distinct from the {uses}/{hits} display params)
   cooldownMs: number;
+  cooldownFn?: SkillParamFunction; // per-level cooldown (seconds); when set, afterCast uses it instead of cooldownMs
   cooldownType: CooldownType;
 };
 export type SkillRuntime = {
