@@ -47,11 +47,11 @@ function town(id: string, name: string, description: string): MapDef {
 
 // A field/dungeon map for a level band. `rooms` = base room count; `width`/
 // `height` default to the biome's MAP_SIZE but can be overridden per segment.
-function field(id: string, biome: Biome, lo: number, hi: number, rooms: number, width = MAP_SIZE[biome].width, height = MAP_SIZE[biome].height): MapDef {
+function field(id: string, name: string, biome: Biome, lo: number, hi: number, rooms: number, width = MAP_SIZE[biome].width, height = MAP_SIZE[biome].height): MapDef {
   const deep = biome === 'deepForest';
   return {
     id,
-    name: `${cap(biome === 'deepForest' ? 'deep forest' : biome)} · Lv ${lo}–${hi}`,
+    name: name || biomeName(biome),
     biome,
     recommended: [lo, hi],
     gen: { width, height, tileset: biome, roomCountMin: rooms, roomCountMax: rooms + 1, roomShape: 'natural', corridorWidth: deep ? 1 : 2, roomMin: 5, roomMax: 8, torchDensity: deep ? 6 : 3, obstacleCount: 4 },
@@ -70,9 +70,9 @@ add(town('kajaani', 'Kajaani', 'The last warm hearth before the deep north swall
 
 // ---------- Lieksa deep-forest dungeon (entrance + 3 deeper maps, dead-end chain) ----------
 add(town('lieksa', 'Lieksa', "A moss-drowned waystation at the deepwood's edge, where the road ends and the old dark begins."));
-add(field('lieksa2', 'deepForest', 25, 29, 3));
-add(field('lieksa3', 'deepForest', 30, 34, 5));
-add(field('lieksa4', 'deepForest', 35, 40, 2));
+add(field('lieksa2', 'Lieksa Dungeon 1', 'deepForest', 25, 29, 3));
+add(field('lieksa3', 'Lieksa Dungeon 2', 'deepForest', 30, 34, 5));
+add(field('lieksa4', 'Lieksa Dungeon 3', 'deepForest', 35, 40, 2));
 link('lieksa', 'e', 'lieksa2');
 link('lieksa2', 'ne', 'lieksa3');
 link('lieksa3', 'nw', 'lieksa4');
@@ -85,14 +85,14 @@ type Edge = { a: string; b: string; dir: Compass; seg: Seg[] };
 // Name an in-between field map after the nearer town, with an index counting
 // outward from that town (1 = adjacent to it, no suffix). For map `i` of `n` on
 // edge a -> b: the closer town owns it, ties (<=) go to `a` (the earlier one).
-const biomeLabel = (biome: Biome) => cap(biome === 'deepForest' ? 'deep forest' : biome);
+const biomeName = (biome: Biome) => cap(biome === 'deepForest' ? 'deep forest' : biome);
 function fieldName(aName: string, bName: string, i: number, n: number, biome: Biome): string {
   const distFromA = i;
   const distFromB = n - 1 - i;
   const ownerIsA = distFromA <= distFromB;
   const townName = ownerIsA ? aName : bName;
   const index = ownerIsA ? i + 1 : n - i;
-  const label = biomeLabel(biome);
+  const label = biomeName(biome);
   return index === 1 ? `${townName} ${label}` : `${townName} ${label} ${index}`;
 }
 const EDGES: Edge[] = [
@@ -134,7 +134,7 @@ const EDGES: Edge[] = [
     dir: 'n',
     seg: [
       { biome: 'lake', lo: 12, hi: 16, rooms: 2 },
-      { biome: 'forest', lo: 15, hi: 21, rooms: 3 },
+      { biome: 'forest', lo: 16, hi: 20, rooms: 3 },
       { biome: 'forest', lo: 20, hi: 25, rooms: 3 },
     ],
   }, // plains
@@ -153,8 +153,8 @@ for (const e of EDGES) {
   const nodes = [e.a];
   e.seg.forEach((s, i) => {
     const id = `${e.a}_${e.b}_${i}`;
-    add(field(id, s.biome, s.lo, s.hi, s.rooms, s.width, s.height));
-    maps[id].name = fieldName(maps[e.a].name, maps[e.b].name, i, e.seg.length, s.biome);
+    const name = fieldName(maps[e.a].name, maps[e.b].name, i, e.seg.length, s.biome);
+    add(field(id, name, s.biome, s.lo, s.hi, s.rooms, s.width, s.height));
     nodes.push(id);
   });
   nodes.push(e.b);

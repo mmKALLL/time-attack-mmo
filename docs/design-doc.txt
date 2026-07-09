@@ -237,6 +237,33 @@ The obstacles have similar layout. However, for each biome, they have the follow
 
 ----
 
+
+List of classes:
+
+Beginner
+
+Fighter
+Knight
+Paladin
+Duelist
+
+Archer
+Hunter
+Sniper
+Ranger
+
+Magician
+Arcanist
+Wizard
+Druid
+
+Rogue
+Assassin
+Shadower
+Ninja
+
+----
+
 The job advancement requirement levels are as follows:
 
 Level 10 - 1st job
@@ -305,5 +332,25 @@ Double Strike - 1x1, 6 mp, 2 hits, 1000ms trigger, dmg: lin(0.6, 0.04)
 Venom Slash - 1x3, 10 mp, 1000ms trigger, poison chance: 75%, uses: 2, cooldown: lin(30, -1), dmg: lin(1, 0.08)
 Hamstring - 3x1 (non-piercing), 16 mp, slow: lin(0.4, 0.02), duration: lin(4, 0.02), dmg: lin(0.8, 0.1)
 Life or Death - the player deals and receives +50% damage for lin(4, 0.04)s, cooldown: (20, -0.04)
+
+----
+
+2nd job skills (merging will be planned later):
+
+Knight
+Paladin
+Duelist
+
+Hunter
+Sniper
+Ranger
+
+Arcanist
+Wizard
+Druid
+
+Assassin
+Shadower
+Ninja
 
 ----

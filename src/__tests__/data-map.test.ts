@@ -45,7 +45,7 @@ describe('in-between field map names', () => {
 
   it('leaves the Lieksa dungeon chain and towns on their own names (not EDGES-generated)', () => {
     expect(nameOf('lieksa')).toBe('Lieksa'); // now a town (its own name, not EDGES-generated)
-    expect(nameOf('lieksa2')).toBe('Deep forest · Lv 25–29'); // field() default, no EDGES rename
+    expect(nameOf('lieksa2')).toBe('Lieksa Dungeon 1'); // explicit field() name, no EDGES rename
     expect(nameOf('mantyharju')).toBe('Mäntyharju');
   });
 });

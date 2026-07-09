@@ -213,11 +213,11 @@ export function rawDamage(rolled: number, mult: number, def: number): number {
 // ---------- Progression ----------
 // XP needed to advance from `level` to `level + 1`.
 export function xpToNext(level: number): number {
-  return Math.round(60 * Math.pow(1.18, level - 1));
+  return Math.round((1.0 * Math.pow(level + 8, 2.4)) / 10) * 10;
 }
 // XP granted for defeating an enemy of the given level.
 export function xpReward(enemyLevel: number): number {
-  return Math.round(15 * Math.pow(1.15, enemyLevel - 1));
+  return Math.round(42 * Math.pow(1.132883, enemyLevel - 1)); // Double every 6 levels
 }
 
 // ---------- Combat world palette (Direction A "Emberdeep") ----------
