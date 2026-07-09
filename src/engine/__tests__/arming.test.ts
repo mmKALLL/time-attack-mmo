@@ -157,4 +157,18 @@ describe('arming (out-of-combat ranged fire, card #9)', () => {
     expect(groupOf(s, 'p1')).toBeUndefined();
     expect(s.entities.p1.armed).toBe(false); // still un-armed → no out-of-combat retrigger
   });
+
+  it('(f-heal) arming Recover out of combat heals the player and starts its cooldown, forms no group', () => {
+    const p = hero({ x: 5, y: 5 });
+    const rec = p.skills.findIndex((r) => r.skillId === 'recover');
+    p.activeSkillIndex = rec;
+    p.hp = 1; // hurt
+    const s = world([p]); // no enemies at all
+    s.entities.p1.armed = true;
+    advanceArming(s, BIG);
+    expect(s.entities.p1.hp).toBeGreaterThan(Math.round(s.entities.p1.stats.maxHp * 0.15)); // healed a real chunk
+    expect(s.entities.p1.skills[rec].cooldownLeftMs).toBeGreaterThan(0); // cooldown started
+    expect(s.entities.p1.armed).toBe(false); // fired once, un-armed
+    expect(groupOf(s, 'p1')).toBeUndefined(); // self-heal never forms a group
+  });
 });

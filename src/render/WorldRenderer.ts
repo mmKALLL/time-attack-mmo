@@ -859,7 +859,7 @@ export class WorldRenderer {
     if (e.faction !== 'enemy') this.drawFacing(e, px, py); // enemies show no facing arrow
     const inFight = Object.values(world.groups).some((g) => g.memberIds.includes(e.id));
     if (e.faction === 'enemy') this.drawHpPip(px, py, e);
-    if (inFight) this.drawSquareTimer(e, px, py);
+    if (inFight || e.armed) this.drawSquareTimer(e, px, py); // armed = out-of-combat wind-up
   }
 
   // Small yellow arrowhead near the character showing its facing direction.

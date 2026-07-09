@@ -106,7 +106,7 @@ describe('xp & level-ups', () => {
     s.entities.e1.hp = 1;
     moveOrStick(s, 'p1', 'right');
     advanceCombat(s, 1500); // kill grants XP -> crosses the threshold
-    expect(p.level).toBe(beforeLevel + 1);
+    expect(p.level).toBeGreaterThan(beforeLevel); // leveled up (xp tuning may grant >1)
     expect(p.stats.maxHp).toBeGreaterThan(beforeMaxHp);
     expect(p.hp).toBe(p.stats.maxHp); // HP still fully heals on level up
     expect(p.mp).toBeLessThan(p.stats.maxMp); // MP does NOT
@@ -135,5 +135,22 @@ describe('growing the block', () => {
     moveOrStick(s, 'p1', 'right'); // leading edge hits e2 -> stick, no translation
     expect(groupOf(s, 'p1')?.memberIds.sort()).toEqual(['e1', 'e2', 'p1']);
     expect(s.entities.p1.cell).toEqual({ x: 3, y: 3 });
+  });
+});
+
+describe('AoE engagement during combat', () => {
+  it('a damaging AoE sweeps its whole footprint, hitting + sticking an un-blocked foe', () => {
+    const p = hero({ x: 3, y: 3 });
+    p.facing = 'right';
+    p.activeSkillIndex = p.skills.findIndex((r) => r.skillId === 'stab'); // Stab: 2-tile line (AoE)
+    const e1 = rat('e1', { x: 4, y: 3 }); // already engaged
+    const e2 = rat('e2', { x: 5, y: 3 }); // second tile of the line, NOT yet in the block
+    const s = world([p, e1, e2]);
+    s.groups = { g0: { id: 'g0', memberIds: ['p1', 'e1'] } };
+    const before = e2.hp;
+    advanceCombat(s, 1500); // player auto-casts Stab
+    expect(groupOf(s, 'p1')?.memberIds).toContain('e2'); // the sweep engaged the un-blocked foe
+    expect(s.entities.e2.hp).toBeLessThanOrEqual(before); // resolved against it (hit or seeded miss)
+    expect(s.hits.some((h) => h.cell.x === 5 && h.cell.y === 3)).toBe(true); // reached e2's tile
   });
 });

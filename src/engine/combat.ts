@@ -180,6 +180,12 @@ function isAoESkill(skill: Skill): boolean {
   return AOE_SHAPES.has(skill.shapeKind);
 }
 
+// Living enemies of `caster` standing on the skill's shape footprint (absolute cells).
+function enemiesInFootprint(s: WorldState, caster: Entity, skill: Skill, level: number): Entity[] {
+  const cells = new Set(shapeFor(skill, level, caster.facing).map((o) => key({ x: caster.cell.x + o.dx, y: caster.cell.y + o.dy })));
+  return Object.values(s.entities).filter((e) => areEnemies(caster, e) && isAlive(e) && cells.has(key(e.cell)));
+}
+
 // Out-of-combat ranged fire: when the player has ARMED a skill (a hotkey pressed
 // while ungrouped — see world.applyInput), wind it up on the same clock as an
 // in-combat cast and, when it fills, fire the active skill's shape at the enemies
@@ -201,11 +207,22 @@ export function advanceArming(s: WorldState, dt: number): void {
   if (player.castTimerMs < interval) return; // still winding up
   player.castTimerMs -= interval;
 
-  // Absolute cells the shape covers this frame (offsets oriented to facing + cell).
-  const cells = new Set(shapeFor(skill, rt.level, player.facing).map((o) => key({ x: player.cell.x + o.dx, y: player.cell.y + o.dy })));
-  let foes = Object.values(s.entities).filter((e) => e.faction === 'enemy' && isAlive(e) && cells.has(key(e.cell)));
-  // Piercing is derived from the shape: AoE footprints hit everything they cover;
-  // single-target shapes (self/melee/point) strike only the nearest covered foe.
+  // Heal/self skills fire on the player themselves — no enemy needed (mirrors
+  // castSkill's heal branch), so Recover works out of combat.
+  if (skill.kind === 'heal') {
+    const heal = Math.round(player.stats.maxDmg * (skill.params.heal?.(rt.level) ?? 0)) + Math.round(player.stats.maxHp * (skill.params.healPercentage?.(rt.level) ?? 0));
+    if (heal > 0) {
+      player.hp = Math.min(player.stats.maxHp, player.hp + heal);
+      s.hits.push({ cell: { ...player.cell }, from: { ...player.cell }, kind: 'heal', amount: heal });
+    }
+    player.skills = player.skills.map((r, i) => (i === player.activeSkillIndex ? afterCast(r, skill) : r));
+    player.armed = false;
+    return;
+  }
+
+  // Attack skills: fire at the enemies the footprint covers, ENGAGING (sticking) them.
+  // AoE footprints hit everything they cover; single-target shapes strike the nearest.
+  let foes = enemiesInFootprint(s, player, skill, rt.level);
   if (!isAoESkill(skill) && foes.length > 1) {
     let nearest = foes[0];
     for (const f of foes) if (chebyshevDistance(player.cell, f.cell) < chebyshevDistance(player.cell, nearest.cell)) nearest = f;
@@ -369,9 +386,13 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
   const rt = caster.skills[caster.activeSkillIndex];
   if (!rt || !canCast(rt)) return;
   const skill = getSkill(rt.skillId);
-  const living = membersOf(s, g).filter(isAlive);
   const mag = magnitude(skill, rt.level);
-  for (const t of skillTargets(caster, skill, living, rt.level)) {
+  // Heals/buffs target allies in the block; attacks target enemies in the footprint.
+  // A damaging AoE sweeps its whole footprint — catching enemies not yet in the block
+  // and engaging them — while single-target skills stay block-scoped via skillTargets.
+  const aoeAttack = skill.kind !== 'heal' && !!skill.params.dmg && isAoESkill(skill);
+  const targets = aoeAttack ? enemiesInFootprint(s, caster, skill, rt.level) : skillTargets(caster, skill, membersOf(s, g).filter(isAlive), rt.level);
+  for (const t of targets) {
     if (skill.kind === 'heal') {
       // Power heal (heal param x maxDmg) + a flat % of the target's max HP
       // (healPercentage param — e.g. Recover restores 50% of max HP).
@@ -385,6 +406,7 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
       const r = resolveAttack(s, caster, t, mag);
       t.hp = Math.max(0, t.hp - r.amount);
       s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
+      if (aoeAttack) stick(s, caster.id, t.id); // engage un-blocked foes the sweep caught
     }
   }
   caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
