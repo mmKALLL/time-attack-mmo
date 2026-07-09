@@ -114,12 +114,13 @@
 }
 .bar.xp {
   height: 7px;
+  background: #ffffff; /* unfilled XP reads white; gold gradient fills over it */
 }
 .bar.xp > span:not(.label) {
   background: linear-gradient(var(--gold-bright), var(--gold-dim));
 }
 .bar.xp .label {
-  font-size: 8px;
+  font-size: 7px;
   color: #1a140a;
 }
 
