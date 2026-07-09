@@ -7,7 +7,7 @@ import type { CooldownType, ParamName, Skill, SkillElement, SkillKind, SkillPara
 const lin =
   (base: number, step: number): SkillParamFunction =>
   (lv) =>
-    base + step * (lv - 1);
+    base + step * (lv - 1 + (lv >= 10 ? 1 : 0)); // Recover the -1 penalty on the 10th level, as reward for mastery
 const flat =
   (v: number): SkillParamFunction =>
   () =>
@@ -39,8 +39,8 @@ function sk(s: {
 export const SKILLS: Record<string, Skill[]> = {
   // --- Tier 0 ---
   beginner: [
-    sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'point', params: { dmg: lin(1.0, 0.2) } }),
-    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.15) } }),
+    sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'point', params: { dmg: lin(1.0, 0.1) } }),
+    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.1) } }),
     sk({ id: 'recover', name: 'Recover', description: 'Heal for 50% of max HP, cooldown {dur}s.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { dur: lin(180, -15) }, triggerMs: 2000 }),
   ],
 

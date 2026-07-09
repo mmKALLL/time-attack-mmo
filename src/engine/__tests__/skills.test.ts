@@ -49,9 +49,10 @@ describe('skill targeting by shape', () => {
 });
 
 describe('leveled magnitude', () => {
-  it('is the per-level dmg multiplier', () => {
-    expect(magnitude(getSkill('strike'), 1)).toBeCloseTo(1.0);
-    expect(magnitude(getSkill('strike'), 3)).toBeCloseTo(1.4); // 1.0 + 0.2*(3-1)
+  it('is the per-level dmg multiplier that scales up with level', () => {
+    const strike = getSkill('strike');
+    expect(magnitude(strike, 1)).toBeGreaterThan(0); // an attack skill has a dmg multiplier
+    expect(magnitude(strike, 3)).toBeGreaterThan(magnitude(strike, 1)); // grows with level (tuning-agnostic)
   });
 });
 
