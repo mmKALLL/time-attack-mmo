@@ -68,10 +68,10 @@ import {
   DAMAGE_FLOAT_MS,
   DESIGN_H,
   DESIGN_W,
-  DUSK_OVERLAY,
   ENEMY_GLOW,
   FLOOR_CHECKER_SIZE,
   LEVELUP_FX,
+  MAP_CONFIG,
   MOVE_LERP_MS,
   OBSTACLE_OVERLAY_ALPHA,
   TORCH_GLOW,
@@ -592,15 +592,15 @@ export class WorldRenderer {
     this.lights.removeChildren();
     // Per-biome dusk veil, oversized well past the map so it always fills the
     // viewport (the camera can scroll past the map edges into the black stage).
-    const dusk = DUSK_OVERLAY[MAPS[world.mapId]?.biome ?? 'forest'];
+    const light = MAP_CONFIG[MAPS[world.mapId]?.biome ?? 'forest'].light;
     const M = 10000;
     const veil = new Graphics();
-    veil.rect(-M, -M, world.map.width * CELL_PX + 2 * M, world.map.height * CELL_PX + 2 * M).fill({ color: dusk.color, alpha: dusk.alpha });
+    veil.rect(-M, -M, world.map.width * CELL_PX + 2 * M, world.map.height * CELL_PX + 2 * M).fill({ color: light.duskColor, alpha: light.ambientLightLevel / 100 });
     this.lights.addChild(veil);
     for (const f of world.features) {
       if (f.kind !== 'torch') continue;
       const alpha = TORCH_GLOW.intensity * glowPulse(TORCH_GLOW.pulseMs, elapsedMs, f.cell.x + f.cell.y);
-      this.addGlow(this.lights, f.cell.x * CELL_PX + CELL_PX / 2, f.cell.y * CELL_PX + CELL_PX / 2, TORCH_GLOW.cells, TORCH_GLOW.color, alpha);
+      this.addGlow(this.lights, f.cell.x * CELL_PX + CELL_PX / 2, f.cell.y * CELL_PX + CELL_PX / 2, light.torchGlowDistance, TORCH_GLOW.color, alpha);
     }
     for (const ex of world.exits) {
       const pulse = 0.7 + 0.3 * Math.sin(elapsedMs / 360 + (ex.cell.x + ex.cell.y));

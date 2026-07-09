@@ -176,6 +176,33 @@ export type GenParams = {
   obstacleCount: number;
 };
 
+// Per-biome map defaults. MapDef.gen/MapDef.spawns hold the fully-resolved
+// per-map values; MAP_CONFIG (config.ts) supplies these biome defaults that the
+// data-map builders start from and override per segment.
+export type MapConfig = {
+  width: number;
+  height: number;
+  gen: {
+    roomCount: number; // base rooms; field() resolves to roomCountMin=roomCount, roomCountMax=roomCount+1
+    roomMin: number; // room side length (tiles)
+    roomMax: number;
+    roomShape: 'rectangular' | 'natural';
+    corridorWidth: number;
+    torchDensity: number; // torches per 100 wall tiles
+    obstacleCount: number;
+  };
+  spawns: {
+    maxAmount: number;
+    spawnInterval: number; // seconds
+    spawnAmount: number;
+  };
+  light: {
+    duskColor: number;
+    ambientLightLevel: number; // 0-100 opacity of the dusk veil over un-torched areas (= old DUSK_OVERLAY.alpha * 100)
+    torchGlowDistance: number; // cells a torch's glow reaches (= old TORCH_GLOW.cells)
+  };
+};
+
 export type MapDef = {
   id: MapId;
   name: string;

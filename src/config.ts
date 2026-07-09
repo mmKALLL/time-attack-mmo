@@ -1,4 +1,4 @@
-import type { Biome, CombatClass } from './types';
+import type { Biome, CombatClass, MapConfig } from './types';
 
 // ---------- Debug ----------
 export const DEBUG = false; // dev: start skills at Lv2 (else Lv1)
@@ -14,19 +14,44 @@ export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
 export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
 export const CAMERA_ZOOM_PERCENT = 50; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
-// Default map footprint (tiles) per biome; a data-map field segment can override it.
-export const MAP_SIZE: Record<Biome, { width: number; height: number }> = {
-  town: { width: 15, height: 12 },
-  forest: { width: 20, height: 15 },
-  lake: { width: 22, height: 17 },
-  deepForest: { width: 26, height: 20 },
+// Per-biome map defaults: footprint, generator params, spawn cadence, and
+// lighting. A data-map field segment can override width/height and room count.
+export const MAP_CONFIG: Record<Biome, MapConfig> = {
+  town: {
+    width: 15,
+    height: 12,
+    gen: { roomCount: 1, roomMin: 5, roomMax: 8, roomShape: 'rectangular', corridorWidth: 2, torchDensity: 4, obstacleCount: 2 },
+    spawns: { maxAmount: 0, spawnInterval: 999, spawnAmount: 0 },
+    light: { duskColor: 0x0a0a12, ambientLightLevel: 0, torchGlowDistance: 7 },
+  },
+  forest: {
+    width: 20,
+    height: 15,
+    gen: { roomCount: 3, roomMin: 5, roomMax: 8, roomShape: 'natural', corridorWidth: 2, torchDensity: 3, obstacleCount: 4 },
+    spawns: { maxAmount: 5, spawnInterval: 7, spawnAmount: 1 },
+    light: { duskColor: 0x0a0a12, ambientLightLevel: 10, torchGlowDistance: 7 },
+  },
+  lake: {
+    width: 22,
+    height: 17,
+    gen: { roomCount: 3, roomMin: 5, roomMax: 8, roomShape: 'natural', corridorWidth: 2, torchDensity: 3, obstacleCount: 4 },
+    spawns: { maxAmount: 5, spawnInterval: 7, spawnAmount: 1 },
+    light: { duskColor: 0x0a0e18, ambientLightLevel: 0, torchGlowDistance: 7 },
+  },
+  deepForest: {
+    width: 26,
+    height: 20,
+    gen: { roomCount: 3, roomMin: 5, roomMax: 8, roomShape: 'natural', corridorWidth: 1, torchDensity: 6, obstacleCount: 4 },
+    spawns: { maxAmount: 5, spawnInterval: 7, spawnAmount: 1 },
+    light: { duskColor: 0x05060e, ambientLightLevel: 20, torchGlowDistance: 7 },
+  },
 };
 // ---------- Lighting & screen overlays (drawn in render/WorldRenderer.ts) ----------
 // Elliptical glow behind each enemy (wCells/hCells in tiles; pulseMs 0 = steady).
 export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.5, intensity: 0.7, pulseMs: 2000 };
 // export const ENEMY_GLOW = { color: 0x111111, wCells: 1.2, hCells: 1.7, intensity: 0.8, pulseMs: 0 };
-// Additive torch glow (cells = diameter in tiles).
-export const TORCH_GLOW = { color: 0xffc27a, cells: 7, intensity: 0.5, pulseMs: 8000 };
+// Additive torch glow (reach is per-biome MAP_CONFIG.light.torchGlowDistance).
+export const TORCH_GLOW = { color: 0xffc27a, intensity: 0.5, pulseMs: 8000 };
 // Celebratory level-up burst on a character (render/WorldRenderer.ts): flash +
 // golden pillar + expanding rings + rotating starburst rays + rising sparkles +
 // a popped "LEVEL UP!" banner. Tuned live; colors are the game's ember/gold.
@@ -40,13 +65,6 @@ export const LEVELUP_FX = {
   rayCount: 12, // starburst spokes radiating from the character
   particleCount: 16, // rising twinkling sparkle glints (capped, no per-frame textures)
 } as const;
-// Ambient "dusk" veil over the map, per biome (alpha 0 = none).
-export const DUSK_OVERLAY: Record<Biome, { color: number; alpha: number }> = {
-  town: { color: 0x0a0a12, alpha: 0 },
-  forest: { color: 0x0a0a12, alpha: 0.1 },
-  lake: { color: 0x0a0e18, alpha: 0 },
-  deepForest: { color: 0x05060e, alpha: 0.2 },
-};
 // Screen-edge vignette per biome. innerRadius = fully-clear centre, outerRadius =
 // full-dark edge (fractions of the screen's min/max side).
 export const VIGNETTE: Record<Biome, { edgeAlpha: number; warmAlpha: number; innerRadius: number; outerRadius: number }> = {

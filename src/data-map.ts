@@ -1,6 +1,6 @@
 import type { Biome, Compass, MapDef, TileKind, TileMap } from './types';
 import { ENEMIES } from './data-enemy';
-import { MAP_SIZE } from './config';
+import { MAP_CONFIG } from './config';
 
 // ============================================================================
 // World topology (design-doc part 1, Finnish overworld). Towns are safe NPC maps
@@ -31,32 +31,33 @@ const link = (a: string, dir: Compass, b: string) => {
   maps[b].connections.push({ dir: opp[dir], toMap: a });
 };
 
-// A safe town: town tileset, no spawns.
+// A safe town: town tileset, no spawns. Defaults come from MAP_CONFIG.town.
 function town(id: string, name: string, description: string): MapDef {
+  const cfg = MAP_CONFIG.town;
   return {
     id,
     name,
     biome: 'town',
     recommended: [1, 1],
     description,
-    gen: { width: MAP_SIZE.town.width, height: MAP_SIZE.town.height, tileset: 'town', roomCountMin: 1, roomCountMax: 1, roomShape: 'rectangular', corridorWidth: 2, roomMin: 5, roomMax: 8, torchDensity: 4, obstacleCount: 2 },
+    gen: { width: cfg.width, height: cfg.height, tileset: 'town', roomCountMin: cfg.gen.roomCount, roomCountMax: cfg.gen.roomCount, roomShape: cfg.gen.roomShape, corridorWidth: cfg.gen.corridorWidth, roomMin: cfg.gen.roomMin, roomMax: cfg.gen.roomMax, torchDensity: cfg.gen.torchDensity, obstacleCount: cfg.gen.obstacleCount },
     connections: [],
-    spawns: [{ pool: [], maxAmount: 0, spawnInterval: 999, spawnAmount: 0 }],
+    spawns: [{ pool: [], ...cfg.spawns }],
   };
 }
 
-// A field/dungeon map for a level band. `rooms` = base room count; `width`/
-// `height` default to the biome's MAP_SIZE but can be overridden per segment.
-function field(id: string, name: string, biome: Biome, lo: number, hi: number, rooms: number, width = MAP_SIZE[biome].width, height = MAP_SIZE[biome].height): MapDef {
-  const deep = biome === 'deepForest';
+// A field/dungeon map for a level band. Defaults come from MAP_CONFIG[biome];
+// `rooms` = base room count; `width`/`height` can be overridden per segment.
+function field(id: string, name: string, biome: Biome, lo: number, hi: number, rooms: number, width = MAP_CONFIG[biome].width, height = MAP_CONFIG[biome].height): MapDef {
+  const cfg = MAP_CONFIG[biome];
   return {
     id,
     name: name || biomeName(biome),
     biome,
     recommended: [lo, hi],
-    gen: { width, height, tileset: biome, roomCountMin: rooms, roomCountMax: rooms + 1, roomShape: 'natural', corridorWidth: deep ? 1 : 2, roomMin: 5, roomMax: 8, torchDensity: deep ? 6 : 3, obstacleCount: 4 },
+    gen: { width, height, tileset: biome, roomCountMin: rooms, roomCountMax: rooms + 1, roomShape: cfg.gen.roomShape, corridorWidth: cfg.gen.corridorWidth, roomMin: cfg.gen.roomMin, roomMax: cfg.gen.roomMax, torchDensity: cfg.gen.torchDensity, obstacleCount: cfg.gen.obstacleCount },
     connections: [],
-    spawns: [{ pool: poolFor(lo, hi), maxAmount: 5, spawnInterval: 7, spawnAmount: 1 }],
+    spawns: [{ pool: poolFor(lo, hi), ...cfg.spawns }],
   };
 }
 
