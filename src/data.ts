@@ -92,6 +92,7 @@ export function combatClassForJob(jobId: string): CombatClass {
 // Start scenario — a lone level-1 Beginner. (Allies were dropped for the
 // prototype; the player begins with a single point in Strike, see engine/demo.)
 // ============================================================================
-export const PARTY_SPAWN = [{ id: 'p1', name: 'Ravyn', sprite: 'ranger', jobId: 'beginner', level: 1, faction: 'player' as const, cell: { x: 6, y: 8 } }];
+const randomFinnishWarriorNames = ['Aapo', 'Aino', 'Eero', 'Eeva', 'Ilmari', 'Kaisa', 'Lauri', 'Liisa', 'Matti', 'Ravyn', 'Sanna', 'Oskari', 'Taisto', 'Tapio', 'Tuuli'];
+export const PARTY_SPAWN = [{ id: 'p1', name: randomFinnishWarriorNames[Math.floor(Math.random() * randomFinnishWarriorNames.length)], sprite: 'ranger', jobId: 'beginner', level: 1, faction: 'player' as const, cell: { x: 6, y: 8 } }];
 
 // Map data (biomes, tiles, portals, spawns) lives in ./data-map.ts.
