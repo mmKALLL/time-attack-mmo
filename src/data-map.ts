@@ -82,6 +82,19 @@ link('lieksa3', 'n', 'lieksa4');
 // field size for that map. ("plains" from the design doc render as forest.)
 type Seg = { biome: Biome; lo: number; hi: number; rooms: number; width?: number; height?: number };
 type Edge = { a: string; b: string; dir: Compass; seg: Seg[] };
+// Name an in-between field map after the nearer town, with an index counting
+// outward from that town (1 = adjacent to it, no suffix). For map `i` of `n` on
+// edge a -> b: the closer town owns it, ties (<=) go to `a` (the earlier one).
+const biomeLabel = (biome: Biome) => cap(biome === 'deepForest' ? 'deep forest' : biome);
+function fieldName(aName: string, bName: string, i: number, n: number, biome: Biome): string {
+  const distFromA = i;
+  const distFromB = n - 1 - i;
+  const ownerIsA = distFromA <= distFromB;
+  const townName = ownerIsA ? aName : bName;
+  const index = ownerIsA ? i + 1 : n - i;
+  const label = biomeLabel(biome);
+  return index === 1 ? `${townName} ${label}` : `${townName} ${label} ${index}`;
+}
 const EDGES: Edge[] = [
   {
     a: 'mantyharju',
@@ -141,6 +154,7 @@ for (const e of EDGES) {
   e.seg.forEach((s, i) => {
     const id = `${e.a}_${e.b}_${i}`;
     add(field(id, s.biome, s.lo, s.hi, s.rooms, s.width, s.height));
+    maps[id].name = fieldName(maps[e.a].name, maps[e.b].name, i, e.seg.length, s.biome);
     nodes.push(id);
   });
   nodes.push(e.b);
