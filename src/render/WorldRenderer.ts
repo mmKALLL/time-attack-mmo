@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
+import { Application, Container, FillGradient, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import type { Biome, CombatGroup, Entity, ObstacleSize, TilesetName, WorldState } from '../types';
 import { getSkill } from '../data-skills';
 import { MAPS } from '../data-map';
@@ -158,6 +158,7 @@ export class WorldRenderer {
   private pAtlasReady = new Map<string, Texture>(); // player sheets, corner-color keyed
   private pAtlasLoading = new Set<string>();
   private subCache = new Map<string, Texture>();
+  private hpGradients: Partial<Record<'enemy' | 'elite', FillGradient>> = {}; // cached vertical HP-bar fills
   private bgTilesReady = false; // floor + obstacle sheets loaded when the current bg was built
   private propCells = new Set<string>(); // cells carrying an obstacle prop (wall ring + features)
   private prevLevel = new Map<string, number>();
@@ -881,6 +882,28 @@ export class WorldRenderer {
     this.actors.addChild(new Graphics().poly([cx + dx * a, cy + dy * a, cx - dx * b + perpx * c, cy - dy * b + perpy * c, cx - dx * b - perpx * c, cy - dy * b - perpy * c]).fill(0xffd24a));
   }
 
+  // Cached top->bottom gradient for the enemy HP fill (mirrors the HUD hp bar's
+  // vertical gradient for the same sense of depth). textureSpace 'local' maps the
+  // 0..1 stops to each filled rect's bounds, so one gradient reuses across bars.
+  private hpFill(elite: boolean): FillGradient {
+    const key = elite ? 'elite' : 'enemy';
+    let grad = this.hpGradients[key];
+    if (!grad) {
+      const colorStops = elite
+        ? [
+            { offset: 0, color: 0xf0d89a },
+            { offset: 1, color: 0xc2a06a },
+          ]
+        : [
+            { offset: 0, color: 0xd8524a }, // --hp-from
+            { offset: 1, color: 0x8f2b26 }, // --hp-to
+          ];
+      grad = new FillGradient({ type: 'linear', start: { x: 0, y: 0 }, end: { x: 0, y: 1 }, textureSpace: 'local', colorStops });
+      this.hpGradients[key] = grad;
+    }
+    return grad;
+  }
+
   private drawHpPip(px: number, py: number, e: Entity) {
     const m = 8 * UI;
     const h = 4 * UI;
@@ -889,9 +912,9 @@ export class WorldRenderer {
     const y = py + h;
     const pct = Math.max(0, e.hp / e.stats.maxHp);
     const g = new Graphics();
-    g.rect(x, y, w, h).fill({ color: 0x000000, alpha: 0.55 }); // dark backing
-    if (pct > 0) g.rect(x, y, w * pct, h).fill(e.elite ? COLORS.timerBorder : COLORS.hpEnemy);
-    g.rect(x, y, w, h).stroke({ width: 0.75 * UI, color: 0x000000, alpha: 0.9 }); // simple thin black border, sharp corners
+    g.rect(x, y, w, h).fill({ color: 0x0a0d12, alpha: 0.85 }); // recessed dark track
+    if (pct > 0) g.rect(x, y, w * pct, h).fill(this.hpFill(!!e.elite)); // vertical gradient fill
+    g.rect(x, y, w, h).stroke({ width: 1 * UI, color: 0x000000, alpha: 1, alignment: 0.5 }); // crisp black border, sharp corners
     this.actors.addChild(g);
   }
 
