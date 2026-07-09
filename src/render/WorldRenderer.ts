@@ -380,18 +380,22 @@ export class WorldRenderer {
 
     // Floor extends everywhere — even under walls — so the (transparent) wall
     // props sit on ground and the floor shows around and beyond them.
+    // Lake floor tiles render at 2x — each spans a 2x2 cell block; other biomes 1x.
+    const step = lake ? 2 : 1;
     const g = new Graphics(); // procedural-floor fallback until the sheet loads
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const px = x * CELL_PX;
         const py = y * CELL_PX;
         if (floor) {
-          const tex = this.mapSub(floorSheet, qx + (x % grid) * CELL_PX, qy + (y % grid) * CELL_PX, CELL_PX, CELL_PX);
-          if (tex) {
-            const sp = new Sprite(tex);
-            sp.setSize(CELL_PX, CELL_PX);
-            sp.position.set(px, py);
-            this.bg.addChild(sp);
+          if (x % step === 0 && y % step === 0) {
+            const tex = this.mapSub(floorSheet, qx + ((x / step) % grid) * CELL_PX, qy + ((y / step) % grid) * CELL_PX, CELL_PX, CELL_PX);
+            if (tex) {
+              const sp = new Sprite(tex);
+              sp.setSize(step * CELL_PX, step * CELL_PX);
+              sp.position.set(px, py);
+              this.bg.addChild(sp);
+            }
           }
         } else {
           const checker = (Math.floor(x / FLOOR_CHECKER_SIZE) + Math.floor(y / FLOOR_CHECKER_SIZE)) % 2;
