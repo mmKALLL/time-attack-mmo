@@ -20,7 +20,7 @@ export const PRIMARY_POINTS_PER_LEVEL = 3; // design-doc: +3 attribute points / 
 export const ARCHETYPE_WEIGHTS: Record<Archetype, Primaries> = {
   str: { str: 40, dex: 15, int: 15, vit: 30 },
   dex: { str: 20, dex: 40, int: 15, vit: 25 },
-  int: { str: 15, dex: 15, int: 40, vit: 30 },
+  int: { str: 15, dex: 15, int: 50, vit: 20 },
   balanced: { str: 25, dex: 25, int: 25, vit: 25 },
 };
 export function allocatePrimaries(w: Primaries, level: number, growth = 1): Primaries {
