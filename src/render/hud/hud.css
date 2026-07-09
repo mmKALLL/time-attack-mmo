@@ -123,6 +123,7 @@
 .bar.xp .label {
   font-size: 7px;
   color: #ffffff;
+  text-shadow: none;
 }
 .bar.xp .label.clip {
   color: #1a140a;
