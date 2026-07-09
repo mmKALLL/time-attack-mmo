@@ -88,8 +88,8 @@ const EDGES: Edge[] = [
     b: 'savonlinna',
     dir: 'e',
     seg: [
-      { biome: 'forest', lo: 1, hi: 2, rooms: 2, width: 22, height: 13 }, // small starter map
-      { biome: 'forest', lo: 3, hi: 5, rooms: 2, width: 26, height: 15 },
+      { biome: 'forest', lo: 1, hi: 2, rooms: 2, width: 13, height: 11 }, // small starter map
+      { biome: 'forest', lo: 3, hi: 5, rooms: 2, width: 15, height: 13 },
       { biome: 'forest', lo: 4, hi: 7, rooms: 3 },
     ],
   }, // gentle ramp out of the start town
@@ -101,7 +101,7 @@ const EDGES: Edge[] = [
     seg: [
       { biome: 'lake', lo: 10, hi: 12, rooms: 2 },
       { biome: 'forest', lo: 12, hi: 16, rooms: 2 },
-      { biome: 'deepForest', lo: 16, hi: 21, rooms: 2 },
+      { biome: 'deepForest', lo: 16, hi: 21, rooms: 3 },
     ],
   },
   { a: 'varkaus', b: 'kuopio', dir: 'n', seg: [{ biome: 'lake', lo: 9, hi: 12, rooms: 2 }] },
@@ -121,8 +121,8 @@ const EDGES: Edge[] = [
     dir: 'n',
     seg: [
       { biome: 'lake', lo: 12, hi: 16, rooms: 2 },
-      { biome: 'forest', lo: 17, hi: 21, rooms: 2 },
-      { biome: 'forest', lo: 22, hi: 26, rooms: 2 },
+      { biome: 'forest', lo: 15, hi: 21, rooms: 3 },
+      { biome: 'forest', lo: 20, hi: 25, rooms: 3 },
     ],
   }, // plains
   {
@@ -130,8 +130,9 @@ const EDGES: Edge[] = [
     b: 'lieksa',
     dir: 'e',
     seg: [
-      { biome: 'forest', lo: 18, hi: 22, rooms: 2 },
-      { biome: 'deepForest', lo: 23, hi: 27, rooms: 2 },
+      { biome: 'forest', lo: 26, hi: 30, rooms: 3 },
+      { biome: 'deepForest', lo: 23, hi: 27, rooms: 3 },
+      { biome: 'deepForest', lo: 20, hi: 24, rooms: 3 },
     ],
   },
 ];
