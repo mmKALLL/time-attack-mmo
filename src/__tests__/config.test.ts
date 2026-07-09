@@ -43,6 +43,26 @@ describe('derived stats', () => {
     expect(deriveStats({ ...p, str: 100 }, 5).maxHp).toBe(deriveStats(p, 5).maxHp); // STR does not move maxHp
     expect(deriveStats({ ...p, vit: 20 }, 5).maxHp).toBeGreaterThan(deriveStats(p, 5).maxHp); // VIT does
   });
+  it('attackSpeed is 100 + 0.6*dex - 3 (a %; base dex 5 = 100)', () => {
+    const at = (dex: number) => deriveStats({ str: 10, dex, int: 10, vit: 10 }, 1).attackSpeed;
+    expect(at(5)).toBe(100); // 100 + 3 - 3 → exactly normal speed at the base dex
+    expect(at(0)).toBe(97); // 100 + 0 - 3
+    expect(at(25)).toBe(112); // 100 + 15 - 3
+    expect(at(100)).toBeCloseTo(157, 5); // 100 + 60 - 3
+    expect(at(20)).toBeGreaterThan(at(10)); // very gradual, monotonic in dex
+  });
+  it('DEX no longer feeds magical power: a pure-INT caster damage is unmoved by DEX via magical', () => {
+    // Magician power = (0.2*physical + 0.8*magical)*2; magical = int*4 only now.
+    // A DEX bump still nudges maxDmg through the 20% physical share, but must move
+    // it by strictly less than when DEX also fed the 80% magical share (old model).
+    const base: Primaries = { str: 0, dex: 10, int: 30, vit: 10 };
+    const cur = deriveStats(base, 1, 'magician').maxDmg;
+    const bumped = deriveStats({ ...base, dex: 30 }, 1, 'magician').maxDmg;
+    const physOnly = 0.2 * (2 * 20) * 2; // +20 dex → +40 physical → +physical share only
+    const withMagical = physOnly + 0.8 * (2 * 20) * 2; // what the old dex-in-magical model added
+    expect(bumped - cur).toBeCloseTo(physOnly, 5); // moved by the physical share alone
+    expect(bumped - cur).toBeLessThan(withMagical); // strictly less than the old model
+  });
 });
 
 describe('combat math', () => {

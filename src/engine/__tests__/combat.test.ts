@@ -60,6 +60,24 @@ describe('combat tick resolution', () => {
     advanceCombat(s, 600); // crosses 1500ms total
     expect(s.entities.e1.hp).toBeLessThan(before);
   });
+  it('attackSpeed (from DEX) shortens the trigger interval: a high-DEX enemy fires before a base-DEX one', () => {
+    // Beginner speed 1.0. Base dex 5 → attackSpeed 100 → interval 1500ms.
+    // dex 105 → attackSpeed 160 → interval 937.5ms. Advancing 1000ms: the fast
+    // one has fired (dealt damage), the base one has not.
+    const fast = makeEntity({ id: 'fast', faction: 'enemy', name: 'Fast', sprite: 'slime', cell: { x: 4, y: 3 }, level: 20, jobId: 'beginner', primaries: { str: 20, dex: 105, int: 20, vit: 200 } });
+    const sFast = world([hero({ x: 3, y: 3 }), fast]);
+    moveOrStick(sFast, 'p1', 'right');
+    const hpFastBefore = sFast.entities.p1.hp;
+    advanceCombat(sFast, 1000); // 1000 ≥ 937.5 → the fast enemy has fired
+    expect(sFast.entities.p1.hp).toBeLessThan(hpFastBefore);
+
+    const slow = makeEntity({ id: 'slow', faction: 'enemy', name: 'Slow', sprite: 'slime', cell: { x: 4, y: 3 }, level: 20, jobId: 'beginner', primaries: { str: 20, dex: 5, int: 20, vit: 200 } });
+    const sSlow = world([hero({ x: 3, y: 3 }), slow]);
+    moveOrStick(sSlow, 'p1', 'right');
+    const hpSlowBefore = sSlow.entities.p1.hp;
+    advanceCombat(sSlow, 1000); // 1000 < 1500 → the base-dex enemy has NOT fired yet
+    expect(sSlow.entities.p1.hp).toBe(hpSlowBefore);
+  });
   it('removes a dead enemy and dissolves a one-sided group', () => {
     const s = world([hero({ x: 3, y: 3 }), rat('e1', { x: 4, y: 3 })]);
     s.entities.e1.hp = 1;

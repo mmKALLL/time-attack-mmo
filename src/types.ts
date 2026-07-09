@@ -29,6 +29,7 @@ export type Stats = {
   crit: number; // crit chance %
   dodge: number;
   statusResist: number; // % chance to resist status effects (read by the future status system)
+  attackSpeed: number; // skill-trigger speed multiplier as a % (100 = normal); scales DEX
 };
 
 // ---------- Status effects (Phase 2 systems; type present now) ----------

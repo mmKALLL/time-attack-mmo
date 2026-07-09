@@ -222,6 +222,7 @@ export function SkillAllocationScreen() {
     { label: 'Accuracy', get: (s) => s.accuracy },
     { label: 'Dodge', get: (s) => s.dodge, dec: true },
     { label: 'Status Resist', get: (s) => s.statusResist, pct: true },
+    { label: 'Attack Speed', get: (s) => s.attackSpeed, pct: true },
   ];
 
   const line = lineage(p.jobId);

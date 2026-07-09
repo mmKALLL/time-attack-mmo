@@ -149,7 +149,7 @@ export function advanceCombat(s: WorldState, dt: number): void {
       // Enemies approach on their own 2s clock (once per tick), independent of
       // the cast timer, so a slow attacker still creeps forward each frame.
       if (m.faction === 'enemy') advanceApproach(s, m, dt);
-      const interval = COMBAT_TICK_MS / (CLASS_COMBAT[m.combatClass]?.speed ?? 1);
+      const interval = COMBAT_TICK_MS / ((CLASS_COMBAT[m.combatClass]?.speed ?? 1) * (m.stats.attackSpeed / 100));
       m.castTimerMs += dt;
       let guard = 0;
       while (m.castTimerMs >= interval && guard++ < 8) {
