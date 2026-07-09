@@ -37,7 +37,7 @@ export const TORCH_GLOW = { color: 0xffc27a, cells: 7, intensity: 0.5, pulseMs: 
 // golden pillar + expanding rings + rotating starburst rays + rising sparkles +
 // a popped "LEVEL UP!" banner. Tuned live; colors are the game's ember/gold.
 export const LEVELUP_FX = {
-  durationMs: 1400, // total lifetime of one burst (flash..banner fade)
+  durationMs: 2800, // total lifetime of one burst (flash..banner fade)
   coreColor: 0xffffff, // the initial flash + brightest cores
   goldColor: 0xffce6b, // pillar / rays / banner glow (COLORS.emberHi)
   warmColor: 0xe08a3a, // warm accent on outer rings (COLORS.ember)
