@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Spectral:ital,wght@0,400;0,500;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
+<script src="sprites.js"></script>
+<style>
+  @keyframes mmFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @keyframes mmGlow{0%,100%{opacity:.55}50%{opacity:.95}}
+  .mmbtn{position:relative;font-family:Cinzel,serif;letter-spacing:2px;cursor:pointer;user-select:none;color:#e9ddc4;padding:11px 6px 11px 22px;display:flex;align-items:center;gap:14px;transition:color .15s;}
+  .mmbtn:hover{color:#ffe6a6;}
+  .mmbtn:hover .mmb-ic{opacity:1;transform:translateX(0);}
+  .mmb-ic{opacity:0;transform:translateX(-8px);transition:all .18s;color:#e6c583;font-size:14px;}
+  .mmbtn:hover .mmb-line{width:100%;opacity:1;}
+  .mmb-line{position:absolute;left:22px;bottom:5px;height:1px;width:0;background:linear-gradient(90deg,#c2a06a,transparent);opacity:0;transition:width .25s;}
+  .mmbtn.dim{color:#7a7360;}.mmbtn.dim:hover{color:#a99a7c;}
+</style>
+</helmet>
+<div data-screen-label="Main Menu" style="position:relative;width:1920px;height:1080px;overflow:hidden;background:#0a0e16;font-family:Spectral,serif;color:#e9ddc4;user-select:none;">
+  <template id="__bundler_thumbnail" data-bg-color="#0b1020">
+    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <rect width="120" height="120" fill="#0b1020"/>
+      <path d="M0 40 Q30 28 60 38 T120 34 V56 H0 Z" fill="#1f7a6a" opacity="0.5"/>
+      <path d="M0 44 Q40 34 70 44 T120 40 V60 H0 Z" fill="#5a3a8a" opacity="0.4"/>
+      <circle cx="42" cy="30" r="7" fill="#e8eef2"/>
+      <path d="M0 74 L20 58 L38 74 L58 54 L80 74 L102 60 L120 74 V120 H0 Z" fill="#1b2836"/>
+      <rect x="0" y="86" width="120" height="34" fill="#1a2f42"/>
+      <text x="60" y="108" font-family="Georgia,serif" font-weight="900" font-size="20" fill="#f2e8d2" text-anchor="middle" letter-spacing="1">SUOMELA</text>
+    </svg>
+  </template>
+  <canvas ref="{{ cv }}" width="1920" height="1080" style="position:absolute;inset:0;image-rendering:pixelated;"></canvas>
+
+  <!-- vignette -->
+  <div style="position:absolute;inset:0;background:radial-gradient(1200px 900px at 32% 46%, transparent 40%, rgba(6,8,13,.55) 100%);pointer-events:none;"></div>
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(8,10,18,.4) 0%, transparent 22%, transparent 74%, rgba(6,8,13,.7) 100%);pointer-events:none;"></div>
+
+  <!-- TITLE -->
+  <div style="position:absolute;left:150px;top:150px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:13px;letter-spacing:6px;color:#8fb0c8;text-shadow:0 2px 8px #000;margin-bottom:20px;opacity:.9;">THE NORTHERN REALM</div>
+    <div style="position:relative;">
+      <div style="font-family:Cinzel,serif;font-weight:900;font-size:150px;line-height:.86;color:#f2e8d2;text-shadow:0 4px 2px rgba(0,0,0,.5), 0 0 42px rgba(126,180,200,.35), 0 0 90px rgba(90,140,170,.25);letter-spacing:2px;">SUOMELA</div>
+      <div style="position:absolute;right:6px;bottom:-40px;font-family:Cinzel,serif;font-weight:700;font-size:40px;letter-spacing:16px;color:#e6c583;text-shadow:0 2px 10px rgba(0,0,0,.7), 0 0 24px rgba(224,165,58,.4);padding-left:16px;">MMO</div>
+    </div>
+    <div style="margin-top:44px;font-style:italic;font-size:20px;color:#b7c3cf;text-shadow:0 2px 8px #000;max-width:520px;line-height:1.5;">A land of endless forests, frozen fells,<br>and the old magic that still stirs beneath the snow.</div>
+  </div>
+
+  <!-- MENU -->
+  <div style="position:absolute;left:158px;bottom:150px;display:flex;flex-direction:column;gap:2px;">
+    <sc-for list="{{ items }}" as="m" hint-placeholder-count="6">
+      <div class="mmbtn {{ m.dim }}" onClick="{{ m.click }}" onMouseEnter="{{ m.hover }}" style="font-size:{{ m.size }};">
+        <span class="mmb-ic">◆</span>
+        <span>{{ m.label }}</span>
+        <sc-if value="{{ m.tag }}" hint-placeholder-val="{{ false }}"><span style="font-family:'Press Start 2P',monospace;font-size:8px;color:#8f8674;letter-spacing:1px;margin-left:6px;">{{ m.tag }}</span></sc-if>
+        <span class="mmb-line"></span>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- CHARACTER PANEL (right) -->
+  <div style="position:absolute;right:120px;bottom:150px;width:340px;background:linear-gradient(#1a1f2aee,#10141cee);border:1px solid #0a0d12;border-radius:8px;box-shadow:inset 0 1px 0 #3a4552,0 12px 30px rgba(0,0,0,.5), inset 0 0 0 1px #2a3140;padding:16px 18px;backdrop-filter:blur(2px);">
+    <div style="position:absolute;inset:3px;border:1px solid rgba(184,146,90,.28);border-radius:5px;pointer-events:none;"></div>
+    <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#8f8674;letter-spacing:1px;">LAST PLAYED</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:12px;">
+      <div style="width:66px;height:66px;border-radius:7px;background:#0d1016;border:1px solid #b8925a66;box-shadow:inset 0 0 0 1px #000;overflow:hidden;flex:none;position:relative;">{{ heroEl }}</div>
+      <div style="flex:1;">
+        <div style="font-family:Cinzel,serif;font-size:19px;color:#f2e8d2;">Aino Tuulikki</div>
+        <div style="font-size:12.5px;color:#e0906a;margin-top:1px;">Fire Wizard · Lv 24</div>
+        <div style="display:flex;gap:5px;margin-top:7px;">
+          <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#8fb0c8;background:#12202c;border:1px solid #24455a;border-radius:3px;padding:3px 5px;">EMBERS</span>
+          <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#c2a06a;background:#241c11;border:1px solid #4a3a20;border-radius:3px;padding:3px 5px;">HELSINKI</span>
+        </div>
+      </div>
+    </div>
+    <div style="height:1px;background:linear-gradient(90deg,transparent,#b8925a44,transparent);margin:14px 0;"></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#9c927a;">
+      <span>Realm status</span><span style="color:#8fe0a0;">◆ Online · 2,418 adventurers</span>
+    </div>
+  </div>
+
+  <!-- footer -->
+  <div style="position:absolute;left:150px;bottom:56px;font-size:12px;color:#6f6a5a;letter-spacing:1px;">© 2026 Suomela Studios</div>
+  <div style="position:absolute;right:40px;bottom:24px;font-family:'Press Start 2P',monospace;font-size:8px;color:#5f5a4a;letter-spacing:1px;">v0.4.1 · BUILD 2026.07.09</div>
+  <div style="position:absolute;right:40px;top:32px;display:flex;gap:10px;align-items:center;font-family:'Press Start 2P',monospace;font-size:8px;color:#8f8674;"><span style="width:8px;height:8px;border-radius:50%;background:#8fe0a0;box-shadow:0 0 8px #8fe0a0;"></span>SERVERS ONLINE</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080}}">
+class Component extends DCLogic {
+  constructor(p){ super(p); this.cv=React.createRef(); }
+  renderVals(){
+    const R=React.createElement;
+    const heroEl=R('img',{src: window.Sprites?window.Sprites.build('wizard',0,window.Sprites.DIRS.A).toDataURL():'', style:{position:'absolute',left:'-4px',top:'2px',width:'96px',height:'96px',imageRendering:'pixelated'}});
+    const mk=(label,size,dim,tag)=>({label,size,dim:dim?'dim':'',tag:tag||false,click:()=>{},hover:()=>{}});
+    return { cv:this.cv, heroEl,
+      items:[ mk('Enter the Realm','30px',false,false), mk('Continue','22px',false,'LV24'), mk('Characters','22px',false), mk('World Map','22px',false), mk('Settings','22px',false), mk('Credits','18px',true), mk('Quit','18px',true) ] };
+  }
+  componentDidMount(){ const go=()=>{ if(this.cv.current) this.start(); }; go(); }
+  componentWillUnmount(){ cancelAnimationFrame(this._raf); }
+
+  hash(x,y){ let h=(x*374761393+y*668265263)>>>0; h=((h^(h>>13))*1274126177)>>>0; return ((h^(h>>16))>>>0)/4294967296; }
+
+  start(){
+    const ctx=this.cv.current.getContext('2d'); const W=1920,H=1080;
+    // static star field
+    this.stars=[]; for(let i=0;i<140;i++) this.stars.push({x:this.hash(i,1)*W,y:this.hash(i,2)*520,r:this.hash(i,3)*1.4+0.3,t:this.hash(i,4)*6.28});
+    // fell silhouette points (two ranges)
+    const fell=(seed,base,amp)=>{ const pts=[]; for(let x=0;x<=W;x+=40){ const n=Math.sin(x*0.004+seed)*amp + Math.sin(x*0.011+seed*2)*amp*0.4; pts.push([x,base+n]); } return pts; };
+    this.fellA=fell(1,470,60); this.fellB=fell(4,540,90);
+    // spruce silhouette line
+    this.spruce=[]; for(let x=-20;x<W+20;x+=Math.floor(18+this.hash(x,9)*20)){ this.spruce.push({x,h:60+this.hash(x,10)*90}); }
+    const horizon=650;
+
+    const loop=(t)=>{
+      // ---- sky ----
+      const sky=ctx.createLinearGradient(0,0,0,horizon);
+      sky.addColorStop(0,'#0b1020'); sky.addColorStop(0.45,'#12203a'); sky.addColorStop(0.8,'#28405a'); sky.addColorStop(1,'#4a5f70');
+      ctx.fillStyle=sky; ctx.fillRect(0,0,W,horizon);
+
+      // ---- stars ----
+      this.stars.forEach(s=>{ const tw=0.5+0.5*Math.sin(t/700+s.t); ctx.globalAlpha=tw*0.9; ctx.fillStyle='#dfe8f0'; ctx.fillRect(s.x|0,s.y|0,Math.ceil(s.r),Math.ceil(s.r)); }); ctx.globalAlpha=1;
+
+      // ---- aurora ribbons ----
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      for(let b=0;b<3;b++){ const cols=[['#3ad89a','#1f7a6a'],['#7fd0e0','#2a6a90'],['#b78fe0','#5a3a8a']][b];
+        const baseY=150+b*46; const grad=ctx.createLinearGradient(0,baseY-70,0,baseY+90); grad.addColorStop(0,'rgba(0,0,0,0)'); grad.addColorStop(0.5,cols[0]); grad.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.globalAlpha=0.16+0.06*Math.sin(t/1300+b);
+        ctx.beginPath(); ctx.moveTo(0,baseY);
+        for(let x=0;x<=W;x+=24){ const y=baseY+Math.sin(x*0.006+t/1600+b*1.3)*40+Math.sin(x*0.017+t/900)*16; ctx.lineTo(x,y); }
+        ctx.lineTo(W,baseY+150); ctx.lineTo(0,baseY+150); ctx.closePath();
+        ctx.fillStyle=grad; ctx.fill();
+        // vertical curtains
+        ctx.globalAlpha=0.05; ctx.strokeStyle=cols[0]; ctx.lineWidth=2;
+        for(let x=0;x<=W;x+=26){ const y=baseY+Math.sin(x*0.006+t/1600+b*1.3)*40; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+Math.sin(t/1000+x)*6,y+120); ctx.stroke(); }
+      }
+      ctx.restore(); ctx.globalAlpha=1;
+
+      // ---- distant fells ----
+      const drawFell=(pts,col)=>{ ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(0,H); ctx.lineTo(0,pts[0][1]); pts.forEach(p=>ctx.lineTo(p[0],p[1])); ctx.lineTo(W,horizon); ctx.lineTo(0,horizon); ctx.closePath(); ctx.fill(); };
+      drawFell(this.fellB,'#243447'); drawFell(this.fellA,'#1b2836');
+      // snow caps on nearer fell
+      ctx.fillStyle='rgba(200,214,228,0.5)'; this.fellA.forEach(p=>{ if(p[1]<475) ctx.fillRect(p[0]-3,p[1],6,6); });
+
+      // ---- spruce forest silhouette ----
+      ctx.fillStyle='#0e1a16';
+      this.spruce.forEach(s=>{ const bx=s.x, by=horizon+6; ctx.beginPath(); ctx.moveTo(bx,by); for(let seg=0;seg<3;seg++){ const w=8-seg*2; const yy=by-s.h*(seg+1)/3; ctx.lineTo(bx-w,by-s.h*seg/3-6); ctx.lineTo(bx,yy); ctx.lineTo(bx+w,by-s.h*seg/3-6); ctx.lineTo(bx,by); } ctx.moveTo(bx-9,by); ctx.lineTo(bx,by-s.h*0.5); ctx.lineTo(bx+9,by); ctx.closePath(); ctx.fill(); });
+
+      // ---- lake ----
+      const lake=ctx.createLinearGradient(0,horizon,0,H); lake.addColorStop(0,'#2a4358'); lake.addColorStop(0.5,'#1a2f42'); lake.addColorStop(1,'#101f2e');
+      ctx.fillStyle=lake; ctx.fillRect(0,horizon,W,H-horizon);
+      // aurora + sky reflection shimmer
+      ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.10;
+      for(let i=0;i<40;i++){ const y=horizon+10+i*10; const w=Math.sin(t/800+i)*30; ctx.fillStyle= i%3?'#3ad89a':'#7fbfe0'; ctx.fillRect(W*0.1+w,y,W*0.8,2); }
+      ctx.restore(); ctx.globalAlpha=1;
+      // moon glow reflection column
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      const rg=ctx.createLinearGradient(0,horizon,0,H); rg.addColorStop(0,'rgba(150,190,210,0.22)'); rg.addColorStop(1,'rgba(150,190,210,0)');
+      ctx.fillStyle=rg; for(let y=horizon;y<H;y+=4){ const w=40+ (y-horizon)*0.5 + Math.sin(t/500+y)*6; ctx.fillRect(560-w/2,y,w,2); }
+      ctx.restore();
+
+      // ---- moon ----
+      ctx.save(); ctx.globalCompositeOperation='lighter'; const mg=ctx.createRadialGradient(560,180,4,560,180,90); mg.addColorStop(0,'rgba(220,232,240,0.5)'); mg.addColorStop(1,'rgba(220,232,240,0)'); ctx.fillStyle=mg; ctx.fillRect(430,50,260,260); ctx.restore();
+      ctx.fillStyle='#e8eef2'; ctx.beginPath(); ctx.arc(560,180,26,0,6.3); ctx.fill(); ctx.fillStyle='#c8d4dc'; ctx.beginPath(); ctx.arc(552,174,5,0,6.3); ctx.arc(568,188,4,0,6.3); ctx.fill();
+
+      // ---- dock + hero ----
+      const dockY=760; ctx.fillStyle='#3a2a1c'; ctx.fillRect(120,dockY,150,10); for(let x=120;x<270;x+=22){ ctx.fillStyle='#2a1e12'; ctx.fillRect(x,dockY+10,6,44); } ctx.fillStyle='#4a3524'; ctx.fillRect(120,dockY,150,3);
+      if(window.Sprites){ const bob=Math.sin(t/500)*3; window.Sprites.draw(ctx,'wizard',Math.floor(t/450)%2, 176, dockY-58+bob, 'A', {cell:64, shadow:false}); }
+      // campfire on dock
+      const ff=Math.floor(t/120)%2; ctx.save(); ctx.globalCompositeOperation='lighter'; const fg=ctx.createRadialGradient(240,dockY-6,2,240,dockY-6,60); fg.addColorStop(0,'rgba(255,150,60,0.4)'); fg.addColorStop(1,'rgba(255,150,60,0)'); ctx.fillStyle=fg; ctx.fillRect(180,dockY-66,120,120); ctx.restore();
+      ctx.fillStyle=ff?'#f0873a':'#ffce6b'; ctx.beginPath(); ctx.moveTo(240,dockY-18); ctx.lineTo(235,dockY-4); ctx.lineTo(245,dockY-4); ctx.closePath(); ctx.fill(); ctx.fillStyle='#5a3a1c'; ctx.fillRect(232,dockY-3,16,4);
+
+      // ---- drifting mist bands ----
+      ctx.save();
+      for(let i=0;i<4;i++){ const y=horizon-30+i*70; const off=(t*(0.006+i*0.004))% (W+400)-200; ctx.globalAlpha=0.05+i*0.015; ctx.fillStyle='#aebccb'; for(let k=0;k<3;k++){ const x=((off+k*720)% (W+400))-200; ctx.beginPath(); ctx.ellipse(x,y,240,26,0,0,6.3); ctx.fill(); } }
+      ctx.restore(); ctx.globalAlpha=1;
+
+      // ---- fireflies / spirit motes ----
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      for(let i=0;i<24;i++){ const px=(this.hash(i,20)*W + t*(0.01+this.hash(i,21)*0.02)*60)% W; const py=horizon-40-this.hash(i,22)*260 + Math.sin(t/900+i)*20; const a=0.3+0.3*Math.sin(t/500+i*2); ctx.globalAlpha=a; ctx.fillStyle= this.hash(i,23)>0.5?'#8fe0b0':'#e6c583'; ctx.beginPath(); ctx.arc(px,py,1.6,0,6.3); ctx.fill(); }
+      ctx.restore(); ctx.globalAlpha=1;
+
+      this._raf=requestAnimationFrame(loop);
+    };
+    loop(performance.now());
+  }
+}
+</script>
+</body>
+</html>

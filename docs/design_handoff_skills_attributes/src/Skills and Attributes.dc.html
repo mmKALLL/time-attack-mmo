@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
+<script src="sprites.js"></script>
+<style>
+  .sa-panel{position:absolute;box-sizing:border-box;background:linear-gradient(#232833,#151a22);border:1px solid #0a0d12;border-radius:6px;box-shadow:inset 0 1px 0 #3d4757, inset 0 0 0 1px #2a3140, 0 8px 22px rgba(0,0,0,.55);}
+  .sa-gold{position:absolute;inset:3px;border:1px solid rgba(184,146,90,.30);border-radius:3px;pointer-events:none;}
+  .hd{font-family:Cinzel,serif;color:#cca96b;letter-spacing:1.5px;text-transform:uppercase;}
+  .step{width:26px;height:26px;border-radius:5px;border:1px solid #05070a;background:linear-gradient(#333c49,#171b23);display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P',monospace;font-size:11px;cursor:pointer;user-select:none;box-shadow:inset 0 1px 0 #444d5e;color:#e6c583;flex:none;}
+  .step:hover{filter:brightness(1.25);}
+  .step.dis{opacity:.25;cursor:default;filter:none;}
+  .px{font-family:'Press Start 2P',monospace;}
+  .skillrow{cursor:pointer;transition:background .1s;}
+  .skillrow:hover{filter:brightness(1.08);}
+  .btn{font-family:Cinzel,serif;letter-spacing:1px;border-radius:5px;cursor:pointer;user-select:none;text-align:center;}
+  img{image-rendering:pixelated;}
+  ::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-thumb{background:#3a4152;border-radius:4px;}::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+<div data-screen-label="Skills & Attributes" style="position:relative;width:1920px;height:1080px;overflow:hidden;background:radial-gradient(1200px 700px at 30% -10%,#1a1e28,#0a0b0f 68%);font-family:Spectral,serif;color:#e9ddc4;user-select:none;">
+
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#1a1e28"/>
+      <rect x="30" y="18" width="8" height="8" rx="1.5" fill="#6f9ad0"/>
+      <rect x="30" y="32" width="8" height="8" rx="1.5" fill="#6fce8f"/>
+      <rect x="30" y="46" width="8" height="8" rx="1.5" fill="#d8896a"/>
+      <rect x="30" y="60" width="8" height="8" rx="1.5" fill="#b78fe0"/>
+      <rect x="44" y="19" width="26" height="6" rx="1" fill="#3a4152"/>
+      <rect x="44" y="33" width="26" height="6" rx="1" fill="#3a4152"/>
+      <rect x="44" y="47" width="26" height="6" rx="1" fill="#3a4152"/>
+      <rect x="44" y="61" width="26" height="6" rx="1" fill="#3a4152"/>
+      <path d="M50 78 l3 6 6 1 -4.5 4.5 1 6 -5.5 -3 -5.5 3 1 -6 -4.5 -4.5 6 -1 z" fill="#e6c583"/>
+    </svg>
+  </template>
+
+  <!-- HEADER -->
+  <div class="sa-panel" style="top:22px;left:24px;width:1212px;height:108px;display:flex;align-items:center;padding:0 22px;gap:18px;">
+    <div class="sa-gold"></div>
+    <div style="width:76px;height:76px;border-radius:6px;background:#0d1016;border:1px solid #b8925a55;box-shadow:inset 0 0 0 1px #000;overflow:hidden;flex:none;position:relative;">{{ portraitEl }}</div>
+    <div>
+      <div style="font-family:Cinzel,serif;font-size:27px;color:#f2e8d2;">Aino Tuulikki</div>
+      <div style="font-size:14px;color:#e0906a;margin-top:2px;">Fire Wizard <span style="color:#7a7360;">· Beginner → Magician → Fire Wizard</span></div>
+    </div>
+    <div style="margin-left:24px;text-align:center;">
+      <div class="px" style="font-size:9px;color:#c2a06a;">LEVEL</div>
+      <div style="font-family:Cinzel,serif;font-size:44px;color:#e6c583;line-height:1;">24</div>
+    </div>
+    <div style="width:220px;margin-left:8px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#a99a7c;"><span>Experience</span><span class="px" style="font-size:8px;color:#c2a06a;">{{ xpPct }}</span></div>
+      <div style="height:9px;border-radius:2px;background:#0c0f14;box-shadow:inset 0 1px 2px #000;overflow:hidden;margin-top:4px;"><div style="width:62%;height:100%;background:linear-gradient(#8fd0e0,#4a90c0);"></div></div>
+      <div style="font-size:11px;color:#8f8674;margin-top:4px;">{{ xpLabel }} <span style="color:#5f5a4a;">XP to next</span></div>
+    </div>
+  </div>
+
+  <!-- POINTS + ACTIONS -->
+  <div class="sa-panel" style="top:22px;left:1254px;right:24px;height:108px;display:flex;align-items:center;padding:0 20px;gap:16px;">
+    <div class="sa-gold"></div>
+    <div style="display:flex;gap:12px;">
+      <div style="text-align:center;background:#0c0f14;border:1px solid #2a3f56;border-radius:6px;padding:13px 16px;"><div class="px" style="font-size:22px;color:{{ attrPoolColor }};">{{ attrPool }}</div><div style="font-size:10px;color:#8fa8cc;margin-top:5px;letter-spacing:.5px;">ATTRIBUTE</div></div>
+      <div style="text-align:center;background:#0c0f14;border:1px solid #513524;border-radius:6px;padding:13px 16px;"><div class="px" style="font-size:22px;color:{{ skillPoolColor }};">{{ skillPool }}</div><div style="font-size:10px;color:#e0906a;margin-top:5px;letter-spacing:.5px;">SKILL</div></div>
+    </div>
+    <div style="flex:1;font-size:12px;color:#8f8674;font-style:italic;line-height:1.4;">{{ pendingNote }}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="btn {{ confirmCls }}" onClick="{{ confirm }}" style="padding:8px 22px;font-size:14px;color:#12140c;background:linear-gradient(#e6c583,#c8a24a);box-shadow:0 2px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4);">Confirm</div>
+      <div class="btn" onClick="{{ reset }}" style="padding:5px 22px;font-size:12px;color:#b3a888;background:#1a1e26;border:1px solid #3a4152;">Reset</div>
+    </div>
+  </div>
+
+  <!-- COLUMN A : ATTRIBUTES -->
+  <div class="sa-panel" style="top:146px;left:24px;width:452px;bottom:24px;padding:18px 20px;">
+    <div class="sa-gold"></div>
+    <div class="hd" style="font-size:14px;">Attributes</div>
+
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:9px;">
+      <sc-for list="{{ statRows }}" as="st" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,{{ st.tintA }},transparent);border:1px solid #232a36;border-radius:6px;padding:7px 12px;">
+          <div style="width:38px;height:38px;border-radius:6px;background:{{ st.color }};display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-weight:700;font-size:13px;color:#10131a;flex:none;box-shadow:inset 0 -2px 3px rgba(0,0,0,.35);">{{ st.abbr }}</div>
+          <div style="flex:1;">
+            <div style="font-size:15px;color:#f2e8d2;">{{ st.name }}</div>
+            <div style="font-size:11px;color:#8f8674;">{{ st.role }}</div>
+          </div>
+          <div class="step {{ st.downCls }}" onClick="{{ st.dec }}">−</div>
+          <div style="min-width:46px;text-align:center;">{{ st.numEl }}</div>
+          <div class="step {{ st.upCls }}" onClick="{{ st.inc }}" onMouseEnter="{{ st.hoverOn }}" onMouseLeave="{{ st.hoverOff }}">+</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- damage mix -->
+    <div style="margin-top:15px;background:#0c0f14;border:1px solid #2a3140;border-radius:6px;padding:10px 12px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;"><span style="color:#a99a7c;">Damage mix <span style="color:#7a7360;">· class innate</span></span><span class="px" style="font-size:8px;color:#8f8674;">{{ mix.label }}</span></div>
+      <div style="display:flex;height:12px;border-radius:3px;overflow:hidden;margin-top:7px;box-shadow:inset 0 1px 2px #000;">
+        <div style="width:{{ mix.physW }};background:linear-gradient(#6f9ad0,#3f6690);display:flex;align-items:center;justify-content:center;font-size:8px;color:#0c0f14;font-family:'Press Start 2P';">{{ mix.physLbl }}</div>
+        <div style="width:{{ mix.magW }};background:linear-gradient(#b78fe0,#6b4e94);display:flex;align-items:center;justify-content:center;font-size:8px;color:#0c0f14;font-family:'Press Start 2P';">{{ mix.magLbl }}</div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:linear-gradient(90deg,transparent,#b8925a44,transparent);margin:15px 0 12px;"></div>
+    <div class="hd" style="font-size:12px;color:#b89a63;">Derived</div>
+    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;">
+      <sc-for list="{{ derived }}" as="d" hint-placeholder-count="8">
+        <div style="display:flex;justify-content:space-between;align-items:center;height:20px;border-bottom:1px dotted #2f3846;padding-bottom:6px;">
+          <span style="font-size:13px;color:#a99a7c;">{{ d.label }}</span>
+          {{ d.valueEl }}
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top:14px;font-size:11.5px;color:#7a7360;font-style:italic;line-height:1.4;">Every stat pays off for any class — DEX and VIT feed both damage schools, HP, and evasion.</div>
+  </div>
+
+  <!-- COLUMN B : SKILLS (self-describing rows) -->
+  <div class="sa-panel" style="top:146px;left:494px;width:742px;bottom:24px;padding:18px 20px;">
+    <div class="sa-gold"></div>
+    <div class="hd" style="font-size:14px;display:flex;justify-content:space-between;align-items:baseline;">Skills
+      <span style="font-size:9px;color:{{ debugColor }};font-family:'Press Start 2P';">{{ debugLabel }}</span>
+    </div>
+
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:15px;overflow:auto;height:calc(100% - 44px);padding-right:6px;">
+      <sc-for list="{{ skillGroups }}" as="grp" hint-placeholder-count="3">
+        <div>
+          <div style="font-family:Cinzel,serif;font-size:12px;letter-spacing:1px;color:{{ grp.color }};margin-bottom:8px;display:flex;align-items:center;gap:10px;">{{ grp.title }}<span style="flex:1;height:1px;background:linear-gradient(90deg,{{ grp.line }},transparent);"></span></div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ grp.skills }}" as="sk" hint-placeholder-count="3">
+              <div class="skillrow" onClick="{{ sk.select }}" style="display:flex;align-items:flex-start;gap:12px;border:1px solid {{ sk.borderCol }};border-radius:7px;padding:10px 12px;background:{{ sk.bg }};">
+                <div style="width:48px;height:48px;border-radius:6px;background:#0d1016;border:1px solid {{ sk.elemCol }}66;flex:none;position:relative;box-shadow:inset 0 0 0 1px #000;overflow:hidden;">{{ sk.iconEl }}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:15px;color:#f2e8d2;">{{ sk.name }}</span><span class="px" style="font-size:7px;color:{{ sk.elemCol }};">{{ sk.shape }}</span><span style="font-size:11px;color:#7a7360;margin-left:auto;">{{ sk.flags }}</span></div>
+                  <div style="font-size:13.5px;line-height:19px;color:#cdc3aa;margin-top:4px;">{{ sk.descEl }}</div>
+                  <div style="display:flex;align-items:center;gap:4px;margin-top:8px;">
+                    <sc-for list="{{ sk.pips }}" as="p" hint-placeholder-count="5">
+                      <span style="width:{{ p.w }};height:9px;border-radius:2px;background:{{ p.bg }};border:1px solid {{ p.bd }};"></span>
+                    </sc-for>
+                    {{ sk.levelEl }}
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px;align-self:center;">
+                  <div class="step {{ sk.downCls }}" onClick="{{ sk.dec }}">−</div>
+                  <div class="step {{ sk.upCls }}" onClick="{{ sk.inc }}" onMouseEnter="{{ sk.hoverOn }}" onMouseLeave="{{ sk.hoverOff }}">+</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- COLUMN C : ATTACK AREA -->
+  <div class="sa-panel" style="top:146px;left:1254px;right:24px;bottom:24px;padding:20px;">
+    <div class="sa-gold"></div>
+    <div class="hd" style="font-size:13px;color:#b89a63;display:flex;justify-content:space-between;align-items:baseline;">Attack Area <span style="font-size:9px;color:#6f6753;font-family:'Press Start 2P';">RELATIVE TO BLOCK</span></div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-top:16px;">
+      <div style="width:56px;height:56px;border-radius:8px;background:#0d1016;border:2px solid {{ pv.elemCol }};flex:none;position:relative;box-shadow:0 0 16px {{ pv.elemCol }}44, inset 0 0 0 1px #000;overflow:hidden;">{{ pv.iconEl }}</div>
+      <div>
+        <div style="font-family:Cinzel,serif;font-size:21px;color:#f2e8d2;">{{ pv.name }}</div>
+        <div style="font-size:12.5px;color:{{ pv.elemCol }};">{{ pv.shape }} · {{ pv.tier }}</div>
+      </div>
+    </div>
+
+    <!-- grid -->
+    <div style="margin-top:18px;display:flex;justify-content:center;">
+      <div style="display:grid;grid-template-columns:repeat(5,44px);grid-template-rows:repeat(5,44px);gap:5px;padding:12px;background:#0c0f14;border:1px solid #2a3140;border-radius:8px;box-shadow:inset 0 0 26px rgba(0,0,0,.6);background-image:linear-gradient(rgba(120,130,150,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(120,130,150,.04) 1px,transparent 1px);background-size:49px 49px;">
+        <sc-for list="{{ pv.grid }}" as="c" hint-placeholder-count="25">
+          <div style="width:44px;height:44px;border-radius:4px;background:{{ c.bg }};border:{{ c.border }};box-shadow:{{ c.glow }};display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:9px;color:{{ c.markColor }};">{{ c.mark }}</div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:22px;margin-top:12px;font-size:12px;color:#a99a7c;">
+      <span style="display:flex;align-items:center;gap:7px;"><span style="width:14px;height:14px;border-radius:3px;background:#2a3140;border:1px solid #e6c583;"></span> You</span>
+      <span style="display:flex;align-items:center;gap:7px;"><span style="width:14px;height:14px;border-radius:3px;background:{{ pv.elemCol }};"></span> {{ pv.hitLabel }}</span>
+    </div>
+
+    <div style="height:1px;background:linear-gradient(90deg,transparent,#b8925a44,transparent);margin:18px 0 14px;"></div>
+
+    <!-- power headline -->
+    <div style="display:flex;align-items:baseline;gap:16px;">
+      <div>
+        <div style="font-size:12px;color:#8f8674;">{{ pv.powLabel }}</div>
+        <div class="px" style="font-size:{{ pv.powSize }};color:{{ pv.powColor }};margin-top:6px;line-height:34px;height:34px;">{{ pv.powVal }}</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="text-align:right;font-size:11.5px;color:#7a7360;line-height:1.5;max-width:160px;">{{ pv.note }}</div>
+    </div>
+
+    <!-- next level -->
+    <sc-if value="{{ pv.hasNext }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-top:16px;background:linear-gradient(90deg,rgba(111,143,106,.10),transparent);border:1px solid #2f3d33;border-radius:6px;padding:11px 13px;display:flex;align-items:flex-start;gap:14px;">
+        <div style="font-size:11px;letter-spacing:1px;color:#7fb07a;font-family:Cinzel;padding-top:3px;white-space:nowrap;">NEXT LV ▸</div>
+        <div style="flex:1;display:flex;flex-wrap:wrap;gap:9px 24px;">
+          <sc-for list="{{ pv.deltas }}" as="d" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px;">
+              <span style="color:#a99a7c;">{{ d.label }}</span>
+              <span class="px" style="font-size:10px;color:#8f8674;position:relative;top:2px;">{{ d.cur }}</span><span style="color:#7a7360;font-size:12px;">→</span><span class="px" style="font-size:12px;color:#8fe0a0;position:relative;top:2px;">{{ d.next }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ pv.maxed }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:16px;font-family:Cinzel;font-size:14px;color:#e6c583;letter-spacing:1px;">✦ MASTERED · level {{ pv.max }} reached</div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080}}">
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    const DEBUG = true; // config.DEBUG -> skills start at Lv2
+    this.DEBUG = DEBUG;
+    this.LEVEL = 24;
+    this.CLASS = { name:'Fire Wizard', phys:0.20, mag:0.80, minDamageRatio:0.6 }; // Magician school
+    this.SK = {
+      spark:{name:'Spark',group:'beginner',shape:'LINE',kind:'line',elem:'#e6c583',cls:'Beginner',tier:'Starter',flags:'attack · line',tmpl:'Strike a line of tiles for {dmg} damage.',p:{dmg:[12,16,20,24,28]}},
+      secondwind:{name:'Second Wind',group:'beginner',shape:'SELF',kind:'heal',elem:'#8fe0a0',cls:'Beginner',tier:'Starter',flags:'heal · self',tmpl:'Catch your breath and recover {heal} HP.',p:{heal:[40,70,100,130,160]}},
+      energybolt:{name:'Energy Bolt',group:'magician',shape:'LINE',kind:'line',elem:'#a78fe0',cls:'Magician',tier:'1st Job',flags:'attack · line · arcane',tmpl:'Blast a line of tiles for {dmg} damage.',p:{dmg:[30,44,58,72,86,100,114,128,142,156]}},
+      frostbite:{name:'Frostbite',group:'magician',shape:'SINGLE',kind:'single',elem:'#7fc8e0',cls:'Magician',tier:'1st Job',flags:'debuff · ranged · ice',tmpl:'Chill the target, slowing it {pct}% for {dur}s.',p:{pct:[15,20,25,30,35,40,45,50,55,60],dur:[3,3,4,4,5,5,6,6,7,7]}},
+      manashield:{name:'Mana Shield',group:'magician',shape:'SELF',kind:'buff',elem:'#a78fe0',cls:'Magician',tier:'1st Job',flags:'buff · self · arcane',tmpl:'Absorb the next {dmg} damage using MP.',p:{dmg:[80,140,200,260,320,380,440,500,560,620]}},
+      cinderstorm:{name:'Cinderstorm',group:'fire',shape:'2×2 AREA',kind:'area',elem:'#f0873a',cls:'Fire Wizard',tier:'2nd Job',flags:'attack · area · fire',tmpl:'Burn {tiles} tiles for {dmg} and apply Ignite.',p:{tiles:[4,4,4,4,4,4,4,4,4,4],dmg:[60,96,132,168,204,240,276,312,348,384]}},
+      emberlance:{name:'Ember Lance',group:'fire',shape:'LINE',kind:'line',elem:'#f0873a',cls:'Fire Wizard',tier:'2nd Job',flags:'attack · line · fire',tmpl:'Spear a line of foes for {dmg} damage.',p:{dmg:[90,130,170,210,250,290,330,370,410,450]}},
+      immolation:{name:'Immolation',group:'fire',shape:'DoT',kind:'dot',elem:'#e0574a',cls:'Fire Wizard',tier:'2nd Job',flags:'DoT · single · fire',tmpl:'Ignite a foe for {pct}% max HP each round over {dur}s.',p:{pct:[6,8,10,12,14,16,18,20,22,24],dur:[4,4,5,5,6,6,7,7,8,8]}},
+    };
+    const base = DEBUG?2:1;
+    const startLv = { spark:base, secondwind:base, energybolt:5, frostbite:base, manashield:base, cinderstorm:4, emberlance:base, immolation:3 };
+    const skills={}; Object.keys(this.SK).forEach(k=>{ skills[k]={level:startLv[k], committed:startLv[k]}; });
+    this.BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+    const icons0={}; Object.keys(this.SK).forEach(k=>{ icons0[k]=this.BLANK; });
+    this.state = {
+      stats:{ STR:{committed:5,pending:0}, DEX:{committed:10,pending:0}, VIT:{committed:20,pending:0}, INT:{committed:55,pending:0} },
+      attrPool:12, skillPool:3, skills, selected:'cinderstorm', icons:icons0, portrait:this.BLANK,
+      hover:{type:null,key:null}
+    };
+    this.STAT_META = {
+      STR:{name:'Strength',abbr:'STR',role:'Physical power',color:'#6f9ad0',tint:'rgba(63,102,144,.10)'},
+      DEX:{name:'Dexterity',abbr:'DEX',role:'Damage · accuracy · dodge',color:'#6fce8f',tint:'rgba(63,122,78,.10)'},
+      VIT:{name:'Vitality',abbr:'VIT',role:'HP · defense',color:'#d8896a',tint:'rgba(176,90,60,.10)'},
+      INT:{name:'Intelligence',abbr:'INT',role:'Magic power · MP',color:'#b78fe0',tint:'rgba(107,78,148,.12)'},
+    };
+    this.GROUPS=[
+      {id:'beginner',title:'Beginner',color:'#c2a06a',line:'#c2a06a55'},
+      {id:'magician',title:'Magician · 1st Job',color:'#a78fe0',line:'#a78fe055'},
+      {id:'fire',title:'Fire Wizard · 2nd Job',color:'#e08a3a',line:'#e08a3a55'},
+    ];
+  }
+
+  componentDidMount(){
+    const go=()=>{
+      const icons={}; Object.keys(this.SK).forEach(k=>{ icons[k]=this.makeIcon(this.SK[k].kind,this.SK[k].elem); });
+      let portrait=this.BLANK;
+      if(window.Sprites){ try{ portrait=window.Sprites.build('wizard',0,window.Sprites.DIRS.A).toDataURL(); }catch(e){} }
+      this.setState({icons,portrait});
+    };
+    if(window.Sprites) go(); else setTimeout(go,200);
+  }
+
+  makeIcon(kind,color){
+    const c=document.createElement('canvas'); c.width=48; c.height=48; const x=c.getContext('2d');
+    x.imageSmoothingEnabled=false; x.save(); x.shadowColor=color; x.shadowBlur=7; x.fillStyle=color; x.strokeStyle=color; x.lineWidth=3;
+    const cx=24,cy=24;
+    if(kind==='line'){ x.fillRect(8,21,32,6); }
+    else if(kind==='area'){ x.fillRect(13,13,9,9); x.fillRect(26,13,9,9); x.fillRect(13,26,9,9); x.fillRect(26,26,9,9); }
+    else if(kind==='single'){ x.beginPath(); x.moveTo(cx,10); x.lineTo(38,cy); x.lineTo(cx,38); x.lineTo(10,cy); x.closePath(); x.fill(); }
+    else if(kind==='buff'){ x.beginPath(); x.arc(cx,cy,13,0,6.3); x.stroke(); x.globalAlpha=.4; x.beginPath(); x.arc(cx,cy,7,0,6.3); x.fill(); }
+    else if(kind==='heal'){ x.fillRect(cx-4,12,8,24); x.fillRect(12,cy-4,24,8); }
+    else if(kind==='dot'){ x.beginPath(); x.moveTo(cx,9); x.quadraticCurveTo(37,27,cx,39); x.quadraticCurveTo(11,27,cx,9); x.fill(); x.globalAlpha=.55; x.fillStyle='#fff'; x.beginPath(); x.moveTo(cx,17); x.quadraticCurveTo(31,27,cx,35); x.quadraticCurveTo(17,27,cx,17); x.fill(); }
+    x.restore(); return c.toDataURL();
+  }
+
+  eff(k){ const s=this.state.stats[k]; return s.committed+s.pending; }
+  fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+
+  // ---- derived-stat model (per user's formulas) ----
+  derive(s){
+    const C=this.CLASS, L=this.LEVEL;
+    const physical = s.STR*4 + s.DEX*2;
+    const magical  = s.INT*4 + s.DEX*2;
+    const power = C.phys*physical + (1-C.phys)*magical;
+    const maxDmg = Math.round(power);
+    const minDmg = Math.round(power*C.minDamageRatio);
+    const hp = s.VIT*30 + s.STR*5 + L*10 + 15;
+    const mp = s.INT*8 + L*2 - 2;
+    const def = s.VIT*2 + s.STR;
+    const acc = s.DEX*2;
+    const cb = s.DEX*2 + s.INT;
+    const crit = cb<300 ? Math.pow(cb,0.7) : Math.pow(300,0.7)+Math.pow(cb-300,0.6);
+    const dodge = acc*0.25;
+    return {physical,magical,power,maxDmg,minDmg,hp,mp,def,crit,acc,dodge};
+  }
+
+  // handlers
+  incStat(k){ if(this.state.attrPool<=0) return; const stats={...this.state.stats}; stats[k]={...stats[k],pending:stats[k].pending+1}; this.setState({stats,attrPool:this.state.attrPool-1}); }
+  decStat(k){ const st=this.state.stats[k]; if(st.pending<=0) return; const stats={...this.state.stats}; stats[k]={...st,pending:st.pending-1}; this.setState({stats,attrPool:this.state.attrPool+1}); }
+  incSkill(k){ const sk=this.state.skills[k]; const mx=this.SK[k].group==='beginner'?5:10; if(this.state.skillPool<=0||sk.level>=mx) return; const skills={...this.state.skills}; skills[k]={...sk,level:sk.level+1}; this.setState({skills,skillPool:this.state.skillPool-1}); }
+  decSkill(k){ const sk=this.state.skills[k]; if(sk.level<=sk.committed) return; const skills={...this.state.skills}; skills[k]={...sk,level:sk.level-1}; this.setState({skills,skillPool:this.state.skillPool+1}); }
+  confirm(){ const stats={}; Object.keys(this.state.stats).forEach(k=>{ const s=this.state.stats[k]; stats[k]={committed:s.committed+s.pending,pending:0}; }); const skills={}; Object.keys(this.state.skills).forEach(k=>{ skills[k]={...this.state.skills[k],committed:this.state.skills[k].level}; }); this.setState({stats,skills}); }
+  reset(){ let ap=this.state.attrPool, sp=this.state.skillPool; const stats={}; Object.keys(this.state.stats).forEach(k=>{ const s=this.state.stats[k]; ap+=s.pending; stats[k]={committed:s.committed,pending:0}; }); const skills={}; Object.keys(this.state.skills).forEach(k=>{ const s=this.state.skills[k]; sp+=(s.level-s.committed); skills[k]={...s,level:s.committed}; }); this.setState({stats,skills,attrPool:ap,skillPool:sp}); }
+  totalPending(){ let a=0,s=0; Object.values(this.state.stats).forEach(v=>a+=v.pending); Object.values(this.state.skills).forEach(v=>s+=(v.level-v.committed)); return a+s; }
+  setHover(type,key){ const h=this.state.hover; if(h.type===type&&h.key===key) return; this.setState({hover:{type,key}}); }
+  clearHover(){ if(!this.state.hover.type) return; this.setState({hover:{type:null,key:null}}); }
+
+  describe(key,level){
+    const d=this.SK[key]; const i=level-1; const parts=[]; const re=/\{(\w+)\}/g; let last=0,m;
+    while((m=re.exec(d.tmpl))){ if(m.index>last) parts.push({t:d.tmpl.slice(last,m.index)}); const arr=d.p[m[1]]; const val=arr?arr[i]:('{'+m[1]+'}'); const unit=(m[1]==='pct')?'%':(m[1]==='dur'||m[1]==='delay')?'s':''; parts.push({v:''+val+unit}); last=m.index+m[0].length; }
+    if(last<d.tmpl.length) parts.push({t:d.tmpl.slice(last)});
+    return parts;
+  }
+  descEl(key,level,size,hi){ const R=React.createElement; const d=this.SK[key];
+    const col=hi?'#ffd27a':d.elem, fs=(size||11)+(hi?2:0);
+    return R('span',null, this.describe(key,level).map((p,i)=> p.v? R('b',{key:i,style:{color:col,fontFamily:"'Press Start 2P',monospace",fontSize:fs+'px',position:'relative',top:'2px',lineHeight:'1',display:'inline-block'}},p.v) : R('span',{key:i},p.t) )); }
+
+  formula(arr){
+    if(arr.every(v=>v===arr[0])) return ''+arr[0];
+    const d0=arr[1]-arr[0]; let lin=true; for(let i=2;i<arr.length;i++){ if(arr[i]-arr[i-1]!==d0){lin=false;break;} }
+    if(lin){ const a=arr[0]-d0; return d0+'\u00b7L'+(a>0?' + '+a:a<0?' \u2212 '+Math.abs(a):''); }
+    return '\u2308L/2\u2309 + '+(arr[0]-1);
+  }
+  areaGrid(kind,elem){
+    const cells=Array(25).fill('empty'); const caster=11; // col1,row2 (0-idx top-left), facing right
+    if(kind==='line'){ [12,13,14].forEach(i=>cells[i]='hit'); }              // row2, cols 2-4
+    else if(kind==='area'){ [7,8,12,13].forEach(i=>cells[i]='hit'); }         // 2x2 in front: rows1-2, cols2-3
+    else if(kind==='single'||kind==='dot'){ cells[12]='hit'; }                // tile directly right
+    else { cells[caster]='self'; }
+    if(cells[caster]==='empty') cells[caster]='you';
+    return cells.map(t=>{
+      if(t==='you') return { bg:'#2a3140', border:'1px solid #e6c583', glow:'0 0 8px rgba(230,197,131,.4)', mark:'◆', markColor:'#e6c583' };
+      if(t==='self') return { bg:elem, border:'2px solid #e6c583', glow:'0 0 12px '+elem+'88', mark:'◆', markColor:'#12140c' };
+      if(t==='hit') return { bg:elem, border:'2px solid '+elem, glow:'0 0 10px '+elem+'66', mark:'', markColor:elem };
+      return { bg:'#12151c', border:'1px solid #232a36', glow:'none', mark:'', markColor:'#232a36' };
+    });
+  }
+
+  renderVals(){
+    const S=this.state, R=React.createElement;
+    const hov=S.hover||{type:null,key:null};
+    const statHover=(hov.type==='stat' && S.attrPool>0)?hov.key:null;
+
+    const numEl=(committed,pending,previewing)=>{
+      if(previewing) return R('span',{className:'px',style:{fontSize:'19px',color:'#ffd27a'}}, ''+(committed+pending+1));
+      const kids=[R('span',{key:1,className:'px',style:{fontSize:'16px',color:'#f2e8d2'}}, ''+committed)];
+      if(pending>0) kids.push(R('span',{key:2,className:'px',style:{fontSize:'13px',color:'#8fe0a0'}}, ' +'+pending));
+      return R('span',null,kids);
+    };
+    const statRows=Object.keys(this.STAT_META).map(k=>{ const m=this.STAT_META[k]; const st=S.stats[k];
+      return { abbr:m.abbr,name:m.name,role:m.role,color:m.color,tintA:m.tint,
+        numEl: numEl(st.committed, st.pending, statHover===k),
+        inc:()=>this.incStat(k), dec:()=>this.decStat(k),
+        hoverOn:()=>this.setHover('stat',k), hoverOff:()=>this.clearHover(),
+        upCls:S.attrPool>0?'':'dis', downCls:st.pending>0?'':'dis' }; });
+
+    const e={STR:this.eff('STR'),DEX:this.eff('DEX'),VIT:this.eff('VIT'),INT:this.eff('INT')};
+    const b={STR:S.stats.STR.committed,DEX:S.stats.DEX.committed,VIT:S.stats.VIT.committed,INT:S.stats.INT.committed};
+    const eP={...e}; if(statHover) eP[statHover]=e[statHover]+1;
+    const de=this.derive(e), db=this.derive(b), dP=this.derive(eP);
+    const mk=(label,keyd,dec)=>{ const cur=de[keyd], prev=dP[keyd], base=db[keyd];
+      const changed=statHover && Math.abs(prev-cur)>0.001; const f=(v)=> dec?v.toFixed(1):this.fmt(v);
+      let valueEl;
+      if(changed){ valueEl=R('span',{style:{lineHeight:'16px',whiteSpace:'nowrap'}},[
+        R('span',{key:1,className:'px',style:{fontSize:'10px',color:'#8f8674'}}, f(cur)),
+        R('span',{key:2,style:{color:'#7a7360',margin:'0 4px',fontSize:'12px'}}, '\u2192'),
+        R('span',{key:3,className:'px',style:{fontSize:'14px',color:'#ffd27a'}}, f(prev)) ]); }
+      else { valueEl=R('span',{className:'px',style:{fontSize:'11px',color:(cur>base+0.01?'#8fe0a0':'#d8cdb2'),lineHeight:'16px'}}, f(cur)); }
+      return { label, valueEl }; };
+    const derived=[
+      mk('Max damage','maxDmg'), mk('Min damage','minDmg'),
+      mk('Max HP','hp'), mk('Max MP','mp'),
+      mk('Defense','def'), mk('Crit rate','crit',true),
+      mk('Accuracy','acc'), mk('Dodge','dodge',true),
+    ];
+    const C=this.CLASS;
+    const mix={ label:C.name, physW:(C.phys*100)+'%', magW:(C.mag*100)+'%', physLbl:Math.round(C.phys*100)+'% PHY', magLbl:Math.round(C.mag*100)+'% MAG' };
+
+    const skillHoverKey=(hov.type==='skill')?hov.key:null;
+    const pip=(filled,accent,elem,w)=>({ bg: filled?elem:'#242b36', bd: accent?'#e6c583': (filled?elem:'#1a1e26'), w:w||'18px' });
+    const skillGroups=this.GROUPS.map(g=>({ title:g.title, color:g.color, line:g.line,
+      skills:Object.keys(this.SK).filter(k=>this.SK[k].group===g.id).map(k=>{ const d=this.SK[k]; const sk=S.skills[k]; const sel=S.selected===k;
+        const maxLv=d.group==='beginner'?5:10; const pw='18px';
+        const canInc=S.skillPool>0&&sk.level<maxLv; const previewing=skillHoverKey===k && canInc; const lvl=previewing?sk.level+1:sk.level;
+        const pips=[];for(let i2=0;i2<maxLv;i2++) pips.push(pip(i2<lvl,(i2>=sk.committed&&i2<sk.level)||(previewing&&i2===sk.level),d.elem,pw));
+        const levelEl = previewing
+          ? R('span',{style:{fontSize:'11px',color:'#8f8674',marginLeft:'6px'}}, ['Lv '+sk.level+' ', R('span',{key:1,style:{color:'#ffd27a'}},'\u2192 '+(sk.level+1))])
+          : R('span',{style:{fontSize:'11px',color:'#8f8674',marginLeft:'6px'}}, ['Lv '+sk.level, R('span',{key:1,style:{color:'#5f5a4a'}},'/'+maxLv)]);
+        return { name:d.name, shape:d.shape, flags:d.flags, elemCol:d.elem,
+          iconEl:R('img',{src:S.icons[k]||this.BLANK,style:{position:'absolute',inset:0,width:'48px',height:'48px',imageRendering:'pixelated'}}),
+          descEl:this.descEl(k,lvl,11,previewing), levelEl, pips,
+          bg: sel?'rgba(240,135,58,.12)':'#12151c', borderCol: sel?d.elem:'#262b34',
+          select:()=>this.setState({selected:k}), inc:()=>this.incSkill(k), dec:()=>this.decSkill(k),
+          hoverOn:()=>this.setHover('skill',k), hoverOff:()=>this.clearHover(),
+          upCls:canInc?'':'dis', downCls:(sk.level>sk.committed)?'':'dis' };
+      }) }));
+
+    // attack-area preview for selected skill (previews +1 when its own + is hovered)
+    const key=S.selected, d=this.SK[key], sk=S.skills[key];
+    const selMax=d.group==='beginner'?5:10;
+    const selPreview=(skillHoverKey===key)&&(S.skillPool>0&&sk.level<selMax);
+    const plvl=selPreview?sk.level+1:sk.level; const i=plvl-1;
+    const grid=this.areaGrid(d.kind,d.elem);
+    const hitLabel = (d.kind==='heal'||d.kind==='buff')?'Self':(d.kind==='dot'?'Ignite':'Affected');
+    let powLabel='Damage', powVal='\u2014', note='';
+    const rogueMin = C.minDamageRatio;
+    if(d.p.dmg){ const v=d.p.dmg[i]; const mn=Math.round(v*rogueMin); powLabel='Damage'; powVal=mn+' \u2013 '+v; note=Math.round(C.minDamageRatio*100)+'% floor \u00b7 '+mix.label+' mix'; }
+    else if(d.p.heal){ powLabel='Healing'; powVal=''+d.p.heal[i]; note='restores HP'; }
+    else if(d.kind==='dot'){ powLabel='Burn / round'; powVal=d.p.pct[i]+'%'; note='of target max HP for '+d.p.dur[i]+'s'; }
+    else if(d.p.pct){ powLabel='Effect'; powVal=d.p.pct[i]+'%'; note=d.p.dur?('for '+d.p.dur[i]+'s'):''; }
+    const labelOf=(pk)=> pk==='dmg'?'Max damage':pk==='pct'?(d.kind==='dot'?'Burn':'Slow'):pk==='dur'?'Duration':pk==='heal'?'Healing':pk==='tiles'?'Tiles':pk;
+    const unitOf=(pk)=> (pk==='pct')?'%':(pk==='dur')?'s':'';
+    const hasNext=plvl<selMax; const deltas=[];
+    if(hasNext){ Object.keys(d.p).forEach(pk=>{ const u=unitOf(pk); const a=d.p[pk][i], bn=d.p[pk][i+1]; if(a!==bn) deltas.push({label:labelOf(pk),cur:''+a+u,next:''+bn+u}); }); }
+    const pv={ name:d.name, shape:d.shape, tier:d.tier, elemCol:d.elem,
+      iconEl:R('img',{src:S.icons[key]||this.BLANK,style:{position:'absolute',inset:0,width:'56px',height:'56px',imageRendering:'pixelated'}}),
+      grid, hitLabel, powLabel, powVal, powSize: selPreview?'32px':'26px', powColor: selPreview?'#ffd27a':d.elem, note, hasNext, maxed:plvl>=selMax, deltas, max:selMax };
+
+    const pend=this.totalPending();
+    const xpNext=Math.round(5*Math.pow(this.LEVEL+5,2.25)); const xpCur=Math.round(xpNext*0.62);
+    return {
+      portraitEl:R('img',{src:S.portrait,style:{position:'absolute',left:'-8px',top:'0px',width:'116px',height:'116px',imageRendering:'pixelated'}}),
+      xpPct:'62%', xpLabel:this.fmt(xpCur)+' / '+this.fmt(xpNext),
+      attrPool:S.attrPool, skillPool:S.skillPool,
+      attrPoolColor:S.attrPool>0?'#8fe0a0':'#6f6753', skillPoolColor:S.skillPool>0?'#e0906a':'#6f6753',
+      pendingNote: pend>0? ('Unsaved: '+pend+' point'+(pend>1?'s':'')+' allocated. Confirm to lock in.') : 'All points committed. Spend more as you level.',
+      confirmCls: pend>0?'':'dis', confirm:()=>this.confirm(), reset:()=>this.reset(),
+      statRows, mix, derived, skillGroups, pv,
+      debugLabel: this.DEBUG?'config.DEBUG · START LV2':'', debugColor:'#8fe0a0'
+    };
+  }
+}
+</script>
+</body>
+</html>

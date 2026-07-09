@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  .desk{min-width:max-content;background:radial-gradient(1400px 900px at 50% 0%, #2a2118, #14100b 70%);padding:60px;}
+  .sheet{position:relative;width:1440px;height:1860px;border-radius:6px;
+    background:#e8dcbe;
+    box-shadow:0 40px 90px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.15) inset;}
+  .deckle{position:absolute;inset:0;border-radius:6px;pointer-events:none;
+    box-shadow:inset 0 0 60px rgba(120,86,44,.35), inset 0 0 160px rgba(90,60,26,.22), inset 0 0 0 2px rgba(120,90,50,.25);}
+</style>
+</helmet>
+<div class="desk">
+  <div class="sheet">
+    <svg ref="{{ svg }}" viewBox="0 0 1440 1860" width="1440" height="1860" style="position:absolute;inset:0;display:block;border-radius:6px;"></svg>
+    <div class="deckle"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.svg = React.createRef(); }
+  renderVals(){ return { svg:this.svg }; }
+
+  get C(){ return {
+    ink:'#493523', ink2:'#6e563a', ink3:'#9c8560', halo:'#eee2c2',
+    water:'#cdd2bf', shore:'#6e563a', forest:'#5f6a3f',
+    warrior:'#3f6690', archer:'#3f7a4e', magician:'#6b4e94', thief:'#8a5030',
+    ochre:'#a8552b', red:'#9a3b2b'
+  }; }
+
+  get cities(){ return {
+    helsinki:[637,1725], turku:[435,1680], tampere:[548,1511], oulu:[678,946],
+    savonlinna:[937,1451], kuopio:[846,1287], jyvaskyla:[699,1392], varkaus:[860,1380],
+    kokkola:[500,1134], mantyharju:[785,1524], lahti:[692,1594], seinajoki:[478,1303],
+    lappajarvi:[538,1234], rovaniemi:[697,706], pori:[399,1512], kotka:[789,1676],
+    ruka:[957,759], lieksa:[1023,1218], kajaani:[849,1073], sodankyla:[764,558], utsjoki:[740,175],
+    vaasa:[385,1225], inari:[755,335], saana:[420,235], pallas:[530,390], salla:[900,420], ukk:[960,540]
+  }; }
+
+  get coast(){ return [
+    [395,1735],[360,1600],[368,1500],[345,1400],[325,1290],[400,1200],[468,1135],[560,1015],[652,930],[600,840],
+    [575,725],[560,615],[548,500],[520,390],
+    [455,345],[418,270],[380,180],[455,195],[545,255],[615,195],[680,130],[755,85],[825,110],[895,175],[940,285],
+    [1000,460],[1030,630],[1055,855],
+    [1100,1110],[1110,1250],[1060,1400],[1000,1520],[915,1610],
+    [830,1670],[700,1720],[640,1745],[530,1755],[450,1740]
+  ]; }
+
+  // ---------- math helpers ----------
+  rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  smoothClosed(P,k){ k=k||1; let d=`M${P[0][0]},${P[0][1]}`; const n=P.length; for(let i=0;i<n;i++){ const p0=P[(i-1+n)%n],p1=P[i],p2=P[(i+1)%n],p3=P[(i+2)%n]; const c1x=p1[0]+(p2[0]-p0[0])/6*k,c1y=p1[1]+(p2[1]-p0[1])/6*k,c2x=p2[0]-(p3[0]-p1[0])/6*k,c2y=p2[1]-(p3[1]-p1[1])/6*k; d+=` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0]},${p2[1]}`; } return d+'Z'; }
+  pip(pt,poly){ let x=pt[0],y=pt[1],inside=false; for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1]; const inter=((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi); if(inter) inside=!inside; } return inside; }
+  moveTowards(from,to,dist){ const dx=to[0]-from[0], dy=to[1]-from[1]; const L=Math.hypot(dx,dy)||1; const t=Math.min(dist/L,0.4); return [from[0]+dx*t, from[1]+dy*t]; }
+
+  T(x,y,str,o){ o=o||{}; const C=this.C; const f=o.font||"'IM Fell English', Georgia, serif"; const fill=o.fill||C.ink; const anc=o.anchor||'middle'; const it=o.italic?'font-style="italic"':''; const ls=o.ls!=null?`letter-spacing="${o.ls}"`:''; const halo=o.halo===false?'':`stroke="${C.halo}" stroke-width="${o.hw||3.4}" stroke-linejoin="round" paint-order="stroke"`; const rot=o.rot?`transform="rotate(${o.rot} ${x} ${y})"`:''; const w=o.weight?`font-weight="${o.weight}"`:''; return `<text x="${x}" y="${y}" text-anchor="${anc}" font-family="${f}" font-size="${o.size||16}" ${w} ${it} ${ls} ${halo} ${rot} fill="${fill}">${str}</text>`; }
+
+  merlons(x0,x1,y,mh){ const w=x1-x0,n=Math.max(2,Math.floor(w/7)),s=w/(n*2); let d=`M${x0},${y} `,cx=x0; for(let i=0;i<n;i++){ d+=`L${cx},${y-mh} L${cx+s},${y-mh} L${cx+s},${y} `; cx+=2*s; } return d+`L${x1},${y}`; }
+  pine(x,y,s){ s=s||1; return `<path d="M${x},${y} v${-3*s} M${x-3.2*s},${y-2*s} L${x},${y-9*s} L${x+3.2*s},${y-2*s} M${x-2.4*s},${y-6*s} L${x},${y-11*s} L${x+2.4*s},${y-6*s}"/>`; }
+
+  townIcon(id){ const C=this.C; const w='fill="none"';
+    if(id==='olavinlinna') return `
+      <path d="M-30,5 q7,4 14,0 q7,-4 14,0 q7,4 14,0" stroke-width="1.5" opacity=".65"/>
+      <path d="M-26,3 q26,-7 52,0" fill="${C.halo}"/>
+      <path d="M-22,3 v-24 a6,4 0 0 1 12,0 v24 z" fill="${C.halo}"/><path d="${this.merlons(-22,-10,-21,4)}" ${w}/>
+      <path d="M-6,3 v-36 a7,4 0 0 1 14,0 v36 z" fill="${C.halo}"/><path d="${this.merlons(-6,8,-33,5)}" ${w}/>
+      <path d="M2,-38 v-9 l8,3 -8,3" fill="${C.warrior}"/>
+      <path d="M10,3 v-26 a6,4 0 0 1 12,0 v26 z" fill="${C.halo}"/><path d="${this.merlons(10,22,-23,4)}" ${w}/>
+      <path d="M-16,-10 v5 M1,-20 v6 M16,-12 v5" stroke-width="1.5"/>`;
+    if(id==='turku') return `
+      <path d="M-36,5 q10,4 20,0 q10,-4 20,0 q8,3 16,0" stroke-width="1.5" opacity=".6"/>
+      <path d="M-42,3 v-18 l6,-13 6,13 v18 z" fill="${C.halo}"/><path d="M-36,-30 v-8 M-39,-34 h6"/>
+      <path d="M-30,3 v-26 h28 v26 z" fill="${C.halo}"/><path d="${this.merlons(-30,-2,-26,5)}" ${w}/>
+      <path d="M-20,3 v-11 a6,6 0 0 1 12,0 v11" stroke-width="1.7"/>
+      <path d="M6,3 v-40 h15 v40 z" fill="${C.halo}"/><path d="${this.merlons(6,21,-40,5)}" ${w}/>
+      <path d="M13,-40 v-11 l10,3.5 -10,3.5" fill="${C.warrior}"/>
+      <path d="M10,-16 v6 M17,-16 v6"/>`;
+    if(id==='puijo') return `
+      <path d="M-30,4 q16,-11 30,-9 q11,-1 24,6" fill="${C.halo}"/>
+      ${this.pine(-22,2,1.1)}${this.pine(18,4,1)}
+      <path d="M-3,2 v-42 h6 v42 z" fill="${C.halo}"/>
+      <path d="M-9,-40 a9,5 0 0 1 18,0 z" fill="${C.halo}"/><path d="M-9,-40 h18"/>
+      <path d="M0,-45 v-11"/><circle cx="0" cy="-57" r="2" fill="${C.archer}"/>
+      <path d="M-2,-24 h4"/>`;
+    if(id==='ridge') return `
+      <path d="M-32,4 q16,-15 32,-13 q13,-2 26,5" fill="${C.halo}"/>
+      ${this.pine(-24,0,0.9)}${this.pine(-14,-3,0.8)}${this.pine(24,2,0.9)}
+      <path d="M2,0 v-30 h13 v30 z" fill="${C.halo}"/>
+      <path d="M2,-30 a6.5,7 0 0 1 13,0 z" fill="${C.halo}"/>
+      <path d="M8.5,-44 v-7"/>
+      <path d="M8.5,-56 l3,3 -3,3 -3,-3 z" fill="${C.magician}"/>
+      <path d="M6,-16 a2.5,3.5 0 0 1 5,0 v5 h-5 z"/>`;
+    if(id==='canal') return `
+      <path d="M-30,-4 l9,-9 9,9 z" fill="${C.thief}"/>
+      <path d="M-15,-4 l6.5,-7 6.5,7 z" fill="${C.halo}"/>
+      <path d="M9,-4 l7.5,-8 7.5,8 z" fill="${C.halo}"/>
+      <path d="M-30,-4 h20 v8 h-20 z M9,-4 h16 v8 h-16 z" fill="${C.halo}"/>
+      <path d="M-2,6 v-30 M6,6 v-30" stroke-width="1.8"/>
+      <path d="M-2,-6 l8,4 M-2,-16 l8,4" stroke-width="1.5"/>
+      <path d="M-6,-26 h16"/>`;
+    if(id==='tamperecityscape') return `
+      <path d="M-34,6 q10,4 20,0 q10,-4 20,0 q10,4 20,0" stroke-width="1.4" opacity=".55"/>
+      <path d="M-30,2 q6,-6 0,-12 q-6,-6 0,-12" stroke-width="1.1" opacity=".5"/>
+      <path d="M-8,2 q6,-6 0,-12 q-6,-6 0,-12" stroke-width="1.1" opacity=".5"/>
+      <path d="M14,2 q6,-6 0,-12 q-6,-6 0,-12" stroke-width="1.1" opacity=".5"/>
+      <path d="M-34,-2 q34,-9 68,0" fill="none" stroke-width="1.4"/>
+      <path d="M-22,-2 v-18 h12 v18 z" fill="${C.halo}"/><path d="M-22,-20 l6,-6 6,6 z" fill="${C.halo}"/>
+      <path d="M-2,-2 v-28 h14 v28 z" fill="${C.halo}"/><path d="M-2,-28 l7,-7 7,7 z" fill="${C.halo}"/><path d="M5,-35 v-7"/>
+      <path d="M18,-2 v-14 h11 v14 z" fill="${C.halo}"/><path d="M18,-16 l5.5,-5.5 5.5,5.5 z" fill="${C.archer}"/>
+      <path d="M-16,-2 v-8 M-9,-2 v-8 M-2,-16 v-6 M5,-16 v-6" stroke-width="1"/>`;
+    if(id==='cathedral') return `
+      <path d="M-28,6 q10,4 20,0 q10,-4 18,0" stroke-width="1.5" opacity=".6"/>
+      <path d="M-26,4 h52 M-22,0 h44 M-18,-4 h36"/>
+      <path d="M-18,-4 v-17 h36 v17 z" fill="${C.halo}"/>
+      <path d="M-13,-4 v-15 M-6,-4 v-15 M1,-4 v-15 M8,-4 v-15 M15,-4 v-15"/>
+      <path d="M-10,-21 a10,11 0 0 1 20,0 z" fill="${C.halo}"/>
+      <path d="M0,-32 v-8 M-3,-38 h6"/>
+      <path d="M-21,-21 a4.5,6 0 0 1 9,0 z" fill="${C.halo}"/><path d="M-16.5,-27 v-4"/>
+      <path d="M12,-21 a4.5,6 0 0 1 9,0 z" fill="${C.halo}"/><path d="M16.5,-27 v-4"/>
+      <path d="M0,-44 l2.5,4 -2.5,-1 -2.5,1 z" fill="${C.magician}"/>`;
+    if(id==='ouluport') return `
+      <path d="M-30,6 q10,4 20,0 q10,-4 20,0" stroke-width="1.5" opacity=".6"/>
+      <path d="M-26,4 v-18 h40 v18 z" fill="${C.halo}"/>
+      <path d="M-28,-14 l22,-9 22,9 z" fill="${C.halo}"/>
+      <path d="M-4,-24 v-15 h11 v15 z" fill="${C.halo}"/>
+      <path d="M-4,-39 l5.5,-7 5.5,7 z" fill="${C.thief}"/>
+      <path d="M-20,4 v-11 h6 v11 M-8,4 v-11 h6 v11 M6,4 v-11 h6 v11" stroke-width="1.5"/>
+      <path d="M17,4 v-9 a3,1.6 0 0 1 6,0 v9 z" fill="${C.ink}"/>`;
+    return '';
+  }
+
+  poiIcon(id){ const C=this.C;
+    if(id==='boat') return `<path d="M-13,0 q13,7 26,0 z" fill="${C.halo}"/><path d="M3,0 v-17"/><path d="M3,-17 l-11,11 h11 z" fill="${C.halo}"/><path d="M-16,4 q8,3 16,0 q8,-3 16,0" stroke-width="1.3" opacity=".6"/>`;
+    if(id==='pines') return `${this.pine(-8,2,1.3)}${this.pine(8,0,1.1)}${this.pine(0,4,1)}`;
+    if(id==='skijump') return `<path d="M-14,2 v-3 M-6,2 v-9 M3,2 v-17 M12,2 v-25"/><path d="M-17,4 q19,-33 33,-33" fill="none"/><path d="M16,-29 l-5,-1 M16,-29 l1,-5"/><path d="M-19,6 q9,3 18,0" stroke-width="1.2" opacity=".5"/>`;
+    if(id==='churchtower') return `<path d="M-7,2 v-30 h14 v30 z" fill="${C.halo}"/><path d="M-7,-28 h14"/><path d="M0,-30 v-9 M-4,-35 h8"/><path d="M-3,-14 a3,4 0 0 1 6,0 v6 h-6 z"/>`;
+    if(id==='craterlake') return `<ellipse cx="0" cy="0" rx="15" ry="9" fill="${C.water}" stroke="${C.shore}"/><path d="M-10,-2 q10,5 20,0" stroke-width="1.1" opacity=".6"/><path d="M6,-12 l2,4 4,1 -3,3 1,4 -4,-2 -4,2 1,-4 -3,-3 4,-1 z" fill="${C.ochre}" stroke="none"/>`;
+    if(id==='reindeer') return `<path d="M-12,0 v-9 q0,-6 7,-6 h6 q6,0 8,5" fill="none" stroke-width="2"/><path d="M-11,0 v6 M-4,0 v7 M4,-1 v7 M10,-2 v6"/><path d="M9,-10 q5,-3 7,-9 M9,-10 q6,1 10,-3 M9,-10 l-1,-8 M9,-10 l5,-5"/>`;
+    if(id==='lighthouse') return `<path d="M-7,2 l3,-26 h8 l3,26 z" fill="${C.halo}"/><path d="M-4,-24 h8"/><path d="M-5,-24 v-6 h10 v6 z" fill="${C.ochre}" opacity=".85"/><path d="M-6,-30 h12 l-2,-5 h-8 z" fill="${C.halo}"/><path d="M0,-35 v-4"/><path d="M-16,4 q8,3 16,0 q8,-3 16,0" stroke-width="1.2" opacity=".55"/><path d="M-6,-14 h12 M-6,-6 h12" stroke-width="1.1" opacity=".5"/>`;
+    if(id==='anchor') return `<circle cx="0" cy="-24" r="4"/><path d="M0,-20 v22 M-11,-4 a11,11 0 0 0 22,0" fill="none"/><path d="M-11,-4 l-4,3 M-11,-4 l4,2 M11,-4 l4,3 M11,-4 l-4,2 M-8,-14 h16"/>`;
+    if(id==='fell') return `<path d="M-18,2 q10,-20 18,-20 q9,0 18,20 z" fill="${C.halo}"/><path d="M0,-18 l-6,10 M0,-18 l6,10 M-4,-6 l3,5 M4,-6 l-3,5"/><path d="M6,-14 l14,-6" stroke-width="1.2"/><path d="M9,-12 v3 M13,-14 v3 M17,-16 v3" stroke-width="1.1"/>`;
+    if(id==='hillpines') return `<path d="M-20,2 q12,-16 22,-15 q10,-1 20,15 z" fill="${C.halo}"/>${this.pine(-7,-6,1)}${this.pine(6,-9,0.9)}${this.pine(-16,0,0.8)}`;
+    if(id==='ruin') return `<path d="M-22,5 q11,4 22,0 q11,-4 0,0" stroke-width="1.4" opacity=".55"/><path d="M-10,4 v-30 h13 v22 l-4,-5 -4,5 -5,-6 z" fill="${C.halo}"/><path d="M-10,-26 l6,0 M3,-26 l-3,0"/><path d="M-6,-14 a2.5,3.5 0 0 1 5,0 v4 h-5 z"/>`;
+    if(id==='woodchurch') return `<path d="M-11,2 v-16 h22 v16 z" fill="${C.halo}"/><path d="M-13,-14 l13,-11 13,11 z" fill="${C.halo}"/><path d="M0,-25 v-6 M-3,-29 h6"/><path d="M-3,2 v-9 h6 v9"/>`;
+    if(id==='lavvu') return `<path d="M0,-30 L13,2 H-13 Z" fill="${C.halo}"/><path d="M-4,-18 L4,-18 L9,2 H-9 Z" fill="${C.ink}" opacity=".16"/><path d="M0,-30 v-5 M-3,-33 l3,-4 3,4 M-6,-34 L0,-30 L6,-34"/><path d="M-16,6 q8,3 16,0 q8,-3 16,0" stroke-width="1.2" opacity=".5"/>`;
+    if(id==='cabin') return `<path d="M-9,2 v-14 h18 v14 z" fill="${C.halo}"/><path d="M-11,-12 l11,-9 11,9 z" fill="${C.halo}"/><path d="M4,-12 v-6 h3 v6"/>`;
+    if(id==='vaasa') return `<path d="M-7,2 v-22 h14 v22 z" fill="${C.halo}"/><path d="M-9,-20 l9,-9 9,9 z" fill="${C.halo}"/><path d="M-3,2 v-10 h6 v10"/>`;
+    if(id==='saana') return `<path d="M-16,2 L-8,-16 H8 L16,2 Z" fill="${C.halo}"/><path d="M-8,-16 h16" stroke-width="1.6"/><path d="M-4,-16 l2,-4 M4,-16 l-2,-4"/>`;
+    if(id==='sallafell') return `<path d="M-20,2 q10,-14 20,-13 q10,-1 20,13 z" fill="${C.halo}"/><path d="M-20,2 q10,-8 20,-8 q10,0 20,8" stroke-width="1.1" opacity=".5" fill="none"/>`;
+    if(id==='ukknp') return `<path d="M-20,2 l8,-18 6,8 6,-14 6,10 6,-6 8,20 z" fill="${C.halo}"/><path d="M-14,2 q6,-3 12,0" stroke-width="1" stroke-dasharray="1 3" opacity=".6" fill="none"/>`;
+    if(id==='pallasridge') return `<path d="M-22,2 l7,-20 5,9 6,-16 6,12 5,-8 5,4 8,19 z" fill="${C.halo}"/>`;
+    return '';
+  }
+
+  componentDidMount(){ const wait=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve(); wait.then(()=>this.build()); setTimeout(()=>{ if(!this._built) this.build(); },400); }
+
+  build(){
+    if(this._built) return; const svg=this.svg.current; if(!svg) return; this._built=true;
+    const C=this.C, P=[], cs=this.cities;
+    const coastPts=this.coast;
+    const land=this.smoothClosed(coastPts,1);
+
+    P.push(`<defs>
+      <radialGradient id="vig" cx="50%" cy="46%" r="62%"><stop offset="0%" stop-color="#efe6c8"/><stop offset="70%" stop-color="#e6d9b8"/><stop offset="100%" stop-color="#d8c69a"/></radialGradient>
+      <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.29  0 0 0 0 0.21  0 0 0 0 0.12  0 0 0 0.5 0"/></filter>
+    </defs>`);
+
+    P.push(`<rect x="0" y="0" width="1440" height="1860" fill="url(#vig)"/>`);
+    P.push(`<g opacity="0.5">
+      <ellipse cx="300" cy="500" rx="220" ry="160" fill="#cdba8e" opacity="0.18"/>
+      <ellipse cx="1150" cy="1400" rx="240" ry="200" fill="#cdba8e" opacity="0.16"/>
+      <ellipse cx="1180" cy="360" rx="160" ry="120" fill="#cdba8e" opacity="0.14"/>
+      <ellipse cx="360" cy="1600" rx="180" ry="120" fill="#cdba8e" opacity="0.14"/></g>`);
+    P.push(`<rect x="0" y="0" width="1440" height="1860" filter="url(#rough)" opacity="0.05"/>`);
+
+    P.push(`<path d="M0,0 H1440 V1860 H0 Z ${land}" fill="#c9d0bd" fill-rule="evenodd" opacity="0.5"/>`);
+
+    const centroid=coastPts.reduce((s,p)=>[s[0]+p[0],s[1]+p[1]],[0,0]).map(v=>v/coastPts.length);
+    let hatch=''; const n=coastPts.length;
+    for(let i=0;i<n;i++){
+      const prev=coastPts[(i-1+n)%n], cur=coastPts[i], next=coastPts[(i+1)%n];
+      const tx=next[0]-prev[0], ty=next[1]-prev[1]; const L=Math.hypot(tx,ty)||1;
+      let nx=-ty/L, ny=tx/L;
+      const toC=[cur[0]-centroid[0],cur[1]-centroid[1]];
+      if(nx*toC[0]+ny*toC[1]<0){ nx=-nx; ny=-ny; }
+      const tnx=-ny, tny=nx;
+      for(let k=1;k<=3;k++){ const off=8+k*8; const x1=cur[0]+nx*off, y1=cur[1]+ny*off; const len=11-k*1.8;
+        hatch+=`<path d="M${(x1-tnx*len).toFixed(1)},${(y1-tny*len).toFixed(1)} L${(x1+tnx*len).toFixed(1)},${(y1+tny*len).toFixed(1)}"/>`; }
+    }
+    P.push(`<g stroke="${C.ink3}" stroke-width="1.3" fill="none" opacity="0.6" stroke-linecap="round">${hatch}</g>`);
+
+    P.push(`<path d="${land}" fill="#e7dcbd" stroke="none"/>`);
+    P.push(`<path d="${land}" fill="none" stroke="${C.ink}" stroke-width="2.4" stroke-linejoin="round"/>`);
+    P.push(`<path d="${land}" fill="none" stroke="${C.ink2}" stroke-width="0.9" stroke-linejoin="round" opacity="0.5" transform="translate(3,3)"/>`);
+    P.push(`<clipPath id="landclip"><path d="${land}"/></clipPath>`);
+
+    const lakes=[
+      [[903,1338],[942,1345],[971,1378],[962,1416],[931,1437],[905,1422],[888,1393],[887,1362]],
+      [[812,1250],[872,1262],[884,1310],[840,1330],[800,1300],[796,1268]],
+      [[684,1448],[706,1466],[706,1536],[686,1554],[668,1530],[670,1470]],
+      [[735,974],[807,970],[833,1006],[791,1032],[733,1016]],
+      [[982,1178],[1016,1200],[1010,1262],[978,1272],[966,1218]],
+      [[798,300],[862,300],[882,342],[840,362],[798,346],[788,320]],
+      [[560,1120],[602,1128],[610,1170],[566,1182],[548,1150]],
+    ];
+    let lakeSvg='';
+    lakes.forEach((L)=>{ const d=this.smoothClosed(L,1); lakeSvg+=`<path d="${d}" fill="${C.water}" stroke="${C.shore}" stroke-width="1.4"/>`; const cx=L.reduce((s,p)=>s+p[0],0)/L.length, cy=L.reduce((s,p)=>s+p[1],0)/L.length; for(let k=-1;k<=1;k++){ lakeSvg+=`<path d="M${cx-16},${cy+k*6} q16,4 32,0" fill="none" stroke="${C.shore}" stroke-width="0.8" opacity="0.5"/>`; } });
+    P.push(`<g clip-path="url(#landclip)">${lakeSvg}</g>`);
+
+    // ---- label exclusion zones (no trees inside town/POI/region/sea names) ----
+    const labelZones=[[650,470,95],[430,1120,110],[975,958,90],[1055,1348,100],[600,1638,85],[230,1057,70],[600,1830,115],[755,342,55],[420,240,55],[530,400,70]];
+
+    const rand=this.rng(99); let forest='';
+    let placed=0, tries=0;
+    while(placed<170 && tries<5000){ tries++; const x=60+rand()*1080, y=120+rand()*1620; if(!this.pip([x,y],coastPts)) continue; let inLake=false; for(const L of lakes){ if(this.pip([x,y],L)){ inLake=true; break; } } if(inLake) continue; let nearCity=false; for(const k in cs){ const c=cs[k]; if(Math.hypot(c[0]-x,c[1]-y)<56){ nearCity=true; break; } } if(nearCity) continue; let nearLabel=false; for(const z of labelZones){ if(Math.hypot(z[0]-x,z[1]-y)<z[2]){ nearLabel=true; break; } } if(nearLabel) continue; if(y<760 && rand()>0.26) continue; forest+=this.pine(x,y,0.75+rand()*0.5); placed++; }
+    P.push(`<g clip-path="url(#landclip)" stroke="${C.forest}" stroke-width="1.3" fill="none" opacity="0.62" stroke-linecap="round" stroke-linejoin="round">${forest}</g>`);
+
+    const fellCl=[[560,360],[600,520],[820,430],[880,560],[615,655],[760,480],[900,600],[680,560],[720,660],[850,700],[640,470]];
+    let fells=''; fellCl.forEach((f,i)=>{ const rr=this.rng(7+i); const ridge=`M${f[0]-26},${f[1]} q26,-18 52,0`; fells+=`<path d="${ridge}" fill="none" stroke="${C.ink2}" stroke-width="1.4"/>`; for(let k=0;k<9;k++){ const t=k/8; const x=f[0]-24+t*48; const y=f[1]-Math.sin(t*Math.PI)*16; fells+=`<path d="M${x.toFixed(1)},${y.toFixed(1)} l${(rr()*3-1.5).toFixed(1)},7"/>`; } });
+    P.push(`<g clip-path="url(#landclip)" stroke="${C.ink2}" stroke-width="1" fill="none" opacity="0.5">${fells}</g>`);
+
+    // ---- MOUNTAIN RANGE (Pallas) — a vertical chain of subtle background peaks guarding the NW arm ----
+    let pallasRange=''; const rr=this.rng(31);
+    for(let y=252;y<=366;y+=20){ const x=506+(rr()*10-5); const s=0.9+rr()*0.35;
+      pallasRange+=`<path d="M${(x-14*s).toFixed(1)},${y} L${(x-4*s).toFixed(1)},${(y-13*s).toFixed(1)} L${(x+2*s).toFixed(1)},${(y-5*s).toFixed(1)} L${(x+10*s).toFixed(1)},${(y-15*s).toFixed(1)} L${(x+15*s).toFixed(1)},${y} Z" fill="${C.halo}" stroke="${C.ink2}" stroke-width="1.1" opacity="0.5"/>`;
+      pallasRange+=`<path d="M${(x-6*s).toFixed(1)},${(y-3).toFixed(1)} l2,6 M${(x+4*s).toFixed(1)},${(y-4).toFixed(1)} l2,6" stroke="${C.ink2}" stroke-width="0.9" opacity="0.4" fill="none"/>`; }
+    P.push(`<g clip-path="url(#landclip)">${pallasRange}</g>`);
+
+    const roads=[['helsinki','lahti'],['lahti','jyvaskyla'],['jyvaskyla','kuopio'],['kuopio','kajaani'],['kajaani','oulu',{c1:[790,1060],c2:[680,1020]}],['oulu','rovaniemi'],['rovaniemi','sodankyla'],['sodankyla','utsjoki'],['helsinki','tampere'],['pori','turku'],['tampere','turku'],['turku','helsinki'],['tampere','jyvaskyla'],['jyvaskyla','varkaus'],['varkaus','savonlinna',{mq:[845,1430]}],['savonlinna','mantyharju'],['mantyharju','kotka'],['mantyharju','lahti'],['kotka','helsinki'],['oulu','kokkola'],['kokkola','seinajoki'],['seinajoki','tampere'],['kokkola','lappajarvi'],['kuopio','varkaus'],['kajaani','lieksa',{mq:[1060,1160]}],['lieksa','savonlinna',{mq:[1050,1310]}],['rovaniemi','ruka'],['kajaani','ruka'],['seinajoki','lappajarvi'],['vaasa','seinajoki'],['vaasa','kokkola']];
+    let rd=''; const TRIM=40;
+    roads.forEach((r)=>{ const a=r[0],b=r[1],ov=r[2]; const p=cs[a],q=cs[b]; if(!p||!q) return;
+      if(ov&&ov.c1&&ov.c2){ const p2=this.moveTowards(p,ov.c1,TRIM), q2=this.moveTowards(q,ov.c2,TRIM);
+        rd+=`<path d="M${p2[0].toFixed(1)},${p2[1].toFixed(1)} C${ov.c1[0]},${ov.c1[1]} ${ov.c2[0]},${ov.c2[1]} ${q2[0].toFixed(1)},${q2[1].toFixed(1)}"/>`;
+      } else { const c=(ov&&ov.mq)?ov.mq:[(p[0]+q[0])/2+ (q[1]-p[1])*0.06, (p[1]+q[1])/2 - (q[0]-p[0])*0.06];
+        const p2=this.moveTowards(p,c,TRIM), q2=this.moveTowards(q,c,TRIM);
+        rd+=`<path d="M${p2[0].toFixed(1)},${p2[1].toFixed(1)} Q${c[0].toFixed(0)},${c[1].toFixed(0)} ${q2[0].toFixed(1)},${q2[1].toFixed(1)}"/>`;
+      } });
+    P.push(`<g clip-path="url(#landclip)" fill="none" stroke="${C.ink}" stroke-width="2.2" stroke-dasharray="2 6" stroke-linecap="round" opacity="0.85">${rd}</g>`);
+
+    // ---- REGION LABELS ----
+    const reg=(x,y,s,size,rot)=>P.push(this.T(x,y,s,{font:"'IM Fell English', serif",fill:C.ink3,size:size||27,ls:7,italic:true,halo:false,rot:rot||0,anchor:'middle'}));
+    reg(650,470,'L A P P I',34,-6);
+    reg(430,1120,'POHJANMAA',24,-45); reg(975,958,'KAINUU',22,18); reg(1055,1348,'KARJALA',20,-68); reg(600,1638,'UUSIMAA',18,0);
+
+    P.push(this.T(230,1057,'BOTHNIA',{fill:C.ink3,size:20,ls:6,italic:true,halo:false,rot:-90}));
+    P.push(this.T(600,1830,'SUOMENLAHTI',{fill:C.ink3,size:19,ls:6,italic:true,halo:false}));
+
+    P.push(`<g transform="translate(255,835)" fill="none" stroke="${C.ink2}" stroke-width="1.6" opacity="0.75" stroke-linecap="round">
+      <path d="M-22,6 q22,10 44,0 l-6,-8 h-32 z" fill="${C.halo}"/><path d="M0,-2 v-34"/><path d="M0,-34 l20,8 -20,8 z" fill="${C.halo}"/><path d="M0,-14 l-15,6 15,6 z" fill="${C.halo}"/><path d="M-16,8 q10,4 20,0" stroke-width="1.1" opacity="0.6"/></g>`);
+    P.push(`<g transform="translate(175,1360)" fill="none" stroke="${C.ink2}" stroke-width="2" opacity="0.65" stroke-linecap="round">
+      <path d="M-30,10 q10,-14 22,-6 q10,7 0,16 q-8,7 -2,-4 q4,-8 -6,-6 q-10,3 -6,10"/><path d="M-8,4 q6,-8 16,-4 q10,5 4,14"/><circle cx="-26" cy="6" r="1.4" fill="${C.ink2}"/></g>`);
+
+    // ---- POIs (named) ----
+    const poi=[['kokkola','Kokkola','boat',[0,26]],['mantyharju','Mäntyharju','pines',[0,24]],['lahti','Lahti','skijump',[0,26]],['seinajoki','Seinäjoki','churchtower',[0,24]],['vaasa','Vaasa','vaasa',[0,26]],['lappajarvi','Lappajärvi','craterlake',[0,24]],['rovaniemi','Rovaniemi','reindeer',[0,24]],['pori','Pori','lighthouse',[0,26]],['kotka','Kotka','anchor',[0,24]],['ruka','Ruka','fell',[0,24]],['lieksa','Lieksa','hillpines',[0,24]],['kajaani','Kajaani','ruin',[0,26]],['sodankyla','Sodankylä','woodchurch',[0,26]],['utsjoki','Utsjoki','lavvu',[0,26]],['inari','Inari','cabin',[0,24]],['saana','Saana','saana',[0,24]],['pallas','Pallas','',[0,24]],['salla','Salla','sallafell',[0,24]],['ukk','Sudenpesä','ukknp',[0,26]]];
+    let poiSvg='';
+    poi.forEach(([k,name,icon,lab])=>{ const c=cs[k]; poiSvg+=`<g transform="translate(${c[0]},${c[1]})" fill="none" stroke="${C.ink}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${this.poiIcon(icon)}</g>`; poiSvg+=`<circle cx="${c[0]}" cy="${c[1]}" r="2.6" fill="${C.ink}"/>`; poiSvg+=this.T(c[0]+lab[0],c[1]+lab[1],name,{font:"'IM Fell English', serif",size:15.5,italic:true,fill:C.ink}); });
+    P.push(poiSvg);
+
+    // ---- JOB TOWNS ----
+    const towns=[
+      ['savonlinna','Savonlinna','olavinlinna','warrior','town',[0,34]],
+      ['kuopio','Kuopio','puijo','archer','town',[0,34]],
+      ['jyvaskyla','Jyväskylä','ridge','magician','town',[0,30]],
+      ['varkaus','Varkaus','canal','thief','town',[0,34]],
+      ['turku','Turku','turku','warrior','city',[0,38]],
+      ['tampere','Tampere','tamperecityscape','archer','city',[0,38]],
+      ['helsinki','Helsinki','cathedral','magician','city',[0,36]],
+      ['oulu','Oulu','ouluport','thief','city',[0,36]],
+    ];
+    let townSvg='';
+    towns.forEach(([k,name,icon,role,tier,lab])=>{ const c=cs[k];
+      townSvg+=`<g transform="translate(${c[0]},${c[1]})" fill="none" stroke="${C.ink}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">${this.townIcon(icon)}</g>`;
+      townSvg+=this.T(c[0]+lab[0],c[1]+lab[1],name,{font:"'IM Fell English SC', serif",size:tier==='city'?21:18,ls:1,fill:C.ink,hw:4});
+    });
+    P.push(townSvg);
+
+    // ---- CARTOUCHE ----
+    P.push(`<g transform="translate(65,470)">
+      <rect x="0" y="0" width="300" height="232" rx="6" fill="#eadfc0" stroke="${C.ink}" stroke-width="2"/>
+      <rect x="8" y="8" width="284" height="216" rx="4" fill="none" stroke="${C.ink2}" stroke-width="1" opacity="0.6"/>
+      <path d="M18,20 q-8,0 -8,8 M282,20 q8,0 8,8 M18,212 q-8,0 -8,-8 M282,212 q8,0 8,-8" fill="none" stroke="${C.ink2}" stroke-width="1.4"/>
+      ${this.T(150,70,'SUOMELA',{font:"'IM Fell English SC', serif",size:38,ls:2,fill:C.ink,halo:false})}
+      ${this.T(150,98,'— The Northern Realm —',{italic:true,size:15,fill:C.ink2,halo:false})}
+      <path d="M40,116 H260" stroke="${C.ink2}" stroke-width="1" opacity="0.6"/>
+      ${this.T(150,140,'A land of endless forests,',{italic:true,size:14.5,fill:C.ink,halo:false})}
+      ${this.T(150,160,'frozen fells, and old magic.',{italic:true,size:14.5,fill:C.ink,halo:false})}
+      ${this.T(150,196,'✦  drawn for wandering adventurers  ✦',{italic:true,size:11,fill:C.ink2,ls:1,halo:false})}
+    </g>`);
+
+    P.push(this.compass(185,1545,60));
+
+    P.push(`<g transform="translate(95,1690)">
+      ${this.T(0,-8,'S C A L E',{anchor:'start',size:12,ls:3,fill:C.ink2,halo:false,italic:true})}
+      <rect x="0" y="0" width="180" height="9" fill="none" stroke="${C.ink}" stroke-width="1.2"/>
+      <rect x="0" y="0" width="45" height="9" fill="${C.ink}"/><rect x="90" y="0" width="45" height="9" fill="${C.ink}"/>
+      ${this.T(0,24,'0',{anchor:'middle',size:11,fill:C.ink,halo:false})}${this.T(90,24,'75',{size:11,fill:C.ink,halo:false})}${this.T(180,24,'150 leagues',{anchor:'middle',size:11,fill:C.ink,halo:false})}
+    </g>`);
+
+    P.push(this.legend(1150,1440));
+
+    svg.innerHTML=P.join('');
+  }
+
+  compass(x,y,r){ const C=this.C; const pts=(a,rr)=>{ const rad=(a-90)*Math.PI/180; return [x+Math.cos(rad)*rr,y+Math.sin(rad)*rr]; };
+    let star=''; for(let i=0;i<8;i++){ const a=i*45; const o=pts(a,i%2?r*0.34:r); const b1=pts(a-14,r*0.22); const b2=pts(a+14,r*0.22); star+=`<path d="M${b1[0].toFixed(1)},${b1[1].toFixed(1)} L${o[0].toFixed(1)},${o[1].toFixed(1)} L${b2[0].toFixed(1)},${b2[1].toFixed(1)}" fill="${i===0?C.ochre:(i%2?C.halo:'#ded0a8')}" stroke="${C.ink}" stroke-width="1.2" stroke-linejoin="round"/>`; }
+    const N=pts(0,r+16),E=pts(90,r+16),S=pts(180,r+16),W=pts(270,r+16);
+    return `<g>
+      <circle cx="${x}" cy="${y}" r="${r+8}" fill="none" stroke="${C.ink2}" stroke-width="1.2" opacity="0.6"/>
+      <circle cx="${x}" cy="${y}" r="${r+3}" fill="none" stroke="${C.ink}" stroke-width="1.6"/>
+      ${star}
+      <circle cx="${x}" cy="${y}" r="4" fill="${C.ink}"/>
+      ${this.T(N[0],N[1]+5,'N',{size:18,fill:C.ochre,font:"'IM Fell English SC',serif",halo:false})}
+      ${this.T(E[0],E[1]+6,'E',{size:15,fill:C.ink,font:"'IM Fell English SC',serif",halo:false})}
+      ${this.T(S[0],S[1]+6,'S',{size:15,fill:C.ink,font:"'IM Fell English SC',serif",halo:false})}
+      ${this.T(W[0],W[1]+6,'W',{size:15,fill:C.ink,font:"'IM Fell English SC',serif",halo:false})}
+    </g>`;
+  }
+
+  classGlyph(i,cx,cy,col){
+    const g=(d,f)=>`<g transform="translate(${cx},${cy})" stroke="${col}" stroke-width="1.5" fill="${f||'none'}" stroke-linecap="round" stroke-linejoin="round">${d}</g>`;
+    if(i===0) return g('<path d="M0,-8 V4"/><path d="M-4,0 H4"/><path d="M0,4 V8"/><path d="M-2,-6 L0,-8 L2,-6"/>');        // warrior — sword
+    if(i===1) return g('<path d="M-3,-8 Q6,0 -3,8"/><path d="M-3,-8 V8"/><path d="M-7,0 H7"/><path d="M7,0 L4,-2 M7,0 L4,2"/>'); // archer — bow &amp; arrow
+    if(i===2) return g('<path d="M0,-8 L2,-2 L8,0 L2,2 L0,8 L-2,2 L-8,0 L-2,-2 Z" stroke="none"/>', col);                 // magician — star
+    if(i===3) return g('<path d="M6,-8 L-3,3"/><path d="M-4,-1 L1,4"/><path d="M-3,3 L-6,7"/>');                        // thief — dagger
+    return '';
+  }
+
+  legend(x,y){ const C=this.C;
+    const classes=[
+      ['Warrior',C.warrior,'Savonlinna','Turku'],
+      ['Archer',C.archer,'Kuopio','Tampere'],
+      ['Magician',C.magician,'Jyväskylä','Helsinki'],
+      ['Thief',C.thief,'Varkaus','Oulu'],
+    ];
+    const TX=46;
+    let sym='';
+    sym+=`<circle cx="${TX-16}" cy="70" r="2.6" fill="${C.ink}"/>`+this.T(TX,74,'Point of interest',{anchor:'start',size:13,fill:C.ink,halo:false});
+    sym+=`<path d="M${TX-26},92 h20" stroke="${C.ink}" stroke-width="2.2" stroke-dasharray="2 6" stroke-linecap="round"/>`+this.T(TX,96,'Road',{anchor:'start',size:13,fill:C.ink,halo:false});
+    sym+=`<path d="M${TX-26},112 q5,-5 10,0 q5,5 10,0" fill="none" stroke="${C.shore}" stroke-width="1.2"/>`+this.T(TX,118,'Lake',{anchor:'start',size:13,fill:C.ink,halo:false});
+
+    let body=''; classes.forEach((cl,i)=>{ const by=164+i*54;
+      body+=this.classGlyph(i, TX-18, by-4, cl[1]);
+      body+=this.T(TX,by,cl[0],{anchor:'start',size:15,fill:cl[1],halo:false,font:"'IM Fell English SC', serif"});
+      body+=this.T(TX,by+16,'1st job — '+cl[2],{anchor:'start',size:12,fill:C.ink,halo:false});
+      body+=this.T(TX,by+32,'2nd job — '+cl[3],{anchor:'start',size:12,fill:C.ink,halo:false});
+    });
+    return `<g transform="translate(${x},${y})">
+      <rect x="0" y="0" width="264" height="392" rx="6" fill="#eadfc0" stroke="${C.ink}" stroke-width="2"/>
+      <rect x="7" y="7" width="250" height="378" rx="4" fill="none" stroke="${C.ink2}" stroke-width="1" opacity="0.6"/>
+      ${this.T(132,38,'MAP LEGEND',{font:"'IM Fell English SC',serif",size:20,ls:2,fill:C.ink,halo:false})}
+      <path d="M28,52 H236" stroke="${C.ink2}" stroke-width="1" opacity="0.5"/>
+      ${sym}
+      <path d="M28,138 H236" stroke="${C.ink2}" stroke-width="1" opacity="0.5"/>
+      ${body}
+    </g>`;
+  }
+}
+</script>
+</body>
+</html>

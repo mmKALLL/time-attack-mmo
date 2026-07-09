@@ -3,7 +3,12 @@
 A self-contained, interactive 1920×1080 character screen for the RPG — stat allocation, per-skill leveling, live `describeSkill()` preview, and an attack-area shape preview.
 
 ## Files
-- **Skills and Attributes.html** — the bundled, offline, standalone page. Open directly in a browser. All JS/fonts/sprite art are inlined; no server or assets needed.
+- **src/** — the readable, un-minified source (edit these). This is the authoritative version to infer from:
+  - `Skills and Attributes.dc.html` — the screen: a formatted HTML template + a `class Component` logic class (state, `deriveStats`, `describeSkill`, hover handlers). Read this, not the bundle.
+  - `sprites.js` — procedural pixel-sprite engine (portrait + skill icons drawn to canvas).
+  - `support.js` — the small template runtime the `.dc.html` loads.
+  - To run: open `src/Skills and Attributes.dc.html` in a browser with the two `.js` files beside it (already are).
+- **Skills and Attributes.html** — the bundled, offline, standalone build (all JS/fonts/art inlined and minified). Good for a quick look in a browser; NOT the source — don't infer structure from this file.
 
 ## What it demonstrates (behavior to port)
 - **Primaries:** STR / DEX / VIT / INT, base 5 each. Spend from an **attribute pool** (+3/level).

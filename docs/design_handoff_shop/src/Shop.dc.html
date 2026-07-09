@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
+<script src="sprites.js"></script>
+<style>
+  .sh-panel{position:absolute;box-sizing:border-box;background:linear-gradient(#221d17,#15110c);border:1px solid #0a0805;border-radius:6px;box-shadow:inset 0 1px 0 #4a3f2f, inset 0 0 0 1px #2f281d, 0 10px 26px rgba(0,0,0,.6);}
+  .sh-gold{position:absolute;inset:3px;border:1px solid rgba(184,146,90,.32);border-radius:3px;pointer-events:none;}
+  .hd{font-family:Cinzel,serif;color:#cca96b;letter-spacing:1.5px;text-transform:uppercase;}
+  .px{font-family:'Press Start 2P',monospace;}
+  .cell{position:relative;width:88px;height:88px;border-radius:5px;background:#0d0b08;box-shadow:inset 0 0 0 1px #000;cursor:pointer;box-sizing:border-box;transition:transform .08s;}
+  .cell:hover{transform:translateY(-2px);}
+  .tab{font-family:Cinzel,serif;font-size:13px;letter-spacing:1px;padding:5px 14px;border-radius:4px;cursor:pointer;color:#8a8168;}
+  .tab.on{background:linear-gradient(#3a3020,#241c11);color:#e6c583;box-shadow:inset 0 1px 0 #5a4a30, 0 0 0 1px #0a0805;}
+  .btn{font-family:Cinzel,serif;letter-spacing:1px;border-radius:5px;cursor:pointer;user-select:none;text-align:center;}
+  .btn.dis{opacity:.4;cursor:default;filter:grayscale(.5);}
+  .slot{position:absolute;width:66px;height:66px;border-radius:5px;background:#0d0b08;border:1px solid #3a3020;box-shadow:inset 0 0 10px rgba(0,0,0,.7);cursor:pointer;box-sizing:border-box;}
+  img{image-rendering:pixelated;}
+  ::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-thumb{background:#4a3f2f;border-radius:4px;}::-webkit-scrollbar-track{background:transparent;}
+</style>
+</helmet>
+<div data-screen-label="Shop" style="position:relative;width:1920px;height:1080px;overflow:hidden;background:radial-gradient(1200px 800px at 50% -20%,#241d14,#0c0a07 70%);font-family:Spectral,serif;color:#e9ddc4;user-select:none;">
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#1a140d"/><rect x="24" y="30" width="20" height="20" rx="3" fill="#6b4e94"/><rect x="56" y="30" width="20" height="20" rx="3" fill="#e0a53a"/><rect x="24" y="56" width="20" height="20" rx="3" fill="#6f9ad0"/><rect x="56" y="56" width="20" height="20" rx="3" fill="#3f7a4e"/><circle cx="50" cy="16" r="6" fill="#e6c583"/></svg>
+  </template>
+
+  <!-- MERCHANT BAR -->
+  <div class="sh-panel" style="top:20px;left:20px;right:20px;height:92px;display:flex;align-items:center;padding:0 22px;gap:18px;">
+    <div class="sh-gold"></div>
+    <div style="width:64px;height:64px;border-radius:6px;background:#0d0b08;border:1px solid #b8925a66;overflow:hidden;flex:none;position:relative;box-shadow:inset 0 0 0 1px #000;">{{ merchantEl }}</div>
+    <div>
+      <div style="font-family:Cinzel,serif;font-size:23px;color:#f2e8d2;">Väinö the Wayfarer <span style="font-size:13px;color:#8a8168;font-style:italic;">· Trading Post</span></div>
+      <div style="font-size:14.5px;color:#b3a888;font-style:italic;margin-top:3px;">“{{ greeting }}”</div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;background:#0d0b08;border:1px solid #4a3f2f;border-radius:6px;padding:10px 18px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe08a,#c8922f);box-shadow:0 0 8px rgba(224,160,60,.5);"></div>
+      <span class="px" style="font-size:17px;color:#e6c583;">{{ gold }}</span>
+      <span style="font-size:12px;color:#8a8168;letter-spacing:1px;">GOLD</span>
+    </div>
+  </div>
+
+  <!-- LEFT : MERCHANT STOCK -->
+  <div class="sh-panel" style="top:124px;left:20px;width:628px;bottom:20px;padding:16px 18px;">
+    <div class="sh-gold"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="hd" style="font-size:14px;">Wares for Sale</div>
+      <div style="display:flex;gap:4px;">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+          <span class="tab {{ t.on }}" onClick="{{ t.click }}">{{ t.label }}</span>
+        </sc-for>
+      </div>
+    </div>
+    <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;overflow:auto;height:calc(100% - 52px);padding:8px 4px 4px 2px;">
+      <sc-for list="{{ shopCells }}" as="c" hint-placeholder-count="18">
+        <div class="cell" onClick="{{ c.click }}" onMouseEnter="{{ c.hover }}" style="border:2px solid {{ c.border }};box-shadow:{{ c.glow }};opacity:{{ c.dim }};">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">{{ c.iconEl }}</div>
+          <sc-if value="{{ c.qty }}" hint-placeholder-val="{{ false }}"><span class="px" style="position:absolute;right:4px;top:3px;font-size:8px;color:#cfc6b0;text-shadow:0 1px 2px #000;">{{ c.qty }}</span></sc-if>
+          <span class="px" style="position:absolute;left:4px;right:4px;bottom:3px;text-align:right;font-size:9px;color:#e6c583;text-shadow:0 1px 2px #000;">{{ c.price }}</span>
+          <div style="position:absolute;inset:0;border-radius:4px;box-shadow:{{ c.selRing }};pointer-events:none;"></div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- CENTER : ITEM DETAIL -->
+  <div class="sh-panel" style="top:124px;left:664px;width:564px;bottom:20px;padding:20px;">
+    <div class="sh-gold"></div>
+    <sc-if value="{{ sel.present }}" hint-placeholder-val="{{ true }}">
+      <div style="height:100%;display:flex;flex-direction:column;">
+        <div style="display:flex;gap:16px;align-items:flex-start;">
+          <div style="width:78px;height:78px;border-radius:8px;background:#0d0b08;border:2px solid {{ sel.rarityCol }};position:relative;flex:none;box-shadow:0 0 18px {{ sel.rarityGlow }}, inset 0 0 0 1px #000;"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">{{ sel.iconEl }}</div></div>
+          <div style="flex:1;">
+            <div style="font-family:Cinzel,serif;font-size:23px;color:{{ sel.rarityCol }};line-height:1.1;">{{ sel.name }}</div>
+            <div style="font-size:13px;color:#a99a7c;margin-top:3px;">{{ sel.rarity }} · {{ sel.typeLabel }}</div>
+            <div style="font-size:12px;color:#7a7360;margin-top:2px;">Item Level {{ sel.ilvl }}</div>
+          </div>
+        </div>
+
+        <div style="height:1px;background:linear-gradient(90deg,transparent,#b8925a44,transparent);margin:16px 0;"></div>
+
+        <div class="hd" style="font-size:11px;color:#b89a63;margin-bottom:8px;">Attributes</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <sc-for list="{{ sel.affixes }}" as="a" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:8px;font-size:14.5px;color:{{ a.color }};"><span style="color:{{ a.dot }};">◆</span>{{ a.text }}</div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ sel.hasReqs }}" hint-placeholder-val="{{ true }}">
+          <div class="hd" style="font-size:11px;color:#b89a63;margin:16px 0 8px;">Requirements</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <sc-for list="{{ sel.reqs }}" as="r" hint-placeholder-count="2">
+              <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:{{ r.color }};"><span>{{ r.mark }}</span>{{ r.label }}</div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="margin-top:14px;font-size:13px;color:#8f8674;font-style:italic;line-height:1.45;">{{ sel.flavor }}</div>
+
+        <div style="margin-top:auto;display:flex;align-items:center;gap:14px;padding-top:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><div style="width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe08a,#c8922f);"></div><span class="px" style="font-size:17px;color:#e6c583;">{{ sel.priceLabel }}</span></div>
+          <div style="flex:1;"></div>
+          <sc-if value="{{ sel.canEquip }}" hint-placeholder-val="{{ false }}"><div class="btn" onClick="{{ sel.equip }}" style="padding:9px 20px;font-size:14px;color:#e9ddc4;background:#2a3320;border:1px solid #4a6a3a;">Equip</div></sc-if>
+          <div class="btn {{ sel.actionCls }}" onClick="{{ sel.action }}" style="padding:9px 26px;font-size:15px;color:#12140c;background:linear-gradient(#e6c583,#c8a24a);box-shadow:0 2px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4);">{{ sel.actionLabel }}</div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ sel.empty }}" hint-placeholder-val="{{ false }}">
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#6f6753;">
+        <div style="font-size:44px;opacity:.4;">⚖</div>
+        <div style="font-family:Cinzel,serif;font-size:16px;letter-spacing:1px;">Hover an item to inspect it</div>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- RIGHT : PAPERDOLL + INVENTORY -->
+  <div class="sh-panel" style="top:124px;left:1244px;right:20px;bottom:20px;padding:16px 18px;">
+    <div class="sh-gold"></div>
+    <div class="hd" style="font-size:14px;">Aino Tuulikki <span style="font-size:11px;color:#7a7360;font-family:'Press Start 2P';">FIRE WIZARD · LV24</span></div>
+
+    <!-- paperdoll -->
+    <div style="position:relative;height:250px;margin-top:12px;background:radial-gradient(220px 200px at 50% 42%, #241d14, #120e09);border:1px solid #2f281d;border-radius:8px;box-shadow:inset 0 0 30px rgba(0,0,0,.6);overflow:visible;">
+      <div style="position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:120px;height:120px;display:flex;align-items:center;justify-content:center;opacity:.28;">{{ paperdollEl }}</div>
+      <sc-for list="{{ equipSlots }}" as="s" hint-placeholder-count="7">
+        <div class="slot" onClick="{{ s.click }}" onMouseEnter="{{ s.hover }}" style="left:{{ s.x }};top:{{ s.y }};width:{{ s.w }};height:{{ s.h }};border-color:{{ s.border }};box-shadow:{{ s.glow }}, inset 0 0 10px rgba(0,0,0,.7);">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">{{ s.iconEl }}</div>
+          <div style="position:absolute;inset:0;border-radius:4px;box-shadow:{{ s.selRing }};pointer-events:none;"></div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- inventory -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:22px;">
+      <div class="hd" style="font-size:13px;color:#b89a63;">Backpack</div>
+      <span style="font-size:11px;color:#7a7360;">Sell for 40% value</span>
+    </div>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;overflow:auto;height:calc(100% - 348px);padding:8px 4px 4px 2px;">
+      <sc-for list="{{ invCells }}" as="c" hint-placeholder-count="10">
+        <div class="cell" onClick="{{ c.click }}" onMouseEnter="{{ c.hover }}" style="border:2px solid {{ c.border }};box-shadow:{{ c.glow }};">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">{{ c.iconEl }}</div>
+          <sc-if value="{{ c.qty }}" hint-placeholder-val="{{ false }}"><span class="px" style="position:absolute;right:4px;top:3px;font-size:8px;color:#cfc6b0;text-shadow:0 1px 2px #000;">{{ c.qty }}</span></sc-if>
+          <div style="position:absolute;inset:0;border-radius:4px;box-shadow:{{ c.selRing }};pointer-events:none;"></div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080}}">
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    this.BLANK='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+    this.RAR={ Common:{c:'#b8b0a0',g:'transparent'}, Uncommon:{c:'#6fce8f',g:'rgba(111,206,143,.25)'}, Rare:{c:'#6f9ad0',g:'rgba(111,154,208,.30)'}, Epic:{c:'#b78fe0',g:'rgba(183,143,224,.35)'}, Legendary:{c:'#e0a53a',g:'rgba(224,165,58,.45)'} };
+    this.CLASSCOL={ warrior:'#6f9ad0', archer:'#6fce8f', magician:'#b78fe0', rogue:'#d0906a' };
+    this.player={ cls:'magician', level:24, STR:5,DEX:10,VIT:20,INT:55, faction:{Embers:'Honored'} };
+    this.RANK=['Neutral','Friendly','Honored','Revered','Exalted'];
+    // item factory
+    const I=(o)=>Object.assign({qty:0,reqLevel:1,reqStat:null,reqClass:null,faction:null,affixes:[],flavor:''},o);
+    this.SHOP=[
+      I({id:'staff_vaino',name:"Väinö's Rune Staff",slot:'Weapon',kind:'staff',rarity:'Epic',reqLevel:22,reqStat:{INT:40},reqClass:'magician',faction:{name:'Embers',rank:'Honored'},price:4200,affixes:['+18 INT','+12% Fire damage','5% chance to Ignite on hit'],flavor:'Carved from the singing pine, it hums the old runes of the sage.'}),
+      I({id:'wand_ember',name:'Emberwisp Wand',slot:'Weapon',kind:'wand',rarity:'Uncommon',reqLevel:15,reqStat:{INT:24},reqClass:'magician',price:820,affixes:['+7 INT','+4% Fire damage'],flavor:'A will-o-wisp sealed in birch.'}),
+      I({id:'hammer_ukko',name:"Ukko's Warhammer",slot:'Weapon',kind:'hammer',rarity:'Rare',reqLevel:20,reqStat:{STR:38},reqClass:'warrior',price:2600,affixes:['+14 STR','+3 VIT','Chance to Stun on hit'],flavor:'Thunder sleeps in its iron head.'}),
+      I({id:'bow_tapio',name:"Tapio's Longbow",slot:'Weapon',kind:'bow',rarity:'Rare',reqLevel:20,reqStat:{DEX:36},reqClass:'archer',price:2450,affixes:['+13 DEX','+8% vs. beasts','Ignite arrows: +3% fire'],flavor:'Blessed by the forest-lord for the patient hunter.'}),
+      I({id:'daggers_nakki',name:"Näkki's Fang",slot:'Weapon',kind:'dagger',rarity:'Epic',reqLevel:23,reqStat:{DEX:42},reqClass:'rogue',faction:{name:'Embers',rank:'Revered'},price:4600,affixes:['+16 DEX','+2 hits per round','Poison coating on hit'],flavor:'A tooth from the water-spirit, ever wet, ever cold.'}),
+      I({id:'robe_frost',name:'Frostweave Robe',slot:'Armor',kind:'armor',rarity:'Rare',reqLevel:21,reqStat:{INT:34},price:2100,affixes:['+11 INT','+40 Max MP','Resist Ice 12%'],flavor:'Woven from first-frost, warm to none but the wearer.'}),
+      I({id:'cuirass_bear',name:'Bearpelt Cuirass',slot:'Armor',kind:'armor',rarity:'Uncommon',reqLevel:18,reqStat:{VIT:28},price:1150,affixes:['+9 VIT','+60 Max HP'],flavor:"Otso's warmth, given to the worthy."}),
+      I({id:'cap_ptarmigan',name:'Ptarmigan Feather Cap',slot:'Helmet',kind:'helm',rarity:'Uncommon',reqLevel:16,price:640,affixes:['+5 INT','+4 DEX'],flavor:'Light as the snow-grouse it came from.'}),
+      I({id:'helm_iron',name:'Iron Birch Helm',slot:'Helmet',kind:'helm',rarity:'Common',reqLevel:12,price:220,affixes:['+3 VIT'],flavor:'Plain, sturdy, honest.'}),
+      I({id:'gloves_frost',name:'Frostgrip Gloves',slot:'Gloves',kind:'gloves',rarity:'Uncommon',reqLevel:17,price:700,affixes:['+6 INT','+3% cast on-hit'],flavor:'Fingers never numb, spells never fumbled.'}),
+      I({id:'boots_lake',name:'Lakebound Boots',slot:'Boots',kind:'boots',rarity:'Rare',reqLevel:19,price:1600,affixes:['+8 DEX','+5% Dodge','Walk on water 3s'],flavor:'The mist remembers every quiet step.'}),
+      I({id:'ring_aurora',name:'Ring of the Aurora',slot:'Ring',kind:'ring',rarity:'Legendary',reqLevel:24,faction:{name:'Embers',rank:'Honored'},price:9800,affixes:['+22 INT','+15% Fire damage','+1 to all Fire skills','10% to Ignite on hit'],flavor:'A sliver of northern light, caught in cold gold.'}),
+      I({id:'amulet_sampo',name:'Sampo Shard Pendant',slot:'Amulet',kind:'amulet',rarity:'Epic',reqLevel:22,faction:{name:'Embers',rank:'Honored'},price:5200,affixes:['+10 all attributes','+30 Max MP','Resist Fire 10%'],flavor:'A splinter of the mill that ground fortune from nothing.'}),
+      I({id:'amulet_wolf',name:'Wolf-tooth Charm',slot:'Amulet',kind:'amulet',rarity:'Common',reqLevel:10,price:180,affixes:['+2 STR','+2 DEX'],flavor:'Worn by hunters against the long dark.'}),
+      I({id:'pot_hp2',name:'Greater Lingonberry Draught',slot:'consumable',kind:'potred',rarity:'Uncommon',reqLevel:1,price:120,qty:24,affixes:['Restore 600 HP'],flavor:'Tart enough to wake the fallen.'}),
+      I({id:'pot_hp1',name:'Lesser Lingonberry Draught',slot:'consumable',kind:'potred',rarity:'Common',reqLevel:1,price:40,qty:40,affixes:['Restore 220 HP'],flavor:'A forager\u2019s first remedy.'}),
+      I({id:'pot_mp2',name:'Spring Water Elixir',slot:'consumable',kind:'potblue',rarity:'Uncommon',reqLevel:1,price:130,qty:20,affixes:['Restore 400 MP'],flavor:'Drawn from a spring that never freezes.'}),
+      I({id:'reset_stat',name:'Mirror of Second Chances',slot:'consumable',kind:'scroll',rarity:'Rare',reqLevel:1,price:3000,qty:3,affixes:['Refund all attribute points'],flavor:'It shows not your face, but the self you might have been.'}),
+      I({id:'reset_skill',name:'Rune of Unlearning',slot:'consumable',kind:'scroll',rarity:'Rare',reqLevel:1,price:2500,qty:4,affixes:['Refund all skill points'],flavor:'Forgetting, too, is a craft.'}),
+    ];
+    this.INV=[
+      I({id:'inv_robe',name:'Emberweave Robe',slot:'Armor',kind:'armor',rarity:'Uncommon',reqLevel:20,reqStat:{INT:30},price:1400,affixes:['+8 INT','+30 Max MP'],flavor:'Singed at the hem, still warm.'}),
+      I({id:'inv_wand',name:'Cracked Apprentice Wand',slot:'Weapon',kind:'wand',rarity:'Common',reqLevel:8,reqClass:'magician',price:90,affixes:['+2 INT'],flavor:'Every wizard keeps their first.'}),
+      I({id:'inv_ring',name:'Bogiron Band',slot:'Ring',kind:'ring',rarity:'Uncommon',reqLevel:16,price:520,affixes:['+5 VIT','Resist Ice 6%'],flavor:'Heavy, honest metal.'}),
+      I({id:'inv_hp',name:'Lesser Lingonberry Draught',slot:'consumable',kind:'potred',rarity:'Common',reqLevel:1,price:40,qty:12,affixes:['Restore 220 HP'],flavor:'A forager\u2019s first remedy.'}),
+      I({id:'inv_mp',name:'Birch Sap Tonic',slot:'consumable',kind:'potblue',rarity:'Common',reqLevel:1,price:35,qty:8,affixes:['Restore 150 MP'],flavor:'Faintly sweet.'}),
+      I({id:'inv_dagger',name:'Rusty Skinning Knife',slot:'Weapon',kind:'dagger',rarity:'Common',reqLevel:5,reqClass:'rogue',price:25,affixes:['+1 DEX'],flavor:'Better for hares than heroes.'}),
+    ];
+    this.EQUIP={
+      Weapon:I({id:'eq_staff',name:'Kindling Staff',slot:'Weapon',kind:'staff',rarity:'Uncommon',reqLevel:18,reqClass:'magician',reqStat:{INT:30},price:900,affixes:['+9 INT','+3% Fire damage'],flavor:'It has lit many a campfire, and many a foe.'}),
+      Armor:I({id:'eq_robe',name:'Novice Fire Robe',slot:'Armor',kind:'armor',rarity:'Common',reqLevel:14,price:300,affixes:['+4 INT','+20 Max MP'],flavor:'Standard issue of the ember-schools.'}),
+      Amulet:I({id:'eq_amulet',name:'Coal Bead Necklace',slot:'Amulet',kind:'amulet',rarity:'Uncommon',reqLevel:15,price:420,affixes:['+5 INT','Resist Fire 5%'],flavor:'Warm to the touch.'}),
+      Helmet:null, Gloves:null, Boots:null, Ring:null,
+    };
+    this.SLOTPOS={ Helmet:{l:278,t:18,w:64,h:64}, Amulet:{l:350,t:18,w:64,h:64}, Weapon:{l:206,t:90,w:64,h:136}, Armor:{l:278,t:90,w:64,h:64}, Gloves:{l:350,t:90,w:64,h:64}, Boots:{l:278,t:162,w:64,h:64}, Ring:{l:350,t:162,w:64,h:64} };
+    this.state={ tab:'all', sel:null, gold:12450, shop:this.SHOP, inv:this.INV, equip:this.EQUIP };
+  }
+
+  componentDidMount(){
+    const go=()=>{ this._icons={}; this.setState({_ready:true}); };
+    if(window.Sprites) go(); else setTimeout(go,200);
+  }
+
+  icon(kind,rarCol,size){ size=size||64; const key=kind+rarCol+size; this._icc=this._icc||{}; if(this._icc[key]) return this._icc[key];
+    const c=document.createElement('canvas'); c.width=size; c.height=size; const x=c.getContext('2d'); x.imageSmoothingEnabled=false;
+    const s=size/64; const S=(n)=>n*s; x.lineJoin='round'; x.lineCap='round';
+    const metal='#c9cdd6', metalD='#7a808c', wood='#8a5a30', woodD='#5a3a1c', gold='#e0b24a', leather='#7a5236', steel='#aeb6c2';
+    const g=(col)=>{ x.fillStyle=col; }; const st=(col,w)=>{ x.strokeStyle=col; x.lineWidth=S(w||3); };
+    x.save(); x.translate(size/2,size/2); x.scale(s,s);
+    const cx=0,cy=0;
+    if(kind==='staff'){ st(wood,5); x.beginPath();x.moveTo(-8,26);x.lineTo(6,-18);x.stroke(); st(woodD,2); x.beginPath();x.moveTo(-8,26);x.lineTo(6,-18);x.stroke(); g(rarCol); x.beginPath();x.arc(8,-22,8,0,6.3);x.fill(); g('#fff'); x.globalAlpha=.7;x.beginPath();x.arc(6,-24,3,0,6.3);x.fill();x.globalAlpha=1; }
+    else if(kind==='wand'){ st(wood,4); x.beginPath();x.moveTo(-10,20);x.lineTo(8,-10);x.stroke(); g(rarCol); x.beginPath();x.arc(10,-14,6,0,6.3);x.fill(); g('#fff');x.globalAlpha=.7;x.beginPath();x.arc(8,-16,2,0,6.3);x.fill();x.globalAlpha=1; }
+    else if(kind==='hammer'){ st(wood,5);x.beginPath();x.moveTo(0,26);x.lineTo(0,-6);x.stroke(); g(metal);x.fillRect(-16,-24,32,18); g(metalD);x.fillRect(-16,-10,32,4); g(steel);x.fillRect(-16,-24,32,4); }
+    else if(kind==='bow'){ st(wood,4); x.beginPath();x.arc(4,0,24,-1.15,1.15);x.stroke(); st('#e8dcc0',1.5); x.beginPath();x.moveTo(-6,-22);x.lineTo(-6,22);x.stroke(); g(rarCol);x.save();x.rotate(0);x.fillRect(-8,-2,26,3);x.restore(); }
+    else if(kind==='dagger'){ g(metal);x.beginPath();x.moveTo(0,-26);x.lineTo(6,8);x.lineTo(-6,8);x.closePath();x.fill(); g(steel);x.beginPath();x.moveTo(0,-26);x.lineTo(2,8);x.lineTo(-3,8);x.closePath();x.fill(); g(leather);x.fillRect(-8,8,16,5); g(gold);x.fillRect(-3,12,6,10); }
+    else if(kind==='armor'){ // leather jerkin: shoulders, laced front, belt+buckle
+      g(rarCol); x.beginPath(); x.moveTo(-22,-9); x.lineTo(-15,-16); x.lineTo(-6,-16); x.lineTo(-4,-11); x.lineTo(4,-11); x.lineTo(6,-16); x.lineTo(15,-16); x.lineTo(22,-9); x.lineTo(18,26); x.lineTo(-18,26); x.closePath(); x.fill();
+      x.globalAlpha=.16; g('#000'); x.beginPath(); x.moveTo(3,-11); x.lineTo(6,-16); x.lineTo(15,-16); x.lineTo(22,-9); x.lineTo(18,26); x.lineTo(3,26); x.closePath(); x.fill(); x.globalAlpha=1;
+      x.globalAlpha=.22; g('#fff'); x.fillRect(-16,-14,6,38); x.globalAlpha=1;
+      g('#3a2a1a'); x.fillRect(-18,15,36,7); g('#c8922f'); x.fillRect(-4,16,8,5); g('#e0c070'); x.fillRect(-3,17,3,3);
+      st('#00000055',1.5); x.beginPath(); for(let yy=-6; yy<=10; yy+=5){ x.moveTo(-4,yy); x.lineTo(4,yy+2.5); x.moveTo(4,yy); x.lineTo(-4,yy+2.5); } x.stroke();
+      st('#00000044',1.4); x.beginPath(); x.moveTo(-15,-16);x.lineTo(-6,-16); x.moveTo(6,-16);x.lineTo(15,-16); x.stroke(); }
+    else if(kind==='helm'){ g(rarCol);x.beginPath();x.arc(0,0,20,Math.PI,0);x.lineTo(20,10);x.lineTo(-20,10);x.closePath();x.fill(); g('#0d0b08');x.fillRect(-14,-2,28,7); g(steel);x.beginPath();x.arc(0,0,20,Math.PI,0);x.lineTo(20,-2);x.lineTo(-20,-2);x.closePath();x.globalAlpha=.3;x.fill();x.globalAlpha=1; }
+    else if(kind==='gloves'){ g(rarCol);x.fillRect(-16,-14,20,30); g(rarCol);x.fillRect(4,-6,12,10); x.globalAlpha=.3;g('#000');x.fillRect(-16,10,32,6);x.globalAlpha=1; st('#00000055',2);x.beginPath();x.moveTo(-10,-14);x.lineTo(-10,10);x.moveTo(-3,-14);x.lineTo(-3,10);x.stroke(); }
+    else if(kind==='boots'){ g(rarCol);x.beginPath();x.moveTo(-12,-20);x.lineTo(2,-20);x.lineTo(4,14);x.lineTo(18,14);x.lineTo(18,24);x.lineTo(-12,24);x.closePath();x.fill(); x.globalAlpha=.3;g('#000');x.fillRect(-12,18,30,6);x.globalAlpha=1; }
+    else if(kind==='ring'){ st(rarCol,5);x.beginPath();x.arc(0,4,14,0,6.3);x.stroke(); g(rarCol);x.beginPath();x.moveTo(0,-20);x.lineTo(7,-10);x.lineTo(-7,-10);x.closePath();x.fill(); g('#fff');x.globalAlpha=.6;x.beginPath();x.arc(-3,-14,2,0,6.3);x.fill();x.globalAlpha=1; }
+    else if(kind==='amulet'){ st(gold,3);x.beginPath();x.arc(0,-6,16,0.15*Math.PI,0.85*Math.PI,true);x.stroke(); g(rarCol);x.beginPath();x.moveTo(0,2);x.lineTo(10,14);x.lineTo(0,26);x.lineTo(-10,14);x.closePath();x.fill(); g('#fff');x.globalAlpha=.5;x.beginPath();x.arc(-3,10,2,0,6.3);x.fill();x.globalAlpha=1; }
+    else if(kind==='potred'||kind==='potblue'){ const liq=kind==='potred'?'#c8433a':'#3a7ac8'; const liqL=kind==='potred'?'#e88a7a':'#7ab0e8'; g('#0d0b08');x.fillRect(-9,-18,18,6); g(leather);x.fillRect(-6,-22,12,6); g('#5a6a72');x.beginPath();x.moveTo(-8,-12);x.lineTo(8,-12);x.lineTo(12,18);x.arc(0,18,12,0,Math.PI);x.lineTo(-12,18);x.closePath();x.globalAlpha=.35;x.fill();x.globalAlpha=1; g(liq);x.beginPath();x.moveTo(-9,2);x.lineTo(9,2);x.lineTo(11,18);x.arc(0,18,11,0,Math.PI);x.closePath();x.fill(); g(liqL);x.globalAlpha=.6;x.beginPath();x.arc(-4,8,3,0,6.3);x.fill();x.globalAlpha=1; }
+    else if(kind==='scroll'){ g('#e6dcc0');x.fillRect(-16,-20,32,40); g('#cfc2a0');x.fillRect(-16,-20,32,4);x.fillRect(-16,16,32,4); st('#8a5a30',2);x.beginPath();for(let i=-10;i<=10;i+=6){x.moveTo(-10,i);x.lineTo(10,i);}x.stroke(); g(rarCol);x.globalAlpha=.5;x.fillRect(-16,-2,32,4);x.globalAlpha=1; }
+    x.restore(); const url=c.toDataURL(); this._icc[key]=url; return url;
+  }
+  iconEl(kind,rarCol,size){ const R=React.createElement; return R('img',{src: (this.state._ready||true)?this.icon(kind,rarCol,size):this.BLANK, style:{width:(size||58)+'px',height:(size||58)+'px'}}); }
+
+  rankIdx(r){ return this.RANK.indexOf(r); }
+  usability(it){ const p=this.player; const reqs=[]; let ok=true;
+    if(it.reqLevel>1) reqs.push({label:'Level '+it.reqLevel, pass: p.level>=it.reqLevel});
+    if(it.reqStat){ for(const k in it.reqStat){ reqs.push({label:k+' '+it.reqStat[k], pass: p[k]>=it.reqStat[k]}); } }
+    if(it.reqClass){ reqs.push({label:this.cap(it.reqClass)+' only', pass: p.cls===it.reqClass}); }
+    if(it.faction){ const cur=p.faction[it.faction.name]||'Neutral'; reqs.push({label:it.faction.name+': '+it.faction.rank, pass: this.rankIdx(cur)>=this.rankIdx(it.faction.rank)}); }
+    reqs.forEach(r=>{ if(!r.pass) ok=false; });
+    return {ok,reqs};
+  }
+  cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+  select(source,id){ this.setState({sel:{source,id}}); }
+  hover(source,id){ const s=this.state.sel; if(s&&s.source===source&&s.id===id) return; this.setState({sel:{source,id}}); }
+  setTab(t){ this.setState({tab:t}); }
+  find(source,id){ const arr= source==='shop'?this.state.shop : source==='inv'?this.state.inv : Object.values(this.state.equip); return arr.find(it=>it&&it.id===id); }
+
+  buyItem(it){ if(!it||this.state.gold<it.price) return;
+    const gold=this.state.gold-it.price; const inv=[...this.state.inv];
+    if(it.slot==='consumable'){ const ex=inv.find(x=>x.name===it.name); if(ex){ ex.qty+=1; } else inv.push(Object.assign({},it,{id:'b'+Date.now()+Math.random(),qty:1})); }
+    else inv.push(Object.assign({},it,{id:'b'+Date.now()+Math.random()}));
+    this.setState({gold,inv});
+  }
+  sellItem(it){ const inv=[...this.state.inv]; const idx=inv.findIndex(x=>x.id===it.id); if(idx<0) return;
+    const gold=this.state.gold+Math.round(it.price*0.4); const shop=[...this.state.shop];
+    if(it.slot==='consumable'){ const ex=shop.find(x=>x.slot==='consumable'&&x.name===it.name&&x.price===it.price); if(ex){ ex.qty=(ex.qty||0)+1; } else shop.push(Object.assign({},it,{id:'bb'+Date.now()+Math.random(),qty:1})); }
+    else { if(!shop.find(x=>x.id===it.id)) shop.push(Object.assign({},it)); }
+    let keep=true;
+    if(it.slot==='consumable'&&it.qty>1){ it.qty-=1; } else { inv.splice(idx,1); keep=false; }
+    this.setState({gold,inv,shop, sel: keep?this.state.sel:null});
+  }
+  buy(){ const s=this.state.sel; if(s&&s.source==='shop') this.buyItem(this.find('shop',s.id)); }
+  sell(){ const s=this.state.sel; if(s&&s.source==='inv') this.sellItem(this.find('inv',s.id)); }
+  equipIt(){ const s=this.state.sel; if(!s||s.source!=='inv') return; const it=this.find('inv',s.id); if(!it||it.slot==='consumable') return; if(!this.usability(it).ok) return;
+    const equip={...this.state.equip}; const inv=[...this.state.inv]; const idx=inv.findIndex(x=>x.id===it.id);
+    const prev=equip[it.slot]; equip[it.slot]=it; inv.splice(idx,1); if(prev) inv.push(prev);
+    this.setState({equip,inv,sel:null});
+  }
+  unequip(slot){ const equip={...this.state.equip}; const it=equip[slot]; if(!it) return; equip[slot]=null; this.setState({equip,inv:[...this.state.inv,it],sel:null}); }
+
+  cellData(it,source){ const rar=this.RAR[it.rarity]; const u=(it.slot!=='consumable')?this.usability(it):{ok:true};
+    const s=this.state.sel; const seld=s&&s.source===source&&s.id===it.id;
+    return { iconEl:this.iconEl(it.kind,rar.c,58), border:rar.c, glow: rar.g!=='transparent'?('0 0 10px '+rar.g+', inset 0 0 0 1px #000'):'inset 0 0 0 1px #000',
+      qty: it.qty>0?('x'+it.qty):false, price: source==='shop'? it.price.toLocaleString('en-US') : '', dim: (source==='shop'&&!u.ok)?'0.5':'1',
+      selRing: seld?'0 0 0 2px #e6c583, 0 0 12px rgba(230,197,131,.5)':'none',
+      click:()=> source==='shop'? this.buyItem(it) : (source==='inv'? this.sellItem(it) : this.select(source,it.id)), hover:()=>this.hover(source,it.id) }; }
+
+  renderVals(){
+    const R=React.createElement, S=this.state;
+    const merchantEl = R('img',{src: window.Sprites?window.Sprites.build('wizard',0,window.Sprites.DIRS.A).toDataURL():this.BLANK, style:{position:'absolute',left:'-6px',top:'0px',width:'96px',height:'96px',imageRendering:'pixelated'}});
+    const paperdollEl = R('img',{src: window.Sprites?window.Sprites.build('wizard',0,window.Sprites.DIRS.A).toDataURL():this.BLANK, style:{width:'150px',height:'150px',imageRendering:'pixelated'}});
+
+    const cats=[['all','All'],['Weapon','Weapons'],['armor','Armor'],['consumable','Goods']];
+    const inCat=(it)=>{ if(S.tab==='all')return true; if(S.tab==='Weapon')return it.slot==='Weapon'; if(S.tab==='consumable')return it.slot==='consumable'; if(S.tab==='armor')return ['Armor','Helmet','Gloves','Boots','Ring','Amulet'].includes(it.slot); return true; };
+    const tabs=cats.map(c=>({label:c[1], on:S.tab===c[0]?'on':'', click:()=>this.setTab(c[0])}));
+    const shopCells=S.shop.filter(inCat).map(it=>this.cellData(it,'shop'));
+    const invCells=S.inv.map(it=>this.cellData(it,'inv'));
+
+    const slotOrder=['Helmet','Amulet','Weapon','Armor','Gloves','Ring','Boots'];
+    const equipSlots=slotOrder.map(slot=>{ const it=S.equip[slot]; const pos=this.SLOTPOS[slot]; const rar=it?this.RAR[it.rarity]:null;
+      const sel=S.sel&&S.sel.source==='equip'&&it&&S.sel.id===it.id;
+      return { label:slot, x:pos.l+'px', y:pos.t+'px', w:pos.w+'px', h:pos.h+'px',
+        iconEl: it?this.iconEl(it.kind,rar.c, slot==='Weapon'?54:44):R('span',null,''),
+        border: it?rar.c:'#3a3020', glow: it&&rar.g!=='transparent'?('0 0 8px '+rar.g):'none',
+        selRing: sel?'0 0 0 2px #e6c583':'none',
+        click:()=> it?this.select('equip',it.id):null, hover:()=> it?this.hover('equip',it.id):null }; });
+
+    // selected detail
+    let sel={present:false,empty:true};
+    if(S.sel){ const it=this.find(S.sel.source,S.sel.id); if(it){ const rar=this.RAR[it.rarity]; const u=(it.slot!=='consumable')?this.usability(it):{ok:true,reqs:[]};
+      const affixes=it.affixes.map(a=>{ const proc=/chance|Ignite|Poison|Stun|Walk|on-hit|on hit/i.test(a); const res=/Resist|damage|vs\./i.test(a);
+        return { text:a, color: proc?'#e0a86a': (res?'#8fbfe0':'#8fe0a0'), dot: proc?'#e0a86a':(res?'#8fbfe0':'#8fe0a0') }; });
+      const reqs=(u.reqs||[]).map(r=>({label:r.label, color:r.pass?'#8fbf8f':'#d06a5a', mark:r.pass?'✓':'✕'}));
+      const source=S.sel.source; const isShop=source==='shop'; const isInv=source==='inv'; const isEq=source==='equip';
+      sel={ present:true, empty:false, iconEl:this.iconEl(it.kind,rar.c,64), name:it.name, rarity:it.rarity, rarityCol:rar.c, rarityGlow:rar.g,
+        typeLabel: it.slot==='consumable'?'Consumable':it.slot, ilvl:it.reqLevel, affixes, reqs, hasReqs:reqs.length>0, flavor:it.flavor,
+        priceLabel: isShop?(it.price.toLocaleString('en-US')+' g'):(isInv?(Math.round(it.price*0.4).toLocaleString('en-US')+' g'):'equipped'),
+        actionLabel: isShop?'Buy':(isInv?'Sell':'Unequip'),
+        actionCls: (isShop&&S.gold<it.price)?'dis':'',
+        action: isShop?()=>this.buy():(isInv?()=>this.sell():()=>this.unequip(it.slot)),
+        canEquip: isInv&&it.slot!=='consumable'&&u.ok,
+        equip:()=>this.equipIt() };
+    }}
+
+    return { merchantEl, paperdollEl, greeting:'Long road, traveler? Warm your coin by my fire — fair prices, folk-blessed steel.',
+      gold:S.gold.toLocaleString('en-US'), tabs, shopCells, invCells, equipSlots, sel };
+  }
+}
+</script>
+</body>
+</html>
