@@ -883,16 +883,15 @@ export class WorldRenderer {
 
   private drawHpPip(px: number, py: number, e: Entity) {
     const m = 8 * UI;
-    const h = 5 * UI;
+    const h = 4 * UI;
     const w = CELL_PX - 2 * m;
     const x = px + m;
-    const y = py + 4 * UI;
-    const r = 2 * UI; // rounded corners
+    const y = py + h;
     const pct = Math.max(0, e.hp / e.stats.maxHp);
     const g = new Graphics();
-    g.roundRect(x, y, w, h, r).fill({ color: 0x0a0d12, alpha: 0.82 }); // recessed dark backing
-    if (pct > 0) g.roundRect(x, y, w * pct, h, r).fill(e.elite ? COLORS.timerBorder : COLORS.hpEnemy);
-    g.roundRect(x, y, w, h, r).stroke({ width: 1.2 * UI, color: COLORS.gold, alpha: 0.85 }); // decorative gold frame
+    g.rect(x, y, w, h).fill({ color: 0x000000, alpha: 0.55 }); // dark backing
+    if (pct > 0) g.rect(x, y, w * pct, h).fill(e.elite ? COLORS.timerBorder : COLORS.hpEnemy);
+    g.rect(x, y, w, h).stroke({ width: 0.75 * UI, color: 0x000000, alpha: 0.9 }); // simple thin black border, sharp corners
     this.actors.addChild(g);
   }
 
