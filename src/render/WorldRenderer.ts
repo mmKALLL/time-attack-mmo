@@ -864,7 +864,7 @@ export class WorldRenderer {
 
     if (e.faction !== 'enemy') this.drawFacing(e, px, py); // enemies show no facing arrow
     const inFight = Object.values(world.groups).some((g) => g.memberIds.includes(e.id));
-    if (e.faction === 'enemy') this.drawHpPip(px, py, e);
+    if (e.faction === 'enemy' && inFight) this.drawHpPip(px, py, e); // only engaged enemies show HP
     if (inFight || e.armed) this.drawSquareTimer(e, px, py); // armed = out-of-combat wind-up
   }
 
