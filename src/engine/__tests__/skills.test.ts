@@ -69,9 +69,9 @@ describe('uses and cooldown bookkeeping', () => {
     expect(rt.usesLeft).toBe(getSkill('finishingBlow').uses);
     expect(canCast(rt)).toBe(false);
   });
-  it('a per-level cooldownFn (e.g. Recover) shortens the cooldown as the skill levels up', () => {
+  it('a per-level cooldown param (e.g. Recover) shortens the cooldown as the skill levels up', () => {
     const recover = getSkill('recover');
-    expect(recover.cooldownFn).toBeDefined(); // authored via cooldown: lin(18, -2)
+    expect(recover.params.cooldown).toBeDefined(); // authored via cooldown: lin(18, -2), folded into params
     const cdAt = (level: number) => afterCast({ skillId: 'recover', level, usesLeft: 1, cooldownLeftMs: 0 }, recover).cooldownLeftMs;
     expect(cdAt(1)).toBeGreaterThan(0);
     expect(cdAt(5)).toBeLessThan(cdAt(1)); // higher level -> shorter cooldown (tuning-agnostic)

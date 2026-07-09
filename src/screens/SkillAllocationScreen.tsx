@@ -255,12 +255,13 @@ export function SkillAllocationScreen() {
   };
 
   // power headline + NEXT LV deltas from the skill's param functions
-  const paramLabel = (k: string, s: Skill) => (k === 'dmg' ? 'Max damage' : k === 'heal' ? 'Healing' : k === 'pct' ? (s.kind === 'dot' ? 'Burn' : 'Effect') : k === 'dur' ? 'Duration' : k === 'tiles' ? 'Tiles' : k === 'hits' ? 'Hits' : k);
+  const paramLabel = (k: string, s: Skill) => (k === 'dmg' ? 'Max damage' : k === 'heal' ? 'Healing' : k === 'pct' ? (s.kind === 'dot' ? 'Burn' : 'Effect') : k === 'dur' ? 'Duration' : k === 'tiles' ? 'Tiles' : k === 'hits' ? 'Hits' : k === 'cooldown' ? 'Cooldown' : k);
   const paramVal = (k: string, s: Skill, lv: number) => {
     const fn = s.params[k as keyof typeof s.params];
     if (!fn) return '';
     const v = fn(lv);
     if (k === 'dmg' || k === 'heal') return `${Math.round(power * v)}`;
+    if (k === 'cooldown') return `${+v.toFixed(1)}s`; // seconds, e.g. per-level "15.0s -> 13.8s"
     const unit = k === 'pct' ? '%' : k === 'dur' ? 's' : '';
     return `${Math.round(v)}${unit}`;
   };

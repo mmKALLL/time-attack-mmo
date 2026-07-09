@@ -44,7 +44,7 @@ export type CooldownType = 'passive' | 'active';
 // returned number is a MULTIPLIER on the character's normal damage calc; other
 // params (pct/dur/tiles/...) return their literal per-level value.
 export type SkillParamFunction = (level: number) => number;
-export type ParamName = 'dmg' | 'heal' | 'healPercentage' | 'pct' | 'dur' | 'tiles' | 'hits' | 'uses' | 'targets' | 'delay';
+export type ParamName = 'dmg' | 'heal' | 'healPercentage' | 'pct' | 'dur' | 'tiles' | 'hits' | 'uses' | 'targets' | 'delay' | 'cooldown';
 export type SkillParams = Partial<Record<ParamName, SkillParamFunction>>;
 
 export type SkillKind = 'attack' | 'heal' | 'buff' | 'debuff' | 'dot';
@@ -63,8 +63,7 @@ export type Skill = {
   triggerMs?: number; // auto-cast interval; multiple of STEP_MS (250), default 1500
   telegraphMs?: number; // AoE wind-up (ms) before it resolves; required in practice on enemy AoE skills
   uses?: number; // cooldown charges (distinct from the {uses}/{hits} display params)
-  cooldownMs: number;
-  cooldownFn?: SkillParamFunction; // per-level cooldown (seconds); when set, afterCast uses it instead of cooldownMs
+  cooldownMs: number; // level-1 cooldown in ms, derived from params.cooldown; backs the Hud passive-tag read
   cooldownType: CooldownType;
 };
 export type SkillRuntime = {

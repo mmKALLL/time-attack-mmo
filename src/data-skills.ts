@@ -14,7 +14,8 @@ const flat =
     v;
 
 // Cooldown/trigger are authored in SECONDS. `cooldown` may be a fixed number or a
-// per-level function (level -> seconds, e.g. `lin(18, -2)` to shave 2s/level). Legacy
+// per-level function (level -> seconds, e.g. `lin(18, -2)` to shave 2s/level) and is
+// folded into params.cooldown, so it can show in descriptions via {cooldown}. Legacy
 // cooldownMs/triggerMs (in ms) still work for un-migrated calls.
 function sk(s: {
   id: string;
@@ -33,20 +34,16 @@ function sk(s: {
   cooldownMs?: number; // legacy: fixed cooldown in ms
   cooldownType?: CooldownType;
 }): Skill {
-  const { cooldown, cooldownMs, trigger, triggerMs, ...rest } = s;
-  const cooldownFn = typeof cooldown === 'function' ? cooldown : undefined;
-  const cdMs = cooldownFn
-    ? Math.round(cooldownFn(1) * 1000) // level-1 value backs the display/passive-tag reads
-    : typeof cooldown === 'number'
-      ? Math.round(cooldown * 1000)
-      : (cooldownMs ?? 0);
+  const { cooldown, cooldownMs, trigger, triggerMs, params = {}, ...rest } = s;
+  // Precedence: the `cooldown` shorthand > an explicit params.cooldown > legacy cooldownMs.
+  const cooldownParam =
+    cooldown != null ? (typeof cooldown === 'function' ? cooldown : flat(cooldown)) : (params.cooldown ?? (cooldownMs != null ? flat(cooldownMs / 1000) : undefined));
   const trgMs = trigger != null ? Math.round(trigger * 1000) : triggerMs;
   return {
-    params: {},
     cooldownType: 'passive',
     ...rest,
-    cooldownMs: cdMs,
-    ...(cooldownFn ? { cooldownFn } : {}),
+    params: cooldownParam ? { ...params, cooldown: cooldownParam } : params,
+    cooldownMs: cooldownParam ? Math.round(cooldownParam(1) * 1000) : 0, // level-1 value backs the Hud passive-tag read
     ...(trgMs != null ? { triggerMs: trgMs } : {}),
   };
 }
@@ -61,7 +58,7 @@ export const SKILLS: Record<string, Skill[]> = {
   beginner: [
     sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'point', params: { dmg: lin(1.0, 0.1) } }),
     sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'neutral', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.08) } }),
-    sk({ id: 'recover', name: 'Recover', description: 'Restore {healPercentage} of max HP.', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { healPercentage: lin(0.25, 0.05) }, uses: 1, cooldown: lin(18, -2) }),
+    sk({ id: 'recover', name: 'Recover', description: 'Restore {healPercentage} of max HP (cooldown: {cooldown}s).', kind: 'heal', target: 'self', element: 'neutral', shapeKind: 'self', params: { healPercentage: flat(0.5) }, uses: 1, cooldown: lin(180, -12) }),
   ],
 
   // --- Fighter ---
@@ -190,6 +187,7 @@ export function describeSkill(skill: Skill, level: number, atk?: number): string
     const v = fn(level);
     if (name === 'dmg' || name === 'heal') return atk != null ? String(Math.round(atk * v)) : `×${v.toFixed(2)}`;
     if (name === 'healPercentage') return `${Math.round(v * 100)}%`; // fraction of max HP -> "50%"
+    if (name === 'cooldown') return `${+v.toFixed(1)}s`; // seconds -> "18s" / "1.4s"
     if (name === 'dur' || name === 'delay') return String(Math.round(v * 10) / 10);
     return String(Math.round(v));
   });

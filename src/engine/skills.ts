@@ -41,7 +41,7 @@ export function afterCast(rt: SkillRuntime, skill: Skill): SkillRuntime {
   if (rt.usesLeft < 0) return rt;
   const usesLeft = rt.usesLeft - 1;
   if (usesLeft <= 0) {
-    const cooldownLeftMs = skill.cooldownFn ? Math.round(skill.cooldownFn(rt.level) * 1000) : skill.cooldownMs;
+    const cooldownLeftMs = skill.params.cooldown ? Math.round(skill.params.cooldown(rt.level) * 1000) : skill.cooldownMs;
     return { ...rt, usesLeft: skill.uses ?? -1, cooldownLeftMs };
   }
   return { ...rt, usesLeft };
