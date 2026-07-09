@@ -76,6 +76,14 @@ describe('uses and cooldown bookkeeping', () => {
     expect(cdAt(1)).toBeGreaterThan(0);
     expect(cdAt(5)).toBeLessThan(cdAt(1)); // higher level -> shorter cooldown (tuning-agnostic)
   });
+  it('an unlimited-use skill that defines a cooldown still enters cooldown on cast', () => {
+    const skill = getSkill('bracingGuard'); // cooldown, no uses (usesLeft -1)
+    expect(skill.cooldownMs).toBeGreaterThan(0);
+    const rt = afterCast({ skillId: 'bracingGuard', level: 1, usesLeft: -1, cooldownLeftMs: 0 }, skill);
+    expect(rt.cooldownLeftMs).toBe(skill.cooldownMs); // now on cooldown
+    expect(rt.usesLeft).toBe(-1); // still unlimited
+    expect(canCast(rt)).toBe(false);
+  });
   it('passive cooldowns tick regardless of selection; active only while selected', () => {
     const e = makeEntity({ id: 'm', faction: 'player', name: 'm', sprite: 'wizard', cell: { x: 0, y: 0 }, level: 10, jobId: 'cinderSage' });
     e.skills = [

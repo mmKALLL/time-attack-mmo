@@ -38,10 +38,13 @@ export function canCast(rt: SkillRuntime): boolean {
 // After a cast: unlimited skills (usesLeft < 0) are unchanged; limited skills
 // decrement, and depleting the last use starts the cooldown and refills uses.
 export function afterCast(rt: SkillRuntime, skill: Skill): SkillRuntime {
-  if (rt.usesLeft < 0) return rt;
+  const cooldownLeftMs = skill.params.cooldown ? Math.round(skill.params.cooldown(rt.level) * 1000) : skill.cooldownMs;
+  if (rt.usesLeft < 0) {
+    // Unlimited-use skills still enter cooldown when they define one (active-cooldown skills).
+    return cooldownLeftMs > 0 ? { ...rt, cooldownLeftMs } : rt;
+  }
   const usesLeft = rt.usesLeft - 1;
   if (usesLeft <= 0) {
-    const cooldownLeftMs = skill.params.cooldown ? Math.round(skill.params.cooldown(rt.level) * 1000) : skill.cooldownMs;
     return { ...rt, usesLeft: skill.uses ?? -1, cooldownLeftMs };
   }
   return { ...rt, usesLeft };

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { tick } from '../world';
 import { advanceCombat, advanceArming, groupOf } from '../combat';
+import { canCast } from '../skills';
 import { makeEntity } from '../entities';
 import { demoMap } from '../../data-map';
 import type { Entity, WorldState } from '../../types';
@@ -170,5 +171,17 @@ describe('arming (out-of-combat ranged fire, card #9)', () => {
     expect(s.entities.p1.skills[rec].cooldownLeftMs).toBeGreaterThan(0); // cooldown started
     expect(s.entities.p1.armed).toBe(false); // fired once, un-armed
     expect(groupOf(s, 'p1')).toBeUndefined(); // self-heal never forms a group
+  });
+
+  it('(g) auto-selects the first usable skill after the active one goes to cooldown (card #19)', () => {
+    const p = hero({ x: 5, y: 5 });
+    const rec = p.skills.findIndex((r) => r.skillId === 'recover');
+    p.activeSkillIndex = rec; // Recover: 1 use -> cooldown after firing
+    const s = world([p]);
+    s.entities.p1.armed = true;
+    advanceArming(s, BIG); // Recover fires, depletes its use, goes to cooldown
+    expect(s.entities.p1.skills[rec].cooldownLeftMs).toBeGreaterThan(0);
+    expect(s.entities.p1.activeSkillIndex).not.toBe(rec); // jumped off the cooling skill
+    expect(canCast(s.entities.p1.skills[s.entities.p1.activeSkillIndex])).toBe(true); // ...to a usable one
   });
 });

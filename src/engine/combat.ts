@@ -217,6 +217,7 @@ export function advanceArming(s: WorldState, dt: number): void {
       s.hits.push({ cell: { ...player.cell }, from: { ...player.cell }, kind: 'heal', amount: heal });
     }
     player.skills = player.skills.map((r, i) => (i === player.activeSkillIndex ? afterCast(r, skill) : r));
+    autoSelectUsableSkill(s);
     player.armed = false;
     return;
   }
@@ -243,6 +244,7 @@ export function advanceArming(s: WorldState, dt: number): void {
     stick(s, player.id, foe.id); // engage: combat auto-cast takes over next frame
   }
   player.skills = player.skills.map((r, i) => (i === player.activeSkillIndex ? afterCast(r, skill) : r));
+  autoSelectUsableSkill(s);
   player.armed = false;
 }
 
@@ -383,6 +385,17 @@ function resolveAttack(s: WorldState, caster: Entity, target: Entity, mult: numb
 }
 
 // Fire one combatant's active skill (called on that combatant's own cast timer).
+// After the player's active skill is spent/cooling, jump the hotkey selection to
+// the first still-usable skill so they keep attacking (card #19). Player-only.
+function autoSelectUsableSkill(s: WorldState): void {
+  const player = s.entities[s.playerId];
+  if (!player) return;
+  const active = player.skills[player.activeSkillIndex];
+  if (active && canCast(active)) return;
+  const next = player.skills.findIndex((rt) => canCast(rt));
+  if (next >= 0) player.activeSkillIndex = next;
+}
+
 function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
   const rt = caster.skills[caster.activeSkillIndex];
   if (!rt || !canCast(rt)) return;
@@ -411,6 +424,7 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
     }
   }
   caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
+  if (caster.id === s.playerId) autoSelectUsableSkill(s);
 }
 
 // Level up a hero: bump level, re-allocate primaries for the new level, re-derive
