@@ -48,10 +48,15 @@ function Portrait({ entity, size }: { entity: Entity; size: number }) {
 
 function Bar({ kind, cur, max, label }: { kind: 'hp' | 'mp' | 'xp'; cur: number; max: number; label?: string }) {
   const pct = Math.max(0, Math.min(1, cur / max));
+  const text = label ?? `${Math.round(cur)} / ${max}`;
   return (
     <div className={`bar ${kind}`}>
       <span style={{ transform: `scaleX(${pct})` }} />
-      <span className="label">{label ?? `${Math.round(cur)} / ${max}`}</span>
+      <span className="label">{text}</span>
+      {/* second copy clipped to the filled width, so the label splits colors at the fill edge */}
+      <span className="label clip" style={{ clipPath: `inset(0 ${(1 - pct) * 100}% 0 0)` }} aria-hidden="true">
+        {text}
+      </span>
     </div>
   );
 }
