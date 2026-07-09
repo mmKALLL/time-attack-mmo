@@ -50,7 +50,8 @@ export function WorldMapScreen() {
   // Open pre-scrolled to the party's vertical position — centred if there's room,
   // otherwise clamped to the very bottom (the browser clamps scrollTop for us).
   useEffect(() => {
-    const stage = stageRef.current, map = mapRef.current;
+    const stage = stageRef.current,
+      map = mapRef.current;
     if (!stage || !map || !current) return;
     stage.scrollTop = (current.y / DESIGN_H) * map.clientHeight - stage.clientHeight / 2;
     stage.scrollLeft = (current.x / DESIGN_W) * map.clientWidth - stage.clientWidth / 2;
@@ -67,7 +68,7 @@ export function WorldMapScreen() {
         {/* HEADER (chrome bar above the scrollable map). */}
         <div className="wm-header">
           <div className="wm-title">Suomela · World Map</div>
-          <div className="wm-subtitle">Click a visited town to fast travel</div>
+          <div className="wm-subtitle">Click a visited town to fast travel.</div>
           <div className="wm-spacer" />
           <div className="wm-stat">
             <div className="wm-stat-num" style={{ color: OCHRE }}>
@@ -115,13 +116,7 @@ export function WorldMapScreen() {
                 if (!n.isTown || !known) return null;
 
                 return (
-                  <g
-                    key={n.id}
-                    className="wm-town"
-                    onClick={() => travel(n)}
-                    onMouseEnter={() => setHovered(n.id)}
-                    onMouseLeave={() => setHovered((h) => (h === n.id ? null : h))}
-                  >
+                  <g key={n.id} className="wm-town" onClick={() => travel(n)} onMouseEnter={() => setHovered(n.id)} onMouseLeave={() => setHovered((h) => (h === n.id ? null : h))}>
                     {hovered === n.id && <circle className="wm-town-glow" cx={n.x} cy={n.y} r={24} />}
                     <circle className="wm-town-hit" cx={n.x} cy={n.y} r={30} />
                   </g>
@@ -162,7 +157,8 @@ function HereRing({ x, y, r }: { x: number; y: number; r: number }) {
 
 // "Fast Travel to / <Town>" bubble, drawn above the hovered town's icon.
 function FastTravelTip({ node }: { node: WorldNode }) {
-  const w = 240, h = 68;
+  const w = 240,
+    h = 68;
   const x = node.x;
   const top = node.y - 44 - h; // float above the painted icon
   return (
