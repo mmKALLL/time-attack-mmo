@@ -12,7 +12,7 @@ import './skills.css';
 const STAT_META: { key: PrimaryKey; abbr: string; name: string; role: string; color: string; tint: string }[] = [
   { key: 'str', abbr: 'STR', name: 'Strength', role: 'Physical power', color: '#6f9ad0', tint: 'rgba(63,102,144,.10)' },
   { key: 'dex', abbr: 'DEX', name: 'Dexterity', role: 'Damage · accuracy · dodge', color: '#6fce8f', tint: 'rgba(63,122,78,.10)' },
-  { key: 'vit', abbr: 'VIT', name: 'Vitality', role: 'HP · defense', color: '#d8896a', tint: 'rgba(176,90,60,.10)' },
+  { key: 'vit', abbr: 'VIT', name: 'Vitality', role: 'HP · resistance', color: '#d8896a', tint: 'rgba(176,90,60,.10)' },
   { key: 'int', abbr: 'INT', name: 'Intelligence', role: 'Magic power · MP', color: '#b78fe0', tint: 'rgba(107,78,148,.12)' },
 ];
 const ELEM: Record<string, string> = {
@@ -213,8 +213,8 @@ export function SkillAllocationScreen() {
     return { cur, next, changed, f };
   };
   const DERIVED: { label: string; get: (s: typeof de) => number; dec?: boolean; pct?: boolean }[] = [
-    { label: 'Max damage', get: (s) => s.maxDmg },
     { label: 'Min damage', get: (s) => s.minDmg },
+    { label: 'Max damage', get: (s) => s.maxDmg },
     { label: 'Max HP', get: (s) => s.maxHp },
     { label: 'Max MP', get: (s) => s.maxMp },
     { label: 'Defense', get: (s) => s.def },
