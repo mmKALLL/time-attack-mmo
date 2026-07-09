@@ -294,4 +294,7 @@ Power Knockback - 1x1, pushes enemy up to 3 tiles back, uses: 2, cooldown: lin(3
 
 Magician 1st job skills:
 
-Daze - adjacent4, 22 mp, slow: lin(0.25, 0.05), duration: lin(4, 0.4), cooldown: lin(30, -1), dmg: lin(0.6, 0.06)
+Magic Claw - 3x1 (non-piercing), 12 mp, 2 hits, dmg: lin(0.6, 0.08)
+Cross Blast - hits player's diagonals, 16 mp, uses: 4, cooldown: lin(20, -1), dmg: lin(1, 0.15)
+Arcane Arc - 5-tile arc 3 tiles away, 22 mp, AoE (5s delay), dmg: lin(1.6, 0.2)
+Shocking Grasp - 1x1, 8 mp, slow: lin(0.25, 0.05), duration: lin(4, 0.4), cooldown: lin(30, -1), dmg: lin(1.4, 0.2)
