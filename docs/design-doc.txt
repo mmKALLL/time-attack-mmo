@@ -292,3 +292,6 @@ Piercing Shot - 4x1, 10 mp, dmg: lin(0.8, 0.15)
 Scatter Shot - 1x3 two tiles away, 16 mp, dmg(1.2, 0.2)
 Power Knockback - 1x1, pushes enemy up to 3 tiles back, uses: 2, cooldown: lin(30, -1), dmg: lin(1.4, 0.2)
 
+Magician 1st job skills:
+
+Daze - adjacent4, 22 mp, slow: lin(0.25, 0.05), duration: lin(4, 0.4), cooldown: lin(30, -1), dmg: lin(0.6, 0.06)
