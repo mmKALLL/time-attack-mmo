@@ -79,9 +79,13 @@ function ZoneBanner() {
   return (
     <div className="panel zone-banner">
       <div className="title">{def.name}</div>
-      <div className="sub">
-        RECOMMENDED LV {def.recommended[0]}–{def.recommended[1]}
-      </div>
+      {def.description ? (
+        <div className="sub flavor">{def.description}</div>
+      ) : (
+        <div className="sub">
+          RECOMMENDED LV {def.recommended[0]}–{def.recommended[1]}
+        </div>
+      )}
     </div>
   );
 }

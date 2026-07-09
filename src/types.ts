@@ -179,6 +179,7 @@ export type MapDef = {
   name: string;
   biome: Biome;
   recommended: [number, number]; // recommended level range (zone banner)
+  description?: string; // towns: a one-line mythical blurb shown in the zone banner instead of the level
   gen: GenParams;
   connections: MapConnection[];
   spawns: SpawnRule[];

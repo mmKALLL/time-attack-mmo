@@ -32,12 +32,13 @@ const link = (a: string, dir: Compass, b: string) => {
 };
 
 // A safe town: town tileset, no spawns.
-function town(id: string, name: string): MapDef {
+function town(id: string, name: string, description: string): MapDef {
   return {
     id,
     name,
     biome: 'town',
     recommended: [1, 1],
+    description,
     gen: { width: MAP_SIZE.town.width, height: MAP_SIZE.town.height, tileset: 'town', roomCountMin: 1, roomCountMax: 1, roomShape: 'rectangular', corridorWidth: 2, roomMin: 5, roomMax: 8, torchDensity: 4, obstacleCount: 2 },
     connections: [],
     spawns: [{ pool: [], maxAmount: 0, spawnInterval: 999, spawnAmount: 0 }],
@@ -60,22 +61,21 @@ function field(id: string, biome: Biome, lo: number, hi: number, rooms: number, 
 }
 
 // ---------- Towns ----------
-add(town('mantyharju', 'Mäntyharju')); // starting town (beginners, lv 1)
-add(town('savonlinna', 'Savonlinna')); // fighter 1st job
-add(town('varkaus', 'Varkaus')); // rogue 1st job
-add(town('jyvaskyla', 'Jyväskylä')); // magician 1st job
-add(town('kuopio', 'Kuopio')); // archer 1st job
-add(town('kajaani', 'Kajaani')); // 2nd job
+add(town('mantyharju', 'Mäntyharju', "Where the old pines hush and every wanderer's tale first draws breath.")); // starting town (beginners, lv 1)
+add(town('savonlinna', 'Savonlinna', 'A black-water fortress isle where oaths are sworn in steel and stone.')); // fighter 1st job
+add(town('varkaus', 'Varkaus', 'A town of shifting locks and whispered bargains, where the current keeps its secrets.')); // rogue 1st job
+add(town('jyvaskyla', 'Jyväskylä', 'A ridge of scholars where the very air crackles with half-spoken spells.')); // magician 1st job
+add(town('kuopio', 'Kuopio', 'A mirror-lake town beneath a lonely tower, watched by the keenest eyes in the north.')); // archer 1st job
+add(town('kajaani', 'Kajaani', 'The last warm hearth before the deep north swallows the road whole.')); // 2nd job
 
 // ---------- Lieksa deep-forest dungeon (entrance + 3 deeper maps, dead-end chain) ----------
-add(field('lieksa', 'deepForest', 20, 24, 2));
-maps.lieksa.name = 'Lieksa Deepwood';
+add(town('lieksa', 'Lieksa', "A moss-drowned waystation at the deepwood's edge, where the road ends and the old dark begins."));
 add(field('lieksa2', 'deepForest', 25, 29, 3));
 add(field('lieksa3', 'deepForest', 30, 34, 5));
 add(field('lieksa4', 'deepForest', 35, 40, 2));
-link('lieksa', 'n', 'lieksa2');
-link('lieksa2', 'n', 'lieksa3');
-link('lieksa3', 'n', 'lieksa4');
+link('lieksa', 'e', 'lieksa2');
+link('lieksa2', 'ne', 'lieksa3');
+link('lieksa3', 'nw', 'lieksa4');
 
 // ---------- Field-map chains between nodes (design-doc part 1) ----------
 // One field map in a chain. `width`/`height` optionally override the standard

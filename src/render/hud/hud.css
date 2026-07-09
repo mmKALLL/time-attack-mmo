@@ -50,6 +50,13 @@
   color: var(--ink-dim);
   letter-spacing: 2px;
 }
+/* Town flavor blurb: a readable italic sentence, not the spaced-out stat label. */
+.zone-banner .sub.flavor {
+  font-style: italic;
+  letter-spacing: 0.2px;
+  max-width: 360px;
+  line-height: 1.4;
+}
 
 /* ---- Focus target ---- */
 .focus-target {
