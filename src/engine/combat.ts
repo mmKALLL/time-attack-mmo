@@ -27,6 +27,33 @@ function chebyshevDistance(a: Cell, b: Cell): number {
   return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 }
 
+// The single foe a non-piercing (pierce:false) line/arc collapses onto: the
+// nearest by Chebyshev distance, tie-broken by the smallest LATERAL offset from
+// the caster's facing line (so an equidistant arc fan prefers the most central
+// enemy), then by entity id for a fully deterministic pick. Lateral = distance
+// perpendicular to facing: |Δy| for left/right, |Δx| for up/down. Assumes `foes`
+// is non-empty (callers guard on length).
+function nearestEnemy(caster: Entity, foes: Entity[]): Entity {
+  const lateral = (f: Entity): number => (caster.facing === 'left' || caster.facing === 'right' ? Math.abs(f.cell.y - caster.cell.y) : Math.abs(f.cell.x - caster.cell.x));
+  let best = foes[0];
+  for (const f of foes) {
+    const d = chebyshevDistance(caster.cell, f.cell);
+    const bd = chebyshevDistance(caster.cell, best.cell);
+    if (d !== bd) {
+      if (d < bd) best = f;
+      continue;
+    }
+    const l = lateral(f);
+    const bl = lateral(best);
+    if (l !== bl) {
+      if (l < bl) best = f;
+      continue;
+    }
+    if (f.id < best.id) best = f;
+  }
+  return best;
+}
+
 // The nearest living hero (faction !== 'enemy') in `enemy`'s group by Chebyshev
 // distance; ties broken by iteration order. Recomputed each tick so an enemy
 // retargets to a hero that has moved closer. Undefined if the enemy is ungrouped
@@ -239,13 +266,10 @@ export function advanceArming(s: WorldState, dt: number): void {
   }
 
   // Attack/debuff skills: fire at the enemies the footprint covers, ENGAGING (sticking) them.
-  // AoE footprints hit everything they cover; single-target shapes strike the nearest.
+  // AoE footprints hit everything they cover; single-target shapes — and non-piercing
+  // (pierce:false) line/arc AoEs — collapse to the nearest enemy on the footprint.
   let foes = enemiesInFootprint(s, player, skill, rt.level);
-  if (!isAoESkill(skill) && foes.length > 1) {
-    let nearest = foes[0];
-    for (const f of foes) if (chebyshevDistance(player.cell, f.cell) < chebyshevDistance(player.cell, nearest.cell)) nearest = f;
-    foes = [nearest];
-  }
+  if ((!isAoESkill(skill) || skill.pierce === false) && foes.length > 1) foes = [nearestEnemy(player, foes)];
   if (!foes.length) {
     player.armed = false; // whiff: nothing in range — no cooldown consumed
     return;
@@ -442,7 +466,9 @@ function autoSelectUsableSkill(s: WorldState): void {
 // enemies its footprint sweeps (engaging them, so a pure debuff/dot still bites).
 function statusRecipients(s: WorldState, g: CombatGroup, caster: Entity, skill: Skill, level: number): Entity[] {
   if (targetsAllies(skill)) return skillTargets(caster, skill, membersOf(s, g).filter(isAlive), level);
-  const foes = enemiesInFootprint(s, caster, skill, level);
+  let foes = enemiesInFootprint(s, caster, skill, level);
+  // Non-piercing: only the nearest foe is struck, so only it is statused/engaged.
+  if (skill.pierce === false && foes.length > 1) foes = [nearestEnemy(caster, foes)];
   for (const f of foes) stick(s, caster.id, f.id); // engage foes the (possibly damage-less) skill reaches
   return foes;
 }
@@ -470,7 +496,10 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
   // A damaging AoE sweeps its whole footprint — catching enemies not yet in the block
   // and engaging them — while single-target skills stay block-scoped via skillTargets.
   const aoeAttack = skill.kind !== 'heal' && !!skill.params.dmg && isAoESkill(skill);
-  const targets = aoeAttack ? enemiesInFootprint(s, caster, skill, rt.level) : skillTargets(caster, skill, membersOf(s, g).filter(isAlive), rt.level);
+  let targets = aoeAttack ? enemiesInFootprint(s, caster, skill, rt.level) : skillTargets(caster, skill, membersOf(s, g).filter(isAlive), rt.level);
+  // Non-piercing line/arc: collapse to the single nearest enemy on the footprint,
+  // BEFORE the loop, so damage AND the engage-stick apply to only that one foe.
+  if (skill.pierce === false && targets.length > 1) targets = [nearestEnemy(caster, targets)];
   for (const t of targets) {
     if (skill.kind === 'heal') {
       // Power heal (heal param x maxDmg) + a flat % of the target's max HP

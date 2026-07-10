@@ -75,6 +75,7 @@ export type Skill = {
   cooldownMs: number; // level-1 cooldown in ms, derived from params.cooldown; backs the Hud passive-tag read
   cooldownType: CooldownType;
   status?: StatusApplication | StatusApplication[]; // status(es) applied to the skill's recipients on cast
+  pierce?: boolean; // line/arc attacks hit every enemy on the footprint by default; pierce:false hits only the nearest one (stops at the first enemy)
 };
 export type SkillRuntime = {
   skillId: SkillId;

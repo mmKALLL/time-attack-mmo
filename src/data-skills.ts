@@ -35,6 +35,7 @@ function sk(s: {
   cooldownMs?: number; // legacy: fixed cooldown in ms
   cooldownType?: CooldownType;
   status?: StatusApplication | StatusApplication[]; // status(es) the skill applies on cast
+  pierce?: boolean; // false = single-target (nearest enemy on the footprint); spread via ...rest onto the Skill
 }): Skill {
   const { cooldown, cooldownMs, trigger, triggerMs, params = {}, ...rest } = s;
   // Precedence: the `cooldown` shorthand > an explicit params.cooldown > legacy cooldownMs.
@@ -88,7 +89,7 @@ export const SKILLS: Record<string, Skill[]> = {
 
   // --- Archer ---
   archer: [
-    sk({ id: 'piercingShot', name: 'Piercing Shot', description: 'Pierce {tiles} tiles in a line for {dmg} damage.', kind: 'attack', target: 'line', element: 'air', shapeKind: 'line', params: { dmg: lin(0.8, 0.15), tiles: flat(4) }, mpCost: 10 }),
+    sk({ id: 'piercingShot', name: 'Piercing Shot', description: 'Pierce {tiles} tiles in a line for {dmg} damage.', kind: 'attack', target: 'line', element: 'air', shapeKind: 'line', params: { dmg: lin(0.8, 0.15), tiles: flat(5) }, mpCost: 10 }),
     sk({ id: 'scatterShot', name: 'Scatter Shot', description: 'Scatter arrows over {tiles} tiles for {dmg} damage.', kind: 'attack', target: 'arc', element: 'air', shapeKind: 'arc', params: { dmg: lin(1.2, 0.2), tiles: flat(3) }, mpCost: 16 }), // TODO: offset 2 tiles out
     sk({ id: 'powerKnockback', name: 'Power Knockback', description: 'Blast one foe for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'ranged', element: 'air', shapeKind: 'point', params: { dmg: lin(1.4, 0.2) }, uses: 2, cooldown: lin(30, -1) }), // TODO: knockback (push foe up to 3 tiles)
     sk({ id: 'improvedCritical', name: 'Improved Critical', description: 'Passive: +{crit} crit chance, +{critDmg} crit damage.', kind: 'buff', target: 'self (passive)', element: 'air', shapeKind: 'self', params: { crit: lin(5, 2), critDmg: lin(10, 4) } }), // TODO: passive crit boost (unwired)
@@ -109,7 +110,7 @@ export const SKILLS: Record<string, Skill[]> = {
 
   // --- Magician ---
   magician: [
-    sk({ id: 'magicClaw', name: 'Magic Claw', description: 'Claw {tiles} tiles {hits} times for {dmg} damage each.', kind: 'attack', target: 'adjacent-arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(0.6, 0.08), tiles: flat(3), hits: flat(2) }, mpCost: 12 }), // TODO: non-piercing + multi-hit
+    sk({ id: 'magicClaw', name: 'Magic Claw', description: 'Claw {tiles} tiles {hits} times for {dmg} damage each.', kind: 'attack', target: 'adjacent-arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(0.6, 0.08), tiles: flat(3), hits: flat(2) }, mpCost: 12, pierce: false }), // TODO: multi-hit
     sk({ id: 'crossBlast', name: 'Cross Blast', description: 'Blast the diagonal tiles for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'area (cross)', element: 'arcane', shapeKind: 'cross', params: { dmg: lin(1.0, 0.15) }, mpCost: 16, uses: 4, cooldown: lin(20, -1) }), // TODO: diagonal cross (hits diagonals, not orthogonals)
     sk({ id: 'arcaneArc', name: 'Arcane Arc', description: 'Detonate {tiles} tiles for {dmg} damage after a delay.', kind: 'attack', target: 'arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(1.6, 0.2), tiles: flat(5) }, mpCost: 22, telegraphMs: 5000 }), // TODO: player-side AoE telegraph (5s delay); offset 3 tiles out
     sk({ id: 'shockingGrasp', name: 'Shocking Grasp', description: 'Shock one foe for {dmg}, slowing it {pct}% for 5s (cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'arcane', shapeKind: 'point', params: { dmg: lin(1.4, 0.2), pct: lin(25, 5) }, mpCost: 8, cooldown: lin(30, -1), status: { name: 'slow' } }),
@@ -134,7 +135,7 @@ export const SKILLS: Record<string, Skill[]> = {
   rogue: [
     sk({ id: 'doubleStrike', name: 'Double Strike', description: 'Stab one foe {hits} times for {dmg} damage each.', kind: 'attack', target: 'melee', element: 'dark', shapeKind: 'point', params: { dmg: lin(0.6, 0.04), hits: flat(2) }, mpCost: 6, trigger: 1 }), // TODO: multi-hit
     sk({ id: 'venomSlash', name: 'Venom Slash', description: 'Slash {tiles} tiles for {dmg} damage, poisoning foes for {pct}% max HP/s over 10s (cooldown: {cooldown}).', kind: 'attack', target: 'adjacent-arc', element: 'dark', shapeKind: 'arc', params: { dmg: lin(1.0, 0.08), tiles: flat(3), pct: flat(2) }, mpCost: 10, trigger: 1, uses: 2, cooldown: lin(30, -1), status: { name: 'poison' } }),
-    sk({ id: 'hamstring', name: 'Hamstring', description: 'Cut {tiles} tiles for {dmg}, slowing foes {pct}% for 5s.', kind: 'attack', target: 'adjacent-arc', element: 'dark', shapeKind: 'arc', params: { dmg: lin(0.8, 0.1), tiles: flat(3), pct: lin(40, 2) }, mpCost: 16, status: { name: 'slow' } }),
+    sk({ id: 'hamstring', name: 'Hamstring', description: 'Cut {tiles} tiles for {dmg}, slowing foes {pct}% for 5s.', kind: 'attack', target: 'adjacent-arc', element: 'dark', shapeKind: 'arc', params: { dmg: lin(0.8, 0.1), tiles: flat(3), pct: lin(40, 2) }, mpCost: 16, pierce: false, status: { name: 'slow' } }),
     sk({ id: 'lifeOrDeath', name: 'Life and Death', description: 'Deal and take +{pct}% damage for 10s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'dark', shapeKind: 'self', params: { pct: flat(50) }, cooldown: lin(20, -0.5), cooldownType: 'active', status: [{ name: 'atkUp' }, { name: 'defDown' }] }),
   ],
   assassin: [
