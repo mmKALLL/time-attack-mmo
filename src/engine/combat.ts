@@ -143,7 +143,9 @@ function orientCombatants(s: WorldState): void {
 // (advanceCombat) and the out-of-combat ranged wind-up (advanceArming) so both
 // clocks fill at the same rate.
 export function castInterval(e: Entity): number {
-  return COMBAT_TICK_MS / ((CLASS_COMBAT[e.combatClass]?.speed ?? 1) * (e.stats.attackSpeed / 100));
+  const rt = e.skills[e.activeSkillIndex];
+  const trigger = rt ? (getSkill(rt.skillId).triggerMs ?? COMBAT_TICK_MS) : COMBAT_TICK_MS; // per-skill trigger (default 1.5s)
+  return trigger / ((CLASS_COMBAT[e.combatClass]?.speed ?? 1) * (e.stats.attackSpeed / 100));
 }
 
 // Advance combat clocks + resolve auto-casts for every group.

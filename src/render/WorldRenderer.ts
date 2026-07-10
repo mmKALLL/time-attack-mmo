@@ -64,7 +64,6 @@ import {
   CAMERA_ZOOM_PERCENT,
   CELL_PX,
   COLORS,
-  COMBAT_TICK_MS,
   DAMAGE_FLOAT_MS,
   DAMAGE_FLOAT_STACK_TILES,
   DESIGN_H,
@@ -78,7 +77,7 @@ import {
   TORCH_GLOW,
   VIGNETTE,
 } from '../config';
-import { CLASS_COMBAT } from '../config-stats';
+import { castInterval } from '../engine/combat';
 import { Sprites } from './sprites';
 import { backOvershoot, easeOutCubic, lerp, shouldSnap } from './tween';
 
@@ -602,7 +601,7 @@ export class WorldRenderer {
     const light = MAP_CONFIG[MAPS[world.mapId]?.biome ?? 'forest'].light;
     const M = 10000;
     const veil = new Graphics();
-    veil.rect(-M, -M, world.map.width * CELL_PX + 2 * M, world.map.height * CELL_PX + 2 * M).fill({ color: light.duskColor, alpha: light.ambientLightLevel / 100 });
+    veil.rect(-M, -M, world.map.width * CELL_PX + 2 * M, world.map.height * CELL_PX + 2 * M).fill({ color: light.duskColor, alpha: light.ambientDuskLevel / 100 });
     this.lights.addChild(veil);
     for (const f of world.features) {
       if (f.kind !== 'torch') continue;
@@ -929,7 +928,7 @@ export class WorldRenderer {
   }
 
   private drawSquareTimer(e: Entity, px: number, py: number) {
-    const interval = COMBAT_TICK_MS / (CLASS_COMBAT[e.combatClass]?.speed ?? 1);
+    const interval = castInterval(e);
     const frac = Math.min(1, e.castTimerMs / interval); // 0 -> just cast, 1 -> about to cast
     const size = 12 * UI;
     const pad = 4 * UI;
@@ -983,7 +982,7 @@ export class WorldRenderer {
     const isTerrain = skill.kind === 'heal';
     const fill = isBuff ? 0x4a8fe0 : isTerrain ? 0x54c56a : COLORS.attackCurrentFill;
     const stroke = isBuff ? 0x86b6f2 : isTerrain ? 0x8fe0a0 : COLORS.attackCurrentBorder;
-    const interval = COMBAT_TICK_MS / (CLASS_COMBAT[player.combatClass]?.speed ?? 1);
+    const interval = castInterval(player);
     // Both the in-combat cast timer and the armed wind-up accumulate in castTimerMs.
     const frac = group || player.armed ? Math.min(1, player.castTimerMs / interval) : 0;
     const pulse = 0.14 + 0.18 * frac + 0.05 * Math.sin(elapsedMs / 120);

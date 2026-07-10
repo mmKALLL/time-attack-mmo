@@ -1,5 +1,5 @@
 import type { Input, WorldState } from '../types';
-import { moveOrStick, advanceCombat, advanceArming, advanceTelegraphs, groupOf } from './combat';
+import { moveOrStick, advanceCombat, advanceArming, advanceTelegraphs, groupOf, castInterval } from './combat';
 import { exitAt, travelTo, advanceRespawns } from './maps';
 import { advanceRoaming } from './roaming';
 import { spendAttribute, levelUpSkill } from './progression';
@@ -43,9 +43,15 @@ export function applyInput(s: WorldState, input: Input): void {
     // In a combat group: just swap the active skill (auto-cast is unchanged) — no arming.
     // Out of combat: ARM a ranged fire-and-engage (resolved by advanceArming). Only reset
     // the wind-up when arming fresh (previously unarmed); re-pressing while already armed
-    // swaps the skill mid-wind-up without dropping the timer.
-    if (groupOf(s, player.id)) return;
+    // swaps the skill mid-wind-up. The accumulated charge carries over but is CAPPED to the
+    // new skill's trigger, so charging a long skill then switching to a short one fires it
+    // now (extra charge lost), while short->long keeps the progress you'd already built.
+    if (groupOf(s, player.id)) {
+      player.castTimerMs = Math.min(player.castTimerMs, castInterval(player));
+      return;
+    }
     if (!player.armed) player.castTimerMs = 0;
+    else player.castTimerMs = Math.min(player.castTimerMs, castInterval(player));
     player.armed = true;
   }
 }

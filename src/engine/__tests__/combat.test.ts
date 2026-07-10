@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { moveOrStick, advanceCombat, castInterval, groupOf, enemyAt } from '../combat';
+import { applyAction } from '../world';
 import { getSkill } from '../../data-skills';
 import { makeEntity } from '../entities';
 import { demoMap } from '../../data-map';
@@ -136,6 +137,40 @@ describe('growing the block', () => {
     moveOrStick(s, 'p1', 'right'); // leading edge hits e2 -> stick, no translation
     expect(groupOf(s, 'p1')?.memberIds.sort()).toEqual(['e1', 'e2', 'p1']);
     expect(s.entities.p1.cell).toEqual({ x: 3, y: 3 });
+  });
+});
+
+describe('per-skill cast trigger + switch (card #28)', () => {
+  const twoTriggerSkills = (p: Entity, longFirst: boolean) => {
+    const longS = { skillId: 'heavenPierce', level: 1, usesLeft: -1, cooldownLeftMs: 0 }; // triggerMs 2250
+    const shortS = { skillId: 'strafe', level: 1, usesLeft: -1, cooldownLeftMs: 0 }; // triggerMs 1000
+    p.skills = longFirst ? [longS, shortS] : [shortS, longS];
+    p.activeSkillIndex = 0;
+  };
+  it('castInterval reflects the active skill trigger (per-skill)', () => {
+    const p = hero({ x: 3, y: 3 });
+    twoTriggerSkills(p, false); // slot0 = short (1000), slot1 = long (2250)
+    const fast = castInterval(p);
+    p.activeSkillIndex = 1;
+    expect(castInterval(p)).toBeGreaterThan(fast); // longer trigger -> longer interval
+  });
+  it('caps carried charge to the new (shorter) trigger on switch — extra time lost', () => {
+    const p = hero({ x: 5, y: 5 });
+    twoTriggerSkills(p, true); // slot0 = long, slot1 = short
+    p.armed = true;
+    p.castTimerMs = 2000; // charged the long skill a long time
+    const q = applyAction(world([p]), { type: 'selectSkill', slot: 1 }).entities.p1; // switch to short
+    expect(q.activeSkillIndex).toBe(1);
+    expect(q.castTimerMs).toBe(castInterval(q)); // capped to the short interval; extra discarded
+    expect(q.castTimerMs).toBeLessThan(2000);
+  });
+  it('keeps the built charge when switching short -> long trigger', () => {
+    const p = hero({ x: 5, y: 5 });
+    twoTriggerSkills(p, false); // slot0 = short, slot1 = long
+    p.armed = true;
+    p.castTimerMs = 500; // partway through the short skill's wind-up
+    const q = applyAction(world([p]), { type: 'selectSkill', slot: 1 }).entities.p1; // switch to long
+    expect(q.castTimerMs).toBe(500); // under the long interval -> progress preserved
   });
 });
 
