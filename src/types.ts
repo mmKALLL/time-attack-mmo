@@ -46,7 +46,6 @@ export type StatusApplication = { name: StatusKind; param?: ParamName; stat?: Pr
 
 // ---------- Skills ----------
 export const MAX_SKILL_LEVEL = 5;
-export type CooldownType = 'passive' | 'active';
 
 // Each {param} in a description has its own per-level formula. For dmg/heal the
 // returned number is a MULTIPLIER on the character's normal damage calc; other
@@ -72,8 +71,7 @@ export type Skill = {
   triggerMs?: number; // auto-cast interval; multiple of STEP_MS (250), default 1500
   telegraphMs?: number; // AoE wind-up (ms) before it resolves; required in practice on enemy AoE skills
   uses?: number; // cooldown charges (distinct from the {uses}/{hits} display params)
-  cooldownMs: number; // level-1 cooldown in ms, derived from params.cooldown; backs the Hud passive-tag read
-  cooldownType: CooldownType;
+  cooldownMs: number; // level-1 cooldown in ms, derived from params.cooldown
   status?: StatusApplication | StatusApplication[]; // status(es) applied to the skill's recipients on cast
   pierce?: boolean; // line/arc attacks hit every enemy on the footprint by default; pierce:false hits only the nearest one (stops at the first enemy)
   knockback?: number; // tiles a landed hit shoves the foe backward, away from the caster (engine/combat.ts applyKnockback/advanceKnockback)

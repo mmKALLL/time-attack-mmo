@@ -50,7 +50,6 @@ function mkSkill(id: string, params: Record<string, (lv: number) => number> = {}
     shapeKind: 'point',
     params: params as Skill['params'],
     cooldownMs: 0,
-    cooldownType: 'passive',
   };
 }
 

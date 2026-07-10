@@ -50,13 +50,10 @@ export function afterCast(rt: SkillRuntime, skill: Skill): SkillRuntime {
   return { ...rt, usesLeft };
 }
 
-// Passive cooldowns always tick; active cooldowns tick only for the selected slot.
+// Cooldowns always tick down, regardless of which slot is selected.
 export function tickCooldowns(e: Entity, dt: number): SkillRuntime[] {
-  return e.skills.map((rt, i) => {
+  return e.skills.map((rt) => {
     if (rt.cooldownLeftMs <= 0) return rt;
-    const skill = getSkill(rt.skillId);
-    const shouldTick = skill.cooldownType === 'passive' || i === e.activeSkillIndex;
-    if (!shouldTick) return rt;
     return { ...rt, cooldownLeftMs: Math.max(0, rt.cooldownLeftMs - dt) };
   });
 }

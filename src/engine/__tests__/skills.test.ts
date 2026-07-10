@@ -84,15 +84,15 @@ describe('uses and cooldown bookkeeping', () => {
     expect(rt.usesLeft).toBe(-1); // still unlimited
     expect(canCast(rt)).toBe(false);
   });
-  it('passive cooldowns tick regardless of selection; active only while selected', () => {
+  it('cooldowns tick down for every slot, regardless of which is selected', () => {
     const e = makeEntity({ id: 'm', faction: 'player', name: 'm', sprite: 'wizard', cell: { x: 0, y: 0 }, level: 10, jobId: 'cinderSage' });
     e.skills = [
-      { skillId: 'cinderstorm', level: 1, usesLeft: -1, cooldownLeftMs: 1000 }, // passive
-      { skillId: 'finishingBlow', level: 1, usesLeft: 1, cooldownLeftMs: 1000 }, // active
+      { skillId: 'cinderstorm', level: 1, usesLeft: -1, cooldownLeftMs: 1000 }, // selected
+      { skillId: 'finishingBlow', level: 1, usesLeft: 1, cooldownLeftMs: 1000 }, // not selected
     ];
     e.activeSkillIndex = 0; // cinderstorm selected
     const ticked = tickCooldowns(e, 400);
-    expect(ticked[0].cooldownLeftMs).toBe(600); // passive always ticks
-    expect(ticked[1].cooldownLeftMs).toBe(1000); // active, not selected => frozen
+    expect(ticked[0].cooldownLeftMs).toBe(600); // selected slot ticks
+    expect(ticked[1].cooldownLeftMs).toBe(600); // unselected slot ticks too
   });
 });

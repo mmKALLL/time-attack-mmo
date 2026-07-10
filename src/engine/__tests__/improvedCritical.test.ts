@@ -39,7 +39,7 @@ const caster = () => hero({ x: 1, y: 1 }, 'caster');
 // Minimal hand-built skill (as in status.test.ts) so status baking doesn't depend
 // on any specific data-skills.ts id (which a human is live-editing).
 function mkSkill(id: string, params: Record<string, (lv: number) => number> = {}): Skill {
-  return { id, name: id, description: id, kind: 'buff', target: 'self', element: 'physical', shapeKind: 'self', params: params as Skill['params'], cooldownMs: 0, cooldownType: 'passive' };
+  return { id, name: id, description: id, kind: 'buff', target: 'self', element: 'physical', shapeKind: 'self', params: params as Skill['params'], cooldownMs: 0 };
 }
 function apply(s: WorldState, target: Entity, name: StatusKind, pct: number, extra: Partial<StatusApplication> = {}, from = caster()): void {
   const app: StatusApplication = { name, ...extra };

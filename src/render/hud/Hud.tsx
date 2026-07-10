@@ -224,7 +224,6 @@ function Hotbar() {
                 ))}
               </div>
             ) : null}
-            {skill.cooldownType === 'passive' && skill.cooldownMs > 0 ? <span className="tag">P</span> : null}
           </div>
         );
       })}
