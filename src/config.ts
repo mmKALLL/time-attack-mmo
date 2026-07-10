@@ -13,6 +13,7 @@ export const CELL_PX = 256; // logical tile size (px); 1 enemy-asset tile == 1 c
 export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
 export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
 export const CAMERA_ZOOM_PERCENT = 50; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
+export const PLAYER_SPRITE_SCALE = 1.0; // player sprite render size vs one cell; scales taller+wider from the feet
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
 // Per-biome map defaults: footprint, generator params, spawn cadence, and
 // lighting. A data-map field segment can override width/height and room count.
@@ -48,7 +49,7 @@ export const MAP_CONFIG: Record<Biome, MapConfig> = {
 };
 // ---------- Lighting & screen overlays (drawn in render/WorldRenderer.ts) ----------
 // Elliptical glow behind each enemy (wCells/hCells in tiles; pulseMs 0 = steady).
-export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.5, intensity: 0.7, pulseMs: 2000 };
+export const ENEMY_GLOW = { color: 0xff5a5a, wCells: 1.2, hCells: 1.5, intensity: 0.6, pulseMs: 2000 };
 // export const ENEMY_GLOW = { color: 0x111111, wCells: 1.2, hCells: 1.7, intensity: 0.8, pulseMs: 0 };
 // Additive torch glow (reach is per-biome MAP_CONFIG.light.torchGlowDistance).
 export const TORCH_GLOW = { color: 0xffc27a, intensity: 0.5, pulseMs: 8000 };

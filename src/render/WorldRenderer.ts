@@ -74,6 +74,7 @@ import {
   MAP_CONFIG,
   MOVE_LERP_MS,
   OBSTACLE_OVERLAY_ALPHA,
+  PLAYER_SPRITE_SCALE,
   TORCH_GLOW,
   VIGNETTE,
 } from '../config';
@@ -326,8 +327,8 @@ export class WorldRenderer {
       else if (e.facing === 'right') flip = false;
       this.lastFlip.set(e.id, flip);
       const sp = new Sprite(tex);
-      sp.setSize(CELL_PX, CELL_PX); // downscale the 512px portrait to one cell
-      sp.anchor.set(0.5, 1); // bottom-center on the cell
+      sp.setSize(CELL_PX * PLAYER_SPRITE_SCALE, CELL_PX * PLAYER_SPRITE_SCALE); // scale from the feet (anchor below)
+      sp.anchor.set(0.5, 1); // bottom-center on the cell — scaling grows the sprite up + out from here
       if (flip) sp.scale.x = -Math.abs(sp.scale.x);
       sp.position.set(px + CELL_PX / 2, py + CELL_PX + bob);
       this.actors.addChild(sp);
