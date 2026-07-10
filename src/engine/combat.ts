@@ -288,12 +288,18 @@ export function advanceArming(s: WorldState, dt: number): void {
   }
   player.mp -= mpCost;
   const mag = magnitude(skill, rt.level);
+  const hits = hitCount(skill, rt.level);
   for (const foe of foes) {
     if (skill.params.dmg) {
-      const r = resolveAttack(s, player, foe, mag);
-      foe.hp = Math.max(0, foe.hp - r.amount);
-      s.hits.push({ cell: { ...foe.cell }, from: { ...player.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
-      if (!r.miss && skill.knockback && isAlive(foe)) applyKnockback(s, player, foe, skill.knockback); // landed knockback: shove the foe back
+      let anyLanded = false;
+      for (let i = 0; i < hits && isAlive(foe); i++) {
+        // N independent seeded rolls per cast — each its own hit/crit/damage + HitEvent.
+        const r = resolveAttack(s, player, foe, mag);
+        foe.hp = Math.max(0, foe.hp - r.amount);
+        s.hits.push({ cell: { ...foe.cell }, from: { ...player.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
+        if (!r.miss) anyLanded = true;
+      }
+      if (anyLanded && skill.knockback && isAlive(foe)) applyKnockback(s, player, foe, skill.knockback); // ≥1 hit landed: shove the foe back (once)
     }
     if (skill.status) for (const app of Array.isArray(skill.status) ? skill.status : [skill.status]) applyStatus(s, foe, app, player, skill, rt.level);
     stick(s, player.id, foe.id); // engage: combat auto-cast takes over next frame
@@ -487,6 +493,13 @@ function resolveAttack(s: WorldState, caster: Entity, target: Entity, mult: numb
   return rollDamage(s, damageSource(caster, mult), target);
 }
 
+// How many independent damage rolls a cast lands on EACH target (multi-hit). The
+// `hits` param (default 1) is rounded and floored at 1 — every N-hit skill fires N
+// sequential seeded rolls per target within the single cast (not spread over time).
+function hitCount(skill: Skill, level: number): number {
+  return Math.max(1, Math.round(skill.params.hits?.(level) ?? 1));
+}
+
 // Fire one combatant's active skill (called on that combatant's own cast timer).
 // After the player's active skill is spent/cooling, jump the hotkey selection to
 // the first still-usable skill so they keep attacking (card #19). Player-only.
@@ -531,6 +544,7 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
   }
   caster.mp -= mpCost;
   const mag = magnitude(skill, rt.level);
+  const hits = hitCount(skill, rt.level);
   // Heals/buffs target allies in the block; attacks target enemies in the footprint.
   // A damaging AoE sweeps its whole footprint — catching enemies not yet in the block
   // and engaging them — while single-target skills stay block-scoped via skillTargets.
@@ -549,11 +563,16 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
         s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: 'heal', amount: heal });
       }
     } else if (skill.params.dmg) {
-      const r = resolveAttack(s, caster, t, mag);
-      t.hp = Math.max(0, t.hp - r.amount);
-      s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
-      if (aoeAttack) stick(s, caster.id, t.id); // engage un-blocked foes the sweep caught
-      if (!r.miss && skill.knockback && isAlive(t)) applyKnockback(s, caster, t, skill.knockback); // landed knockback: shove the foe back
+      let anyLanded = false;
+      for (let i = 0; i < hits && isAlive(t); i++) {
+        // N independent seeded rolls per cast — each its own hit/crit/damage + HitEvent.
+        const r = resolveAttack(s, caster, t, mag);
+        t.hp = Math.max(0, t.hp - r.amount);
+        s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
+        if (!r.miss) anyLanded = true;
+      }
+      if (aoeAttack) stick(s, caster.id, t.id); // engage un-blocked foes the sweep caught (once)
+      if (anyLanded && skill.knockback && isAlive(t)) applyKnockback(s, caster, t, skill.knockback); // ≥1 hit landed: shove the foe back (once)
     }
   }
   applySkillStatuses(s, g, caster, skill, rt.level); // buffs/debuffs/dots (incl. those with no direct damage)
