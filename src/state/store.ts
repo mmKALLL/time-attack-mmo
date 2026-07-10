@@ -45,7 +45,7 @@ type GameStore = {
 // behaviour — no stale combat state is restored. Idempotent w.r.t. travelTo's
 // own enemy-clearing.
 function enterLoaded(w: WorldState): WorldState {
-  const heroes = Object.values(w.entities).filter((e) => e.faction !== 'enemy');
+  const heroes = Object.values(w.entities).filter((e) => e.faction === 'player' || e.faction === 'ally');
   const world: WorldState = {
     ...w,
     entities: Object.fromEntries(heroes.map((e) => [e.id, e])),

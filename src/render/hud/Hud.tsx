@@ -80,7 +80,9 @@ function ShapeGrid({ shape }: { shape: Offset[] }) {
 }
 
 function heroes(entities: Record<string, Entity>): Entity[] {
-  return Object.values(entities).filter((e) => e.faction !== 'enemy');
+  // party = player + allies only; town NPCs share the non-enemy space but must NOT
+  // render as party members (they have no procedural sprite -> Sprites.draw throws).
+  return Object.values(entities).filter((e) => e.faction === 'player' || e.faction === 'ally');
 }
 
 // Display names for the status-badge tooltips.
