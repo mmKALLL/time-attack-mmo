@@ -8,9 +8,9 @@ describe('shapeFor', () => {
     expect(shapeFor(getSkill('verdantWellspring'), 1)).toHaveLength(shapeFor(getSkill('verdantWellspring'), 5).length);
   });
   it('AoE footprints grow with the {tiles} param as level rises', () => {
-    const cleaveLo = shapeFor(getSkill('cleave'), 1).length; // tiles = 3
-    const cleaveHi = shapeFor(getSkill('cleave'), 5).length; // tiles = 3 + 0.5*4 = 5
-    expect(cleaveHi).toBeGreaterThan(cleaveLo);
+    const earthLo = shapeFor(getSkill('earthsmash'), 1).length; // tiles = 3
+    const earthHi = shapeFor(getSkill('earthsmash'), 5).length; // tiles = 3 + 0.5*4 = 5
+    expect(earthHi).toBeGreaterThan(earthLo);
   });
   it('a line skill lays cells straight ahead', () => {
     const cells = shapeFor(getSkill('emberLance'), 3);

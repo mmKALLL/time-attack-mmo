@@ -44,7 +44,7 @@ describe('skill targeting by shape', () => {
     expect(targetsAllies(getSkill('recover'))).toBe(true); // heal
     expect(targetsAllies(getSkill('bracingGuard'))).toBe(true); // buff
     expect(targetsAllies(getSkill('strike'))).toBe(false); // attack
-    expect(targetsAllies(getSkill('frostbite'))).toBe(false); // debuff
+    expect(targetsAllies(getSkill('hobblingShot'))).toBe(false); // debuff
   });
 });
 
