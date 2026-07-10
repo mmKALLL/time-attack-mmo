@@ -48,7 +48,7 @@ export type ParamName = 'dmg' | 'heal' | 'healPercentage' | 'pct' | 'dur' | 'til
 export type SkillParams = Partial<Record<ParamName, SkillParamFunction>>;
 
 export type SkillKind = 'attack' | 'heal' | 'buff' | 'debuff' | 'dot';
-export type SkillElement = 'neutral' | 'steel' | 'guardian' | 'holy' | 'blade' | 'precision' | 'volley' | 'nature' | 'arcane' | 'fire' | 'primal' | 'guile' | 'poison' | 'shadow' | 'trap';
+export type SkillElement = 'physical' | 'light' | 'dark' | 'arcane' | 'fire' | 'ice' | 'air' | 'earth';
 export type ShapeKind = 'self' | 'melee' | 'point' | 'line' | 'arc' | 'area' | 'cross' | 'party';
 
 export type Skill = {

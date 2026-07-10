@@ -13,26 +13,19 @@ import './skills.css';
 
 const STAT_META: { key: PrimaryKey; abbr: string; name: string; role: string; color: string; tint: string }[] = [
   { key: 'str', abbr: 'STR', name: 'Strength', role: 'Physical power', color: '#6f9ad0', tint: 'rgba(63,102,144,.10)' },
-  { key: 'dex', abbr: 'DEX', name: 'Dexterity', role: 'Damage · accuracy · dodge', color: '#6fce8f', tint: 'rgba(63,122,78,.10)' },
+  { key: 'dex', abbr: 'DEX', name: 'Dexterity', role: 'Speed · accuracy · crit', color: '#6fce8f', tint: 'rgba(63,122,78,.10)' },
   { key: 'vit', abbr: 'VIT', name: 'Vitality', role: 'HP · resistance', color: '#d8896a', tint: 'rgba(176,90,60,.10)' },
   { key: 'int', abbr: 'INT', name: 'Intelligence', role: 'Magic power · MP', color: '#b78fe0', tint: 'rgba(107,78,148,.12)' },
 ];
 const ELEM: Record<string, string> = {
-  fire: '#f0873a',
+  physical: '#c8ccd4',
+  light: '#e6c583',
+  dark: '#8f7ad6',
   arcane: '#a78fe0',
-  nature: '#6fce8f',
-  holy: '#e6c583',
-  neutral: '#e6c583',
-  shadow: '#8f7ad6',
-  poison: '#8fce6f',
-  blade: '#d88f6a',
-  steel: '#9fb0c8',
-  precision: '#6fce8f',
-  volley: '#8fce8f',
-  guardian: '#e6c583',
-  primal: '#8fd0a0',
-  guile: '#b0a0d0',
-  trap: '#c8a86f',
+  fire: '#f0873a',
+  ice: '#7fc8e0',
+  air: '#9fd8cf',
+  earth: '#b8925a',
 };
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 const elemOf = (s: Skill) => ELEM[s.element] ?? '#e6c583';
@@ -673,7 +666,7 @@ export function SkillAllocationScreen() {
                           <span className="sa-px" style={{ fontSize: 10, color: '#8f8674', position: 'relative', top: 2 }}>
                             {d.cur}
                           </span>
-                          <span style={{ color: '#7a7360', fontSize: 12 }}>→</span>
+                          <span style={{ color: '#7a7360', fontSize: 12 }}> &gt; </span>
                           <span className="sa-px" style={{ fontSize: 12, color: '#8fe0a0', position: 'relative', top: 2 }}>
                             {d.next}
                           </span>
