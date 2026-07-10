@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Entity, Offset } from '../../types';
 import { JOBS } from '../../data';
 import { getSkill, describeSkill } from '../../data-skills';
@@ -197,6 +197,47 @@ function Legend() {
   );
 }
 
+// Screen-wide XP bar pinned to the very bottom (DDO-style): a gold fill with the
+// "cur / need (pct%)" label split black-over-fill / white-over-track, plus rising
+// "+N XP" gains near the right edge whenever XP increases.
+function BottomXpBar() {
+  const world = useGame((s) => s.world);
+  const player = world.entities[world.playerId];
+  const xp = player?.xp ?? 0;
+  const [gains, setGains] = useState<{ id: number; amount: number }[]>([]);
+  const prevXp = useRef<number | null>(null);
+  const seq = useRef(0);
+  useEffect(() => {
+    if (!player) return;
+    if (prevXp.current !== null && xp > prevXp.current) {
+      const id = seq.current++;
+      const amount = xp - prevXp.current;
+      setGains((g) => [...g, { id, amount }]);
+      window.setTimeout(() => setGains((g) => g.filter((x) => x.id !== id)), 1400);
+    }
+    prevXp.current = xp;
+  }, [xp, player]);
+  if (!player) return null;
+  const need = xpToNext(player.level);
+  const pct = need > 0 ? Math.max(0, Math.min(1, player.xp / need)) : 0;
+  const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+  const text = `${fmt(player.xp)} / ${fmt(need)} (${(pct * 100).toFixed(1)}%)`;
+  return (
+    <div className="xpbar-bottom">
+      <span className="fill" style={{ width: `${pct * 100}%` }} />
+      <span className="label">{text}</span>
+      <span className="label clip" style={{ clipPath: `inset(0 ${(1 - pct) * 100}% 0 0)` }} aria-hidden="true">
+        {text}
+      </span>
+      {gains.map((g) => (
+        <span key={g.id} className="xpgain">
+          +{fmt(g.amount)} XP
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function Hud() {
   return (
     <div className="hud">
@@ -205,6 +246,7 @@ export function Hud() {
       <PartyFrames />
       <Hotbar />
       <Legend />
+      <BottomXpBar />
     </div>
   );
 }

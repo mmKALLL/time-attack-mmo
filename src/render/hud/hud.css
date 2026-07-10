@@ -340,3 +340,60 @@
   border-radius: 2px;
   flex: none;
 }
+
+/* ---- Bottom-edge XP bar (screen-wide, DDO-style) ---- */
+.xpbar-bottom {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 15px;
+  background: #0d1016;
+  border-top: 1px solid var(--panel-edge);
+  pointer-events: none;
+  overflow: visible; /* let the +XP floats rise above the bar */
+}
+.xpbar-bottom .fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(var(--gold-bright), var(--gold-dim));
+}
+.xpbar-bottom .label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  color: #ffffff; /* over the unfilled track */
+}
+.xpbar-bottom .label.clip {
+  color: #1a140a; /* clipped to the filled width -> dark over the gold fill */
+}
+.xpbar-bottom .xpgain {
+  position: absolute;
+  right: 14px;
+  bottom: 100%;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--gold-bright);
+  text-shadow: 0 1px 2px #000;
+  animation: xpgain-rise 1.4s ease-out forwards;
+}
+@keyframes xpgain-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
