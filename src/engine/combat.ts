@@ -640,6 +640,7 @@ function levelUp(e: Entity): void {
 
 // Award XP for a defeated enemy to every living hero (player + allies).
 function awardXp(s: WorldState, amount: number): void {
+  s.xpGains.push(amount); // one entry per killed enemy, regardless of how many heroes share the XP
   for (const e of Object.values(s.entities)) {
     if (e.faction !== 'enemy' && isAlive(e)) {
       e.xp += amount;

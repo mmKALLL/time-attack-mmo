@@ -20,6 +20,7 @@ function world(entities: Entity[]): WorldState {
     spawnClockMs: 0,
     tickCount: 0,
     hits: [],
+    xpGains: [],
     telegraphs: [],
   };
 }

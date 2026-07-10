@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { moveOrStick, advanceCombat, castInterval, groupOf, enemyAt } from '../combat';
-import { applyAction } from '../world';
+import { moveOrStick, advanceCombat, castInterval, groupOf, enemyAt, cleanupDead } from '../combat';
+import { applyAction, tick } from '../world';
 import { getSkill } from '../../data-skills';
 import { makeEntity } from '../entities';
 import { demoMap } from '../../data-map';
-import { xpToNext } from '../../config';
+import { xpToNext, xpReward } from '../../config';
 import type { Entity, WorldState } from '../../types';
 
 function world(entities: Entity[]): WorldState {
@@ -22,6 +22,7 @@ function world(entities: Entity[]): WorldState {
     spawnClockMs: 0,
     tickCount: 0,
     hits: [],
+    xpGains: [],
     telegraphs: [],
   };
 }
@@ -112,6 +113,35 @@ describe('xp & level-ups', () => {
     expect(p.stats.maxHp).toBeGreaterThan(beforeMaxHp);
     expect(p.hp).toBe(p.stats.maxHp); // HP still fully heals on level up
     expect(p.mp).toBeLessThan(p.stats.maxMp); // MP does NOT
+  });
+});
+
+describe('xpGains stream (per-kill HUD floats)', () => {
+  it('pushes one entry per killed enemy in a single cleanupDead', () => {
+    const s = world([hero({ x: 3, y: 3 }), rat('e1', { x: 6, y: 3 }), rat('e2', { x: 7, y: 3 })]);
+    s.xpGains = []; // fresh tick
+    s.entities.e1.hp = 0;
+    s.entities.e2.hp = 0;
+    cleanupDead(s);
+    expect(s.xpGains).toHaveLength(2); // two enemies -> two floats
+    // Amounts match xpReward(level) for each dead enemy (order-independent).
+    expect(s.xpGains.slice().sort((a, b) => a - b)).toEqual([xpReward(20), xpReward(20)].sort((a, b) => a - b));
+  });
+
+  it('pushes exactly one entry per enemy even with multiple living heroes sharing the XP', () => {
+    const ally = makeEntity({ id: 'a1', faction: 'ally', name: 'Ally', sprite: 'ranger', cell: { x: 2, y: 3 }, level: 20, jobId: 'beginner' });
+    const s = world([hero({ x: 3, y: 3 }), ally, rat('e1', { x: 6, y: 3 })]);
+    s.xpGains = [];
+    s.entities.e1.hp = 0;
+    cleanupDead(s);
+    expect(s.xpGains).toEqual([xpReward(20)]); // one kill -> one float, not one-per-hero
+  });
+
+  it('is reset to empty each tick when no enemy dies', () => {
+    const s = world([hero({ x: 3, y: 3 }), rat('e1', { x: 8, y: 8 })]); // far apart: no combat, no kills
+    s.xpGains = [999]; // stale value from a prior tick
+    const s2 = tick(s, [], 100);
+    expect(s2.xpGains).toEqual([]); // reset at tick start, nothing pushed
   });
 });
 

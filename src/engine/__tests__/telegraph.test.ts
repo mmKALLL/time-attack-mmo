@@ -24,6 +24,7 @@ function world(entities: Entity[], rng = 1337): WorldState {
     spawnClockMs: 0,
     tickCount: 0,
     hits: [],
+    xpGains: [],
     telegraphs: [],
   };
 }

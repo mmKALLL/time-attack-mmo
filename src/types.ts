@@ -273,6 +273,7 @@ export type WorldState = {
   spawnClockMs: number; // accumulates toward the next respawn wave
   tickCount: number;
   hits: HitEvent[]; // combat text events from the latest tick
+  xpGains: number[]; // per-kill XP awards from the latest tick (transient, reset each tick like `hits`)
   telegraphs: Telegraph[]; // pending dodgeable AoEs on the current map (map-local)
 };
 

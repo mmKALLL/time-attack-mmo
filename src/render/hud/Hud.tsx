@@ -252,26 +252,84 @@ function Legend() {
   );
 }
 
+// Floating "+N XP" gains shown when enemies are defeated. Consumes the engine's
+// per-tick `world.xpGains` stream (one entry per killed enemy) rather than diffing
+// player.xp, so simultaneous kills each get their own float. Positioned just above
+// the Legend HUD panel; simultaneous kills stagger vertically + in fade timing.
+const XP_FLOAT_LIFETIME_MS = 3000; // hold ~3s before fading
+const XP_FLOAT_STAGGER_MS = 100; // per-batch-index delay for fade-in/out
+const XP_FLOAT_LINE_PX = 22; // vertical spacing between stacked simultaneous floats
+const XP_FLOAT_GAP_ABOVE_LEGEND = 16; // float's bottom sits this far above the legend's top
+
+type XpFloat = { id: number; amount: number; index: number };
+
+function XpGainFloats() {
+  // Batch (tickCount) + the gains produced on that tick. A tickCount-keyed effect
+  // fires exactly once per tick, so re-renders never re-enqueue the same batch.
+  const tickCount = useGame((s) => s.world.tickCount);
+  const xpGains = useGame((s) => s.world.xpGains);
+  const [floats, setFloats] = useState<XpFloat[]>([]);
+  const seq = useRef(0);
+  // Anchor: bottom-right, `GAP_ABOVE_LEGEND` above the Legend panel's top edge.
+  // Falls back to a sensible bottom-right position if the legend isn't mounted.
+  const [anchor, setAnchor] = useState({ right: 16, bottom: 48 });
+
+  useEffect(() => {
+    const measure = () => {
+      const el = document.querySelector('.legend');
+      if (el) {
+        const r = el.getBoundingClientRect();
+        setAnchor({
+          right: Math.max(0, window.innerWidth - r.right),
+          bottom: Math.max(0, window.innerHeight - r.top + XP_FLOAT_GAP_ABOVE_LEGEND),
+        });
+      } else {
+        setAnchor({ right: 16, bottom: 48 });
+      }
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
+  useEffect(() => {
+    if (xpGains.length === 0) return;
+    const batch: XpFloat[] = xpGains.map((amount, index) => ({ id: seq.current++, amount, index }));
+    setFloats((f) => [...f, ...batch]);
+    const ids = new Set(batch.map((b) => b.id));
+    const maxStagger = (xpGains.length - 1) * XP_FLOAT_STAGGER_MS;
+    const timer = window.setTimeout(
+      () => setFloats((f) => f.filter((x) => !ids.has(x.id))),
+      XP_FLOAT_LIFETIME_MS + maxStagger,
+    );
+    return () => window.clearTimeout(timer);
+  }, [tickCount]); // fire once per tick; xpGains is snapshotted for this tickCount
+
+  const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
+  return (
+    <div className="xpgain-layer" style={{ right: anchor.right, bottom: anchor.bottom }}>
+      {floats.map((g) => (
+        <span
+          key={g.id}
+          className="xpgain"
+          style={{
+            animationDelay: `${g.index * XP_FLOAT_STAGGER_MS}ms`,
+            bottom: `${g.index * XP_FLOAT_LINE_PX}px`,
+          }}
+        >
+          +{fmt(g.amount)} XP
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // Screen-wide XP bar pinned to the very bottom (DDO-style): a gold fill with the
-// "cur / need (pct%)" label split black-over-fill / white-over-track, plus rising
-// "+N XP" gains near the right edge whenever XP increases.
+// "cur / need (pct%)" label split black-over-fill / white-over-track. The rising
+// "+N XP" gains live in their own layer (XpGainFloats), positioned near the Legend.
 function BottomXpBar() {
   const world = useGame((s) => s.world);
   const player = world.entities[world.playerId];
-  const xp = player?.xp ?? 0;
-  const [gains, setGains] = useState<{ id: number; amount: number }[]>([]);
-  const prevXp = useRef<number | null>(null);
-  const seq = useRef(0);
-  useEffect(() => {
-    if (!player) return;
-    if (prevXp.current !== null && xp > prevXp.current) {
-      const id = seq.current++;
-      const amount = xp - prevXp.current;
-      setGains((g) => [...g, { id, amount }]);
-      window.setTimeout(() => setGains((g) => g.filter((x) => x.id !== id)), 1400);
-    }
-    prevXp.current = xp;
-  }, [xp, player]);
   if (!player) return null;
   const need = xpToNext(player.level);
   const pct = need > 0 ? Math.max(0, Math.min(1, player.xp / need)) : 0;
@@ -284,11 +342,6 @@ function BottomXpBar() {
       <span className="label clip" style={{ clipPath: `inset(0 ${(1 - pct) * 100}% 0 0)` }} aria-hidden="true">
         {text}
       </span>
-      {gains.map((g) => (
-        <span key={g.id} className="xpgain">
-          +{fmt(g.amount)} XP
-        </span>
-      ))}
     </div>
   );
 }
@@ -302,6 +355,7 @@ export function Hud() {
       <Hotbar />
       <Legend />
       <BottomXpBar />
+      <XpGainFloats />
     </div>
   );
 }

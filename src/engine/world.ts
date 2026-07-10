@@ -70,6 +70,7 @@ export function applyAction(state: WorldState, input: Input): WorldState {
 export function tick(state: WorldState, inputs: Input[], dt: number): WorldState {
   const s = structuredClone(state) as WorldState;
   s.hits = []; // combat text events for this tick only
+  s.xpGains = []; // per-kill XP awards for this tick only (HUD floats consume these)
   for (const input of inputs) applyInput(s, input);
   // Roam AFTER input so idle enemies see the player's already-updated cell:
   // they avoid it or bump it into combat, never co-occupying a tile the player

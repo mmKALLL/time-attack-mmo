@@ -22,6 +22,7 @@ function world(entities: Entity[], opts: { exits?: MapExit[]; rng?: number } = {
     spawnClockMs: 0,
     tickCount: 0,
     hits: [],
+    xpGains: [],
     telegraphs: [],
   };
 }

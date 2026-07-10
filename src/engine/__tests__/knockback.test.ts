@@ -24,6 +24,7 @@ function world(entities: Entity[], map: TileMap = demoMap(12, 12)): WorldState {
     spawnClockMs: 0,
     tickCount: 0,
     hits: [],
+    xpGains: [],
     telegraphs: [],
   };
 }

@@ -23,6 +23,7 @@ function world(entities: Entity[], walls: Cell[] = []): WorldState {
     spawnClockMs: 0,
     tickCount: 0,
     hits: [],
+    xpGains: [],
     telegraphs: [],
   };
 }
