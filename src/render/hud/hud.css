@@ -204,8 +204,13 @@
   border: 2px solid var(--ember);
   box-shadow: 0 0 10px rgba(224, 138, 58, 0.55);
 }
-.slot.cooling {
-  opacity: 0.5;
+/* Cooldown: a dark conic overlay whose dark arc un-dims clockwise from the top as it cools. */
+.slot .cdmask {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 2;
 }
 .slot .digit {
   position: absolute;
@@ -222,6 +227,7 @@
   font-family: var(--font-pixel);
   font-size: 9px;
   color: #e88a7a;
+  z-index: 3; /* above the cooldown mask */
 }
 .slot .lvl {
   position: absolute;
@@ -315,7 +321,7 @@
   font-size: 11px;
 }
 .legend {
-  bottom: 68px;
+  bottom: 16px;
   right: 16px;
   width: 236px;
   padding: 8px 10px;

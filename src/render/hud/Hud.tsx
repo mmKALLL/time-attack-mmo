@@ -151,12 +151,11 @@ function Hotbar() {
         const skill = getSkill(rt.skillId);
         const active = i === player.activeSkillIndex;
         const cooling = rt.cooldownLeftMs > 0;
+        const totalCd = skill.params.cooldown ? Math.round(skill.params.cooldown(rt.level) * 1000) : skill.cooldownMs;
+        const elapsedDeg = cooling && totalCd > 0 ? (1 - rt.cooldownLeftMs / totalCd) * 360 : 360; // dark arc shrinks (un-dims) as it cools
         return (
-          <div
-            key={rt.skillId + i}
-            className={`slot${active ? ' active' : ''}${cooling ? ' cooling' : ''}`}
-            title={`${skill.name} (Lv${rt.level})\n${describeSkill(skill, rt.level, player.stats.maxDmg)}`}
-          >
+          <div key={rt.skillId + i} className={`slot${active ? ' active' : ''}${cooling ? ' cooling' : ''}`} title={`${skill.name} (Lv${rt.level})\n${describeSkill(skill, rt.level, player.stats.maxDmg)}`}>
+            {cooling && <span className="cdmask" style={{ background: `conic-gradient(from 0deg, transparent ${elapsedDeg}deg, rgba(0, 0, 0, 0.72) ${elapsedDeg}deg)` }} />}
             <span className="digit">{i + 1}</span>
             <span className="lvl">L{rt.level}</span>
             {cooling && <span className="cd">{Math.ceil(rt.cooldownLeftMs / 1000)}</span>}
@@ -192,7 +191,7 @@ function Legend() {
       </div>
       <div className="sw">
         <span className="chip" style={{ border: '1px solid rgba(226,231,240,0.5)' }} />
-        Moving block (stuck together)
+        Combat block (stuck together)
       </div>
     </div>
   );
