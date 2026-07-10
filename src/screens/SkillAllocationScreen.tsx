@@ -237,8 +237,8 @@ export function SkillAllocationScreen() {
   const statNumChange = (get: (s: typeof de) => number, dec?: boolean, pct?: boolean) => {
     const cur = get(de);
     const next = get(dPrev);
-    const changed = !!statHover && Math.abs(next - cur) > 0.001;
     const f = (v: number) => (dec ? v.toFixed(1) : fmt(v)) + (pct ? '%' : '');
+    const changed = !!statHover && f(cur) !== f(next); // highlight only when the DISPLAYED (rounded) value changes
     return { cur, next, changed, f };
   };
   const DERIVED: { label: string; get: (s: typeof de) => number; dec?: boolean; pct?: boolean }[] = [
