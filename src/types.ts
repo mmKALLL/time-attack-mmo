@@ -44,7 +44,7 @@ export type CooldownType = 'passive' | 'active';
 // returned number is a MULTIPLIER on the character's normal damage calc; other
 // params (pct/dur/tiles/...) return their literal per-level value.
 export type SkillParamFunction = (level: number) => number;
-export type ParamName = 'dmg' | 'heal' | 'healPercentage' | 'pct' | 'dur' | 'tiles' | 'hits' | 'uses' | 'targets' | 'delay' | 'cooldown';
+export type ParamName = 'dmg' | 'heal' | 'healPercentage' | 'pct' | 'dur' | 'tiles' | 'hits' | 'uses' | 'targets' | 'delay' | 'cooldown' | 'crit' | 'critDmg';
 export type SkillParams = Partial<Record<ParamName, SkillParamFunction>>;
 
 export type SkillKind = 'attack' | 'heal' | 'buff' | 'debuff' | 'dot';
@@ -199,7 +199,7 @@ export type MapConfig = {
   };
   light: {
     duskColor: number;
-    ambientLightLevel: number; // 0-100 opacity of the dusk veil over un-torched areas (= old DUSK_OVERLAY.alpha * 100)
+    ambientDuskLevel: number; // 0-100 opacity of the dusk veil over un-torched areas (= old DUSK_OVERLAY.alpha * 100)
     torchGlowDistance: number; // cells a torch's glow reaches (= old TORCH_GLOW.cells)
   };
 };

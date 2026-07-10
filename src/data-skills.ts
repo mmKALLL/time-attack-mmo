@@ -42,6 +42,7 @@ function sk(s: {
   return {
     cooldownType: 'passive',
     ...rest,
+    description: rest.mpCost ? `${rest.mpCost} MP: ${rest.description}` : rest.description,
     params: cooldownParam ? { ...params, cooldown: cooldownParam } : params,
     cooldownMs: cooldownParam ? Math.round(cooldownParam(1) * 1000) : 0, // level-1 value backs the Hud passive-tag read
     ...(trgMs != null ? { triggerMs: trgMs } : {}),
@@ -89,6 +90,7 @@ export const SKILLS: Record<string, Skill[]> = {
     sk({ id: 'piercingShot', name: 'Piercing Shot', description: 'Pierce {tiles} tiles in a line for {dmg} damage.', kind: 'attack', target: 'line', element: 'air', shapeKind: 'line', params: { dmg: lin(0.8, 0.15), tiles: flat(4) }, mpCost: 10 }),
     sk({ id: 'scatterShot', name: 'Scatter Shot', description: 'Scatter arrows over {tiles} tiles for {dmg} damage.', kind: 'attack', target: 'arc', element: 'air', shapeKind: 'arc', params: { dmg: lin(1.2, 0.2), tiles: flat(3) }, mpCost: 16 }), // TODO: offset 2 tiles out
     sk({ id: 'powerKnockback', name: 'Power Knockback', description: 'Blast one foe for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'ranged', element: 'air', shapeKind: 'point', params: { dmg: lin(1.4, 0.2) }, uses: 2, cooldown: lin(30, -1) }), // TODO: knockback (push foe up to 3 tiles)
+    sk({ id: 'improvedCritical', name: 'Improved Critical', description: 'Passive: +{crit} crit chance, +{critDmg} crit damage.', kind: 'buff', target: 'self (passive)', element: 'air', shapeKind: 'self', params: { crit: lin(5, 2), critDmg: lin(10, 4) } }), // TODO: passive crit boost (unwired)
   ],
   hunter: [
     sk({ id: 'arrowRain', name: 'Arrow Rain', description: 'Rain arrows in a 2x3 shape for {dmg} damage.', kind: 'attack', target: 'line', element: 'air', shapeKind: 'area', params: { dmg: lin(0.8, 0.15), tiles: flat(6) }, triggerMs: 1250 }),
@@ -187,6 +189,7 @@ function formatParam(name: ParamName, v: number, atk?: number): string {
   if (name === 'dmg' || name === 'heal') return atk != null ? String(Math.round(atk * v)) : `×${v.toFixed(2)}`;
   if (name === 'healPercentage') return `${Math.round(v * 100)}%`; // fraction of max HP -> "50%"
   if (name === 'cooldown') return `${+v.toFixed(1)}s`; // seconds -> "18s" / "1.4s"
+  if (name === 'crit' || name === 'critDmg') return `${Math.round(v)}%`;
   if (name === 'dur' || name === 'delay') return String(Math.round(v * 10) / 10);
   return String(Math.round(v));
 }
