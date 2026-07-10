@@ -111,6 +111,7 @@ export type Entity = {
   sprite: string; // procedural (sprites.js) builder name for players
   asset?: EnemyAsset; // spritesheet art for asset-based enemies (overrides sprite)
   dialogue?: string[]; // town NPCs only: the themed lines shown when talked to (see data-npc.ts)
+  npcRole?: 'chat' | 'jobAdvance'; // NPCs only: 'chat' = townsfolk dialogue; 'jobAdvance' = the per-town job-advancement NPC
   cell: Cell;
   facing: Direction;
   level: number;
@@ -289,5 +290,6 @@ export type Input =
   | { type: 'spendAttr'; key: PrimaryKey } // raise a primary from the attribute pool
   | { type: 'levelUpSkill'; index: number } // raise a skill from the skill pool
   | { type: 'travelToMap'; mapId: MapId } // quick-travel to a discovered town from the world map
+  | { type: 'advanceJob'; jobId: JobId } // advance to a new job at the town's job-advancement NPC
   | { type: 'respawn' } // return to the starting town at full health
   | { type: 'closeNpc' }; // dismiss the town-NPC dialog box (clears WorldState.pendingNpc)

@@ -8,8 +8,11 @@ import { ENEMIES } from '../data-enemy';
 const groups = SKILLS as Record<string, Skill[]>;
 
 describe('content data', () => {
-  it('models class mixing: flameRanger requires two second classes', () => {
-    expect(JOBS.flameRanger.requires).toEqual(expect.arrayContaining(['wizard', 'ranger']));
+  it('second classes require exactly their base class (fusions removed)', () => {
+    expect(JOBS.knight.requires).toEqual(['fighter']);
+    expect(JOBS.flameRanger).toBeUndefined(); // fusions removed (redesigned later)
+    expect(JOBS.nimbleKnight).toBeUndefined();
+    expect(JOBS.cinderSage).toBeUndefined();
   });
   it('names the sword base class Fighter; its seconds require it', () => {
     expect(JOBS.fighter?.name).toBe('Fighter');

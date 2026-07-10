@@ -3,7 +3,7 @@ import { MAPS } from '../data-map';
 import { ENEMIES, enemyPrimaries, CLASS_BIOME_SKILL } from '../data-enemy';
 import { getSkill } from '../data-skills';
 import { ENEMY_CLASS_COMBAT, enemyStatMult } from '../config-stats';
-import { makeEntity, makeNpc } from './entities';
+import { makeEntity, makeNpc, makeJobNpc } from './entities';
 import { DIRECTIONS, isWall, equals, key } from './grid';
 import { randInt, pick } from './rng';
 import { generateMap } from './map-generator';
@@ -117,17 +117,26 @@ export function spawnNpcs(s: WorldState): void {
     count = MAX_TOWN_NPCS;
   }
   count = Math.max(0, Math.min(MAX_TOWN_NPCS, count));
-  if (count <= 0) return;
-  const themes = pickThemes(s, count);
   const occupied = new Set(Object.values(s.entities).map((e) => key(e.cell)));
   const player = s.entities[s.playerId];
   const avoid = player ? player.cell : { x: Math.floor(s.map.width / 2), y: Math.floor(s.map.height / 2) };
-  for (const theme of themes) {
-    const cell = randomFreeCell(s, occupied, avoid);
-    if (!cell) break;
-    occupied.add(key(cell));
+  if (count > 0) {
+    const themes = pickThemes(s, count);
+    for (const theme of themes) {
+      const cell = randomFreeCell(s, occupied, avoid);
+      if (!cell) break;
+      occupied.add(key(cell));
+      const id = 'npc' + s.seq++;
+      s.entities[id] = makeNpc({ id, name: pick(s, NPC_NAMES), tile: pick(s, NPC_TILES), cell, dialogue: NPC_DIALOGUE[theme] });
+    }
+  }
+  // Every town gets exactly one job-advancement NPC (the Guildmaster), placed on a
+  // portal-safe floor cell not shared with the party, townsfolk, or a portal.
+  const jobCell = randomFreeCell(s, occupied, avoid);
+  if (jobCell) {
+    occupied.add(key(jobCell));
     const id = 'npc' + s.seq++;
-    s.entities[id] = makeNpc({ id, name: pick(s, NPC_NAMES), tile: pick(s, NPC_TILES), cell, dialogue: NPC_DIALOGUE[theme] });
+    s.entities[id] = makeJobNpc({ id, cell: jobCell });
   }
 }
 

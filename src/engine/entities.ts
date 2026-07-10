@@ -2,7 +2,7 @@ import type { Cell, EnemyAsset, Entity, EntityId, CombatClass, Faction, JobId, P
 import { JOBS, archetypeForJob, combatClassForJob } from '../data';
 import { ARCHETYPE_WEIGHTS, allocatePrimaries, deriveStats, scaleStats, START_SKILL_LEVEL } from '../config-stats';
 import { kitOf } from './jobs';
-import { NPC_ASSET_FILE } from '../data-npc';
+import { NPC_ASSET_FILE, JOB_NPC_TILES, JOB_NPC_NAME, JOB_NPC_GREETING } from '../data-npc';
 
 export function skillRuntime(skill: Skill): SkillRuntime {
   return { skillId: skill.id, level: START_SKILL_LEVEL, usesLeft: skill.uses ?? -1, cooldownLeftMs: 0 };
@@ -79,7 +79,30 @@ export function makeNpc(params: { id: EntityId; name: string; tile: string; cell
     skills: [], // explicit: townsfolk carry no skills
   });
   e.dialogue = params.dialogue;
+  e.npcRole = 'chat'; // ordinary townsfolk: opens dialogue when talked to
   e.attrPoints = 0; // townsfolk don't level/allocate
+  e.skillPoints = 0;
+  return e;
+}
+
+// The per-town job-advancement NPC (the Guildmaster): a neutral, non-combatant
+// entity with the 2x2 Guildmaster sprite and npcRole 'jobAdvance'. Talking to it
+// (later UI) opens the advancement panel. No random dialogue — carries a single
+// fixed greeting line.
+export function makeJobNpc(params: { id: EntityId; cell: Cell }): Entity {
+  const e = makeEntity({
+    id: params.id,
+    faction: 'npc',
+    name: JOB_NPC_NAME,
+    asset: { filename: NPC_ASSET_FILE, tiles: JOB_NPC_TILES },
+    cell: params.cell,
+    level: 1,
+    jobId: 'npc', // unknown job => balanced archetype, beginner class, empty kit (no skills)
+    skills: [],
+  });
+  e.dialogue = [JOB_NPC_GREETING];
+  e.npcRole = 'jobAdvance';
+  e.attrPoints = 0;
   e.skillPoints = 0;
   return e;
 }

@@ -24,10 +24,6 @@ export const JOBS: Record<string, JobNode> = {
   assassin: { id: 'assassin', name: 'Assassin', requires: ['rogue'], growth: 1.12, role: 'DPS', accent: '#8f7ad6' },
   shadower: { id: 'shadower', name: 'Shadowblade', requires: ['rogue'], growth: 1.12, role: 'Bruiser', accent: '#6a5aa0' },
   ninja: { id: 'ninja', name: 'Reaver', requires: ['rogue'], growth: 1.12, role: 'Control', accent: '#5aa0c0' },
-  // Fusions: kit = both parents' skills (6). Specialized skills come later.
-  flameRanger: { id: 'flameRanger', name: 'Flame Ranger', requires: ['wizard', 'ranger'], growth: 1.25, role: 'DPS', accent: '#e08a3a' },
-  nimbleKnight: { id: 'nimbleKnight', name: 'Nimble Knight', requires: ['knight', 'shadower'], growth: 1.25, role: 'Tank', accent: '#43c7c0' },
-  cinderSage: { id: 'cinderSage', name: 'Cinder Sage', requires: ['wizard', 'arcanist'], growth: 1.25, role: 'Control', accent: '#a07ad0' },
 };
 
 // Asset-based enemies (race/class/tier with spritesheet art) live in ./data-enemy.ts.
@@ -52,9 +48,6 @@ const JOB_ARCHETYPE: Record<string, Archetype> = {
   assassin: 'dex',
   shadower: 'dex',
   ninja: 'dex',
-  flameRanger: 'int',
-  nimbleKnight: 'balanced',
-  cinderSage: 'int',
 };
 export function archetypeForJob(jobId: string): Archetype {
   return JOB_ARCHETYPE[jobId] ?? 'balanced';
@@ -80,9 +73,6 @@ const JOB_COMBAT_CLASS: Record<string, CombatClass> = {
   assassin: 'rogue',
   shadower: 'rogue',
   ninja: 'rogue',
-  flameRanger: 'magician',
-  nimbleKnight: 'fighter',
-  cinderSage: 'magician',
 };
 export function combatClassForJob(jobId: string): CombatClass {
   return JOB_COMBAT_CLASS[jobId] ?? 'beginner';

@@ -13,25 +13,14 @@ export const MAX_TOWN_NPCS = 4; // hard cap on townsfolk per town (one per theme
 export const NPC_ASSET_FILE = 'town-npc.png'; // shared townsfolk spritesheet
 export const NPC_TILES = ['q3-1', 'q3-2', 'q3-3', 'q3-4', 'q3-5', 'q3-6', 'q3-7', 'q3-8']; // quadrant-3 single-tile portraits
 
+// Job-advancement NPC (the "Guildmaster"): one per town, a 2x2 sprite from
+// quadrant 4. Talking to it opens the advancement panel (later UI pass).
+export const JOB_NPC_TILES = ['q4-9', 'q4-10', 'q4-13', 'q4-12']; // 2x2 sprite (bottom row swapped so it reads 12,13 under the facing flip)
+export const JOB_NPC_NAME = 'Kiltamestari'; // Finnish: "the guild's master" (Guildmaster)
+export const JOB_NPC_GREETING = 'Näytä minulle taitosi, niin näytän sinulle uuden tien.'; // "Show me your skill, and I'll show you a new path."
+
 // Finnish townsfolk name pool (seeded pick per NPC).
-export const NPC_NAMES: string[] = [
-  'Aatos',
-  'Onni',
-  'Helmi',
-  'Väinö',
-  'Sisko',
-  'Urho',
-  'Kerttu',
-  'Toivo',
-  'Elias',
-  'Saima',
-  'Reijo',
-  'Impi',
-  'Eino',
-  'Aili',
-  'Veikko',
-  'Hilja',
-];
+export const NPC_NAMES: string[] = ['Aatos', 'Onni', 'Helmi', 'Väinö', 'Sisko', 'Urho', 'Kerttu', 'Toivo', 'Elias', 'Saima', 'Reijo', 'Impi', 'Eino', 'Aili', 'Veikko', 'Hilja'];
 
 // Three lines per theme (user tunes later); shown one at a time in the dialog box.
 export const NPC_DIALOGUE: Record<NpcTheme, string[]> = {

@@ -8,7 +8,9 @@ import { applyInput } from '../world';
 import { MAPS, START_MAP } from '../../data-map';
 import { MAX_TOWN_NPCS, NPC_DIALOGUE } from '../../data-npc';
 
-const npcs = (s: WorldState): Entity[] => Object.values(s.entities).filter((e) => e.faction === 'npc');
+// Townsfolk = chat NPCs only (excludes the per-town job-advancement NPC, which
+// also has faction 'npc' but npcRole 'jobAdvance').
+const npcs = (s: WorldState): Entity[] => Object.values(s.entities).filter((e) => e.faction === 'npc' && e.npcRole === 'chat');
 
 // Set of the exact dialogue-line arrays, to recover which theme an NPC carries.
 const dialogueSets = Object.values(NPC_DIALOGUE).map((lines) => lines.join('\n'));

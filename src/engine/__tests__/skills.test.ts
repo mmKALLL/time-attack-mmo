@@ -85,7 +85,7 @@ describe('uses and cooldown bookkeeping', () => {
     expect(canCast(rt)).toBe(false);
   });
   it('cooldowns tick down for every slot, regardless of which is selected', () => {
-    const e = makeEntity({ id: 'm', faction: 'player', name: 'm', sprite: 'wizard', cell: { x: 0, y: 0 }, level: 10, jobId: 'cinderSage' });
+    const e = makeEntity({ id: 'm', faction: 'player', name: 'm', sprite: 'wizard', cell: { x: 0, y: 0 }, level: 10, jobId: 'wizard' });
     e.skills = [
       { skillId: 'cinderstorm', level: 1, usesLeft: -1, cooldownLeftMs: 1000 }, // selected
       { skillId: 'finishingBlow', level: 1, usesLeft: 1, cooldownLeftMs: 1000 }, // not selected

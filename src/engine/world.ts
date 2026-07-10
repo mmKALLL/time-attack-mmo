@@ -3,7 +3,8 @@ import { moveOrStick, advanceCombat, advanceArming, advanceKnockback, advanceTel
 import { advanceStatuses } from './status';
 import { exitAt, travelTo, advanceRespawns } from './maps';
 import { advanceRoaming } from './roaming';
-import { spendAttribute, levelUpSkill } from './progression';
+import { spendAttribute, levelUpSkill, advanceJob } from './progression';
+import { learnedIndexes } from './skills';
 import { START_MAP } from '../data-map';
 import { step } from './grid';
 
@@ -24,6 +25,10 @@ export function applyInput(s: WorldState, input: Input): void {
   if (input.type === 'spendAttr') return spendAttribute(s, input.key);
   if (input.type === 'levelUpSkill') return levelUpSkill(s, input.index);
   if (input.type === 'travelToMap') return travelTo(s, input.mapId); // world-map quick travel (no fromMap => arrive at the map's entry)
+  if (input.type === 'advanceJob') {
+    advanceJob(s, input.jobId); // job-advancement NPC action (character screen; validated inside)
+    return;
+  }
   if (input.type === 'respawn') return respawnAtStart(s);
   if (input.type === 'closeNpc') {
     s.pendingNpc = undefined; // dismiss the town-NPC dialog box
@@ -43,8 +48,11 @@ export function applyInput(s: WorldState, input: Input): void {
     }
     moveOrStick(s, s.playerId, input.dir);
   } else if (input.type === 'selectSkill') {
-    if (input.slot < 0 || input.slot >= player.skills.length) return;
-    player.activeSkillIndex = input.slot;
+    // Hotkey slots address only LEARNED skills (level >= 1), in hotbar order:
+    // slot N -> learnedIndexes(player)[N]. Out-of-range slots are ignored.
+    const learned = learnedIndexes(player);
+    if (input.slot < 0 || input.slot >= learned.length) return;
+    player.activeSkillIndex = learned[input.slot];
     // In a combat group: just swap the active skill (auto-cast is unchanged) — no arming.
     // Out of combat: ARM a ranged fire-and-engage (resolved by advanceArming). Only reset
     // the wind-up when arming fresh (previously unarmed); re-pressing while already armed

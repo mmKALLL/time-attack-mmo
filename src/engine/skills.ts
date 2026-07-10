@@ -31,8 +31,24 @@ export function skillTargets(caster: Entity, skill: Skill, members: Entity[], le
   });
 }
 
+// A skill is LEARNED (castable / on the hotbar) once its level reaches 1;
+// level 0 means it's owned but unlearnt (appended by advancement, spent later).
+export function isLearned(rt: SkillRuntime): boolean {
+  return rt.level >= 1;
+}
+
+// Indexes into e.skills for the LEARNED skills (level >= 1), in slot order. This
+// is the hotbar/hotkey order: hotkey slot N addresses learnedIndexes(e)[N].
+export function learnedIndexes(e: Entity): number[] {
+  const out: number[] = [];
+  e.skills.forEach((rt, i) => {
+    if (isLearned(rt)) out.push(i);
+  });
+  return out;
+}
+
 export function canCast(rt: SkillRuntime): boolean {
-  return rt.cooldownLeftMs <= 0 && rt.usesLeft !== 0;
+  return isLearned(rt) && rt.cooldownLeftMs <= 0 && rt.usesLeft !== 0;
 }
 
 // After a cast: unlimited skills (usesLeft < 0) are unchanged; limited skills
