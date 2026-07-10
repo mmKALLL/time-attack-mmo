@@ -277,6 +277,18 @@ export function advanceArming(s: WorldState, dt: number): void {
     return;
   }
 
+  // Telegraph AoE attack: plant a dodgeable telegraph over the skill's footprint and
+  // consume the cast. The footprint IS the AoE, so this fires even with no foes in
+  // range (no whiff). No stick/instant damage — resolution hits enemies later.
+  if (isTelegraphAoEAttack(skill)) {
+    player.mp -= mpCost;
+    s.telegraphs.push(makePlayerTelegraph(player, skill, rt.level, magnitude(skill, rt.level)));
+    player.skills = player.skills.map((r, i) => (i === player.activeSkillIndex ? afterCast(r, skill) : r));
+    autoSelectUsableSkill(s);
+    player.armed = false;
+    return;
+  }
+
   // Attack/debuff skills: fire at the enemies the footprint covers, ENGAGING (sticking) them.
   // AoE footprints hit everything they cover; single-target shapes — and non-piercing
   // (pierce:false) line/arc AoEs — collapse to the nearest enemy on the footprint.
@@ -362,7 +374,24 @@ function makeTelegraph(caster: Entity, target: Entity, skill: Skill, level: numb
   const tiles = anchorOnCell(offsets, target.cell);
   const src = damageSource(caster, mag);
   const dur = skill.telegraphMs ?? 0; // per-skill wind-up (AoE skills must define telegraphMs)
-  return { tiles, remainingMs: dur, totalMs: dur, from: { ...caster.cell }, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, mag: src.mult };
+  return { tiles, remainingMs: dur, totalMs: dur, from: { ...caster.cell }, hitsEnemies: false, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, mag: src.mult };
+}
+
+// Build a player-planted telegraph: the AoE IS the skill's own footprint projected
+// from the caster in its facing (NOT centered on a target). Same frozen damage
+// snapshot as makeTelegraph, but hitsEnemies:true so it resolves onto enemies.
+function makePlayerTelegraph(caster: Entity, skill: Skill, level: number, mag: number): Telegraph {
+  const tiles = shapeFor(skill, level, caster.facing).map((o) => ({ x: caster.cell.x + o.dx, y: caster.cell.y + o.dy }));
+  const src = damageSource(caster, mag);
+  const dur = skill.telegraphMs ?? 0;
+  return { tiles, remainingMs: dur, totalMs: dur, from: { ...caster.cell }, hitsEnemies: true, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, mag: src.mult };
+}
+
+// A skill that PLANTS a dodgeable telegraph on cast instead of hitting instantly:
+// a damaging AoE with a wind-up. Enemy AoE skills go through enemyAttack/makeTelegraph;
+// hero casts of such a skill route through makePlayerTelegraph (advanceArming/castSkill).
+function isTelegraphAoEAttack(skill: Skill): boolean {
+  return isAoESkill(skill) && !!skill.params.dmg && (skill.telegraphMs ?? 0) > 0;
 }
 
 // Centre a set of shape offsets on `anchor`: shift by the offsets' bounding-box
@@ -392,7 +421,9 @@ export function advanceTelegraphs(s: WorldState, dt: number): void {
     const marked = new Set(t.tiles.map(key));
     const src: DamageSource = { accuracy: t.accuracy, minDmg: t.minDmg, maxDmg: t.maxDmg, power: t.power, crit: t.crit, mult: t.mag };
     for (const e of Object.values(s.entities)) {
-      if (e.faction === 'enemy' || !isAlive(e) || !marked.has(key(e.cell))) continue;
+      // Enemy telegraph (hitsEnemies:false) → hits non-enemies; player telegraph
+      // (hitsEnemies:true) → hits enemies. Alive + on a marked tile in either case.
+      if (!isAlive(e) || !marked.has(key(e.cell)) || (e.faction === 'enemy') !== t.hitsEnemies) continue;
       const r = rollDamage(s, src, e);
       e.hp = Math.max(0, e.hp - r.amount);
       s.hits.push({ cell: { ...e.cell }, from: { ...t.from }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
@@ -545,6 +576,16 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
   caster.mp -= mpCost;
   const mag = magnitude(skill, rt.level);
   const hits = hitCount(skill, rt.level);
+  // Telegraph AoE attack: plant ONE dodgeable telegraph over the skill's footprint
+  // (resolves onto enemies after the wind-up) instead of the instant per-target
+  // damage/hits loop. MP is already spent; afterCast below still consumes the cast.
+  if (isTelegraphAoEAttack(skill)) {
+    s.telegraphs.push(makePlayerTelegraph(caster, skill, rt.level, mag));
+    applySkillStatuses(s, g, caster, skill, rt.level); // no-op when the skill has no status
+    caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
+    if (caster.id === s.playerId) autoSelectUsableSkill(s);
+    return;
+  }
   // Heals/buffs target allies in the block; attacks target enemies in the footprint.
   // A damaging AoE sweeps its whole footprint — catching enemies not yet in the block
   // and engaging them — while single-target skills stay block-scoped via skillTargets.

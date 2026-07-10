@@ -551,10 +551,15 @@ export class WorldRenderer {
       const fillAlpha = 0.16 + 0.34 * frac + 0.12 * frac * flash;
       const strokeAlpha = 0.5 + 0.45 * frac;
       const fill = frac < 0.66 ? 0xff8c1a : 0xff3020; // orange warning -> red imminent
+      // Inner fill is a centered square that scales linearly (no easing) with the
+      // delay: player (hitsEnemies) telegraphs shrink full→0, enemy telegraphs grow
+      // 0→full. The outer stroke stays the full tile as a stable warning border.
+      const sizeFrac = t.hitsEnemies ? 1 - frac : frac;
+      const side = (CELL_PX - 2) * sizeFrac;
       for (const c of t.tiles) {
         const px = c.x * CELL_PX;
         const py = c.y * CELL_PX;
-        g.rect(px + 1, py + 1, CELL_PX - 2, CELL_PX - 2).fill({ color: fill, alpha: fillAlpha });
+        g.rect(px + 1 + (CELL_PX - 2 - side) / 2, py + 1 + (CELL_PX - 2 - side) / 2, side, side).fill({ color: fill, alpha: fillAlpha });
         g.rect(px + 1, py + 1, CELL_PX - 2, CELL_PX - 2).stroke({ width: 2 + 2 * frac, color: 0xffce6b, alpha: strokeAlpha });
       }
     }

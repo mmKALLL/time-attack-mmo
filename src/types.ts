@@ -248,6 +248,7 @@ export type Telegraph = {
   remainingMs: number; // countdown to resolution (the dodge window)
   totalMs: number; // full wind-up (= the skill's telegraphMs); lets the renderer escalate the warning
   from: Cell; // caster's cell at cast (hit-event origin, for float drift)
+  hitsEnemies: boolean; // which side it damages on resolve: player-planted → true (hits enemies), enemy-planted → false (hits heroes)
   // Frozen attacker damage inputs (mirror caster.stats + class power + skill mag).
   accuracy: number;
   minDmg: number;
