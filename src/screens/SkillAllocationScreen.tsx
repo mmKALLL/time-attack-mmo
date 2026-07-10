@@ -135,11 +135,15 @@ function SkillDesc({ skill, curLv, previewing, atk, ecol }: { skill: Skill; curL
         const changed = nextPart && 'v' in nextPart && nextPart.v !== part.v;
         if (changed) {
           return (
-            <span key={i} style={numStyle}>
-              <span style={{ color: '#8f8674' }}>{part.v}</span>
-              <span style={{ color: '#7a7360' }}> → </span>
-              <span style={{ color: '#8fe0a0' }}>{nextPart.v}</span>
-            </span>
+            <b key={i} style={{ ...numStyle, color: ecol }}>
+              {/* <span style={{ ...numStyle, color: ecol }}> */}
+              {/* <b style={{ ...numStyle, color: ecol }}> */}
+              {part.v} &gt; {nextPart.v}
+              {/* </b> */}
+              {/* </span>
+              <span style={{ ...numStyle, color: ecol }}> &gt; </span>
+              <span style={{ ...numStyle, color: ecol }}></span> */}
+            </b>
           );
         }
         return (
@@ -265,7 +269,8 @@ export function SkillAllocationScreen() {
   const selSkill = selRt ? getSkill(selRt.skillId) : undefined;
   const selCap = selRt ? skillCap(selRt.skillId) : 10;
   const selHoverPreview = hover.type === 'skill' && hover.key === selected && skillPool > 0 && effSkillLv(selected) < selCap;
-  const selLv = selRt ? effSkillLv(selected) + (selHoverPreview ? 1 : 0) : 1;
+  const selLv = selRt ? effSkillLv(selected) + (selHoverPreview ? 1 : 0) : 1; // bumped on hover: drives the attack-area shape preview
+  const curLv = selRt ? effSkillLv(selected) : 1; // committed/effective level; powVal + deltas compare curLv -> curLv+1
   const power = de.maxDmg;
   const elem = selSkill ? elemOf(selSkill) : '#e6c583';
 
@@ -303,29 +308,29 @@ export function SkillAllocationScreen() {
   let note = '';
   if (selSkill) {
     if (selSkill.params.dmg) {
-      const mult = selSkill.params.dmg(selLv);
+      const dmgAt = (lv: number) => `${Math.round(de.minDmg * selSkill.params.dmg!(lv))}–${Math.round(de.maxDmg * selSkill.params.dmg!(lv))}`;
       powLabel = 'Damage';
-      powVal = `${Math.round(de.minDmg * mult)}–${Math.round(de.maxDmg * mult)}${effSkillLv(selected) != selLv ? ` > ${Math.round(de.minDmg * selSkill.params.dmg(selLv + 1))}–${Math.round(de.maxDmg * selSkill.params.dmg(selLv + 1))}` : ''}`;
+      powVal = `${dmgAt(curLv)}${selHoverPreview ? ` > ${dmgAt(curLv + 1)}` : ''}`;
       note = `${Math.round(cc.phys * 100)}/${Math.round((1 - cc.phys) * 100)} phys/mag mix`;
     } else if (selSkill.params.heal) {
       powLabel = 'Healing';
-      powVal = `${Math.round(power * selSkill.params.heal(selLv))}`;
+      powVal = `${Math.round(power * selSkill.params.heal(curLv))}${selHoverPreview ? ` > ${Math.round(power * selSkill.params.heal(curLv + 1))}` : ''}`;
       note = 'restores HP';
     } else if (selSkill.kind === 'dot' && selSkill.params.pct) {
       powLabel = 'Burn / round';
-      powVal = `${Math.round(selSkill.params.pct(selLv))}%`;
-      note = selSkill.params.dur ? `of max HP for ${Math.round(selSkill.params.dur(selLv))}s` : 'of max HP';
+      powVal = `${Math.round(selSkill.params.pct(curLv))}%`;
+      note = selSkill.params.dur ? `of max HP for ${Math.round(selSkill.params.dur(curLv))}s` : 'of max HP';
     } else if (selSkill.params.pct) {
       powLabel = 'Effect';
-      powVal = `${Math.round(selSkill.params.pct(selLv))}%`;
-      note = selSkill.params.dur ? `for ${Math.round(selSkill.params.dur(selLv))}s` : '';
+      powVal = `${Math.round(selSkill.params.pct(curLv))}%`;
+      note = selSkill.params.dur ? `for ${Math.round(selSkill.params.dur(curLv))}s` : '';
     }
   }
-  const hasNext = selLv < selCap;
+  const hasNext = curLv < selCap;
   const deltas =
     hasNext && selSkill
       ? Object.keys(selSkill.params)
-          .map((k) => ({ label: paramLabel(k, selSkill), cur: paramVal(k, selSkill, selLv), next: paramVal(k, selSkill, selLv + 1) }))
+          .map((k) => ({ label: paramLabel(k, selSkill), cur: paramVal(k, selSkill, curLv), next: paramVal(k, selSkill, curLv + 1) }))
           .filter((d) => d.cur !== d.next)
       : [];
 
