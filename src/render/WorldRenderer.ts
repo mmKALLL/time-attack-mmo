@@ -487,6 +487,19 @@ export class WorldRenderer {
     this.vignette = new Sprite(Texture.from(cv));
     this.vignette.eventMode = 'none';
     this.app.stage.addChild(this.vignette);
+    this.layoutVignette();
+  }
+
+  // The vignette lives on the (letterbox-scaled) stage, so stretch it to cover the
+  // whole viewport in stage-local coords, extended a touch past every edge — else
+  // the world shows un-darkened at the very top/bottom when the window isn't 16:9.
+  private layoutVignette() {
+    if (!this.vignette) return;
+    const scale = this.app.stage.scale.x || 1;
+    const over = 24; // overscan beyond the viewport edges (stage units)
+    this.vignette.position.set(-this.app.stage.position.x / scale - over, -this.app.stage.position.y / scale - over);
+    this.vignette.width = this.app.screen.width / scale + over * 2;
+    this.vignette.height = this.app.screen.height / scale + over * 2;
   }
 
   // Obstacle props (torches are handled by buildLights — they emit light only).
@@ -641,6 +654,7 @@ export class WorldRenderer {
     const at = (e: Entity) => pos.get(e.id) ?? { px: e.cell.x * CELL_PX, py: e.cell.y * CELL_PX };
 
     this.buildBg(world);
+    this.layoutVignette(); // keep the vignette covering the whole viewport (past its edges) as it resizes
     this.camera(world, pos);
     this.fx.removeChildren();
     this.actors.removeChildren();
