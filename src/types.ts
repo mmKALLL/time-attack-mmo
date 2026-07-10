@@ -77,6 +77,7 @@ export type Skill = {
   status?: StatusApplication | StatusApplication[]; // status(es) applied to the skill's recipients on cast
   pierce?: boolean; // line/arc attacks hit every enemy on the footprint by default; pierce:false hits only the nearest one (stops at the first enemy)
   knockback?: number; // tiles a landed hit shoves the foe backward, away from the caster (engine/combat.ts applyKnockback/advanceKnockback)
+  offset?: number; // tiles to project the shape forward, leaving that many empty tiles between the caster and the hitbox (0/absent = adjacent). Applied in shapeFor before rotation, so it flows through targeting, telegraphs, and the HUD preview.
 };
 export type SkillRuntime = {
   skillId: SkillId;

@@ -94,7 +94,8 @@ function surround(): Offset[] {
 export function shapeFor(skill: Skill, level: number, facing: Direction = 'right'): Offset[] {
   const tiles = Math.max(1, Math.round(skill.params.tiles?.(level) ?? DEFAULT_TILES[skill.shapeKind]));
   const base = baseShape(skill.shapeKind, tiles);
-  return base.map((o) => rotate(o, facing));
+  const offset = skill.offset ?? 0; // push the whole footprint forward `offset` tiles (empty tiles between caster and hitbox), then rotate to facing
+  return base.map((o) => rotate({ dx: o.dx + offset, dy: o.dy }, facing));
 }
 
 function baseShape(shapeKind: ShapeKind, tiles: number): Offset[] {

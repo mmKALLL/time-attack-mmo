@@ -222,7 +222,10 @@ describe('player-side AoE telegraph', () => {
     // Tiles equal the skill's footprint projected from the caster (facing 'right').
     const want = playerFootprint(arcaneArc, s.entities.p1.skills[0].level, { x: 5, y: 5 }, 'right');
     expect([...tg.tiles].sort((a, b) => a.x - b.x || a.y - b.y)).toEqual(want.sort((a, b) => a.x - b.x || a.y - b.y));
-    expect(hasCell(tg.tiles, { x: 6, y: 5 })).toBe(true); // arc is one cell ahead of the caster
+    // arcaneArc has offset 2, so the arc is projected 3 cells ahead: nearest tile at x=8, with the two tiles in front (x=6,7) left empty.
+    expect(hasCell(tg.tiles, { x: 8, y: 5 })).toBe(true);
+    expect(hasCell(tg.tiles, { x: 6, y: 5 })).toBe(false);
+    expect(hasCell(tg.tiles, { x: 7, y: 5 })).toBe(false);
   });
 
   it('resolves after the delay: an enemy on a marked tile is hit; one who stepped off dodges', () => {

@@ -57,6 +57,45 @@ describe('shapeFor', () => {
   });
 });
 
+describe('offset shape projection', () => {
+  it('shifts every cell forward by the offset (facing right: dx +2)', () => {
+    const base = getSkill('emberLance');
+    const shifted = { ...base, offset: 2 };
+    const plain = shapeFor(base, 3, 'right');
+    const moved = shapeFor(shifted, 3, 'right');
+    expect(moved).toHaveLength(plain.length);
+    // Every cell is the same as the no-offset cell, pushed +2 along the forward (dx) axis.
+    plain.forEach((c, i) => expect(moved[i]).toEqual({ dx: c.dx + 2, dy: c.dy }));
+  });
+  it('rotates the offset with the facing (facing up shifts along -y)', () => {
+    const base = getSkill('emberLance');
+    const shifted = { ...base, offset: 2 };
+    const plain = shapeFor(base, 3, 'up');
+    const moved = shapeFor(shifted, 3, 'up');
+    // Facing up, forward is -y, so the offset pushes cells by dy -2 (dx unchanged).
+    plain.forEach((c, i) => expect(moved[i]).toEqual({ dx: c.dx, dy: c.dy - 2 }));
+  });
+  it('a no-offset skill is unchanged', () => {
+    const base = getSkill('emberLance');
+    expect(shapeFor({ ...base, offset: 0 }, 3, 'right')).toEqual(shapeFor(base, 3, 'right'));
+    expect(shapeFor(base, 3, 'right')).toEqual(shapeFor({ ...base, offset: undefined }, 3, 'right'));
+  });
+  it('Scatter Shot projects its arc 2 tiles out with an empty row in front (facing right)', () => {
+    expect(getSkill('scatterShot').offset).toBe(1); // one empty tile between caster and hitbox
+    const cells = shapeFor(getSkill('scatterShot'), 1, 'right');
+    const nearest = Math.min(...cells.map((c) => c.dx));
+    expect(nearest).toBe(2); // nearest hitbox tile is 2 out (offset 1 => empty dx=1 row)
+    expect(cells.some((c) => c.dx === 1)).toBe(false); // gap directly in front of the caster
+  });
+  it("Arcane Arc's nearest tile is 3 out (facing right)", () => {
+    expect(getSkill('arcaneArc').offset).toBe(2); // two empty tiles between caster and hitbox
+    const cells = shapeFor(getSkill('arcaneArc'), 1, 'right');
+    const nearest = Math.min(...cells.map((c) => c.dx));
+    expect(nearest).toBe(3); // nearest hitbox tile is 3 out (offset 2 => empty dx=1,2 rows)
+    expect(cells.some((c) => c.dx === 1 || c.dx === 2)).toBe(false); // two-tile gap in front
+  });
+});
+
 describe('facing rotation', () => {
   it('rotate maps forward (1,0) to each facing', () => {
     expect(rotate({ dx: 1, dy: 0 }, 'right')).toEqual({ dx: 1, dy: 0 });

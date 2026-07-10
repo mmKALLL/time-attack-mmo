@@ -37,6 +37,7 @@ function sk(s: {
   status?: StatusApplication | StatusApplication[]; // status(es) the skill applies on cast
   pierce?: boolean; // false = single-target (nearest enemy on the footprint); spread via ...rest onto the Skill
   knockback?: number; // tiles a landed hit shoves the foe backward; spread via ...rest onto the Skill
+  offset?: number; // empty tiles between caster and hitbox (forward projection); spread via ...rest onto the Skill
 }): Skill {
   const { cooldown, cooldownMs, trigger, triggerMs, params = {}, ...rest } = s;
   // Precedence: the `cooldown` shorthand > an explicit params.cooldown > legacy cooldownMs.
@@ -91,7 +92,7 @@ export const SKILLS: Record<string, Skill[]> = {
   // --- Archer ---
   archer: [
     sk({ id: 'piercingShot', name: 'Piercing Shot', description: 'Pierce {tiles} tiles in a line for {dmg} damage.', kind: 'attack', target: 'line', element: 'air', shapeKind: 'line', params: { dmg: lin(0.8, 0.15), tiles: flat(5) }, mpCost: 10 }),
-    sk({ id: 'scatterShot', name: 'Scatter Shot', description: 'Scatter arrows over {tiles} tiles for {dmg} damage.', kind: 'attack', target: 'arc', element: 'air', shapeKind: 'arc', params: { dmg: lin(1.2, 0.2), tiles: flat(3) }, mpCost: 16 }), // TODO: offset 2 tiles out
+    sk({ id: 'scatterShot', name: 'Scatter Shot', description: 'Scatter arrows over {tiles} tiles for {dmg} damage.', kind: 'attack', target: 'arc', element: 'air', shapeKind: 'arc', params: { dmg: lin(1.2, 0.2), tiles: flat(3) }, mpCost: 16, offset: 1 }), // 2 tiles out (one empty tile in front)
     sk({ id: 'powerKnockback', name: 'Power Knockback', description: 'Blast one foe for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'ranged', element: 'air', shapeKind: 'point', params: { dmg: lin(1.4, 0.2) }, uses: 2, cooldown: lin(30, -1), knockback: 3 }), // pushes the foe back 3 tiles
     sk({ id: 'improvedCritical', name: 'Improved Critical', description: 'Passive: +{crit} crit chance, +{critDmg} crit damage.', kind: 'buff', target: 'self (passive)', element: 'air', shapeKind: 'self', params: { crit: lin(5, 2), critDmg: lin(10, 4) } }), // TODO: passive crit boost (unwired)
   ],
@@ -113,7 +114,7 @@ export const SKILLS: Record<string, Skill[]> = {
   magician: [
     sk({ id: 'magicClaw', name: 'Magic Claw', description: 'Claw {tiles} tiles {hits} times for {dmg} damage each.', kind: 'attack', target: 'adjacent-arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(0.6, 0.08), tiles: flat(3), hits: flat(2) }, mpCost: 12, pierce: false }), // TODO: multi-hit
     sk({ id: 'crossBlast', name: 'Cross Blast', description: 'Blast the diagonal tiles for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'area (cross)', element: 'arcane', shapeKind: 'diagonalCross', params: { dmg: lin(1.0, 0.15) }, mpCost: 16, uses: 4, cooldown: lin(20, -1) }),
-    sk({ id: 'arcaneArc', name: 'Arcane Arc', description: 'Detonate {tiles} tiles for {dmg} damage after a delay.', kind: 'attack', target: 'arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(1.6, 0.2), tiles: flat(5) }, mpCost: 22, telegraphMs: 5000 }), // TODO: player-side AoE telegraph (5s delay); offset 3 tiles out
+    sk({ id: 'arcaneArc', name: 'Arcane Arc', description: 'Detonate {tiles} tiles for {dmg} damage after a delay.', kind: 'attack', target: 'arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(1.6, 0.2), tiles: flat(5) }, mpCost: 22, telegraphMs: 5000, offset: 2 }), // 3 tiles out (two empty tiles in front)
     sk({ id: 'shockingGrasp', name: 'Shocking Grasp', description: 'Shock one foe for {dmg}, slowing it {pct}% for 5s (cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'arcane', shapeKind: 'point', params: { dmg: lin(1.4, 0.2), pct: lin(25, 5) }, mpCost: 8, cooldown: lin(30, -1), status: { name: 'slow' } }),
   ],
   arcanist: [
