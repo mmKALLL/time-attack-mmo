@@ -27,7 +27,7 @@ type GameStore = {
   advance: (dt: number) => void;
   reset: () => void;
   // Persistence actions
-  newGame: () => void;
+  newGame: (slot?: number) => void; // default = active slot; a given slot becomes active + is saved into
   loadGame: (slot: number) => void;
   deleteSave: (slot: number) => void;
   exportSave: (slot: number) => string | null;
@@ -36,6 +36,7 @@ type GameStore = {
   getActiveSlot: () => number;
   listSlots: () => SaveSlotMeta[];
   hasSave: (slot: number) => boolean;
+  firstEmptySlot: () => number | null; // lowest empty slot, or null when every slot is full
 };
 
 // Turn a loaded world into a clean map re-entry: keep the HERO party, drop the
@@ -100,9 +101,12 @@ export const useGame = create<GameStore>((set) => ({
     autosaveClockMs = 0;
     set({ scene: 'dungeon', world, inputQueue: [], highlights: {} });
   },
-  newGame: () => {
+  newGame: (slot) => {
+    // Target a specific slot when given (making it active), else the current active slot.
+    if (slot !== undefined) setActiveSlot(slot);
+    const target = slot ?? getActiveSlot();
     const world = createDemoWorld();
-    saveSlot(getActiveSlot(), world);
+    saveSlot(target, world);
     autosaveClockMs = 0;
     set({ world, inputQueue: [], highlights: {} });
   },
@@ -127,4 +131,8 @@ export const useGame = create<GameStore>((set) => ({
   getActiveSlot: () => getActiveSlot(),
   listSlots: () => listSlots(),
   hasSave: (slot) => hasSave(slot),
+  firstEmptySlot: () => {
+    const idx = listSlots().findIndex((m) => m === null);
+    return idx === -1 ? null : idx;
+  },
 }));

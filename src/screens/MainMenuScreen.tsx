@@ -129,14 +129,19 @@ export function MainMenuScreen() {
   const loadGame = useGame((s) => s.loadGame);
   const getActiveSlot = useGame((s) => s.getActiveSlot);
   const hasSave = useGame((s) => s.hasSave);
+  const firstEmptySlot = useGame((s) => s.firstEmptySlot);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const activeSlot = getActiveSlot();
   const saveExists = hasSave(activeSlot);
+  const emptySlot = firstEmptySlot();
+  const slotsFull = emptySlot === null;
 
-  // New game: warn before clobbering an existing save in the active slot.
-  const onNewGame = () => {
-    if (saveExists && !window.confirm('Starting a new game overwrites your current save. Continue?')) return;
-    newGame();
+  // Enter the Realm: open character selection (pick/create a slot there).
+  const onEnterRealm = () => setScene('charCreate');
+  // New Character: create in the first open slot and drop straight in. Disabled when full.
+  const onNewCharacter = () => {
+    if (emptySlot === null) return;
+    newGame(emptySlot);
     setScene('dungeon');
   };
   // Continue the active slot's save (only offered when one exists).
@@ -400,9 +405,9 @@ export function MainMenuScreen() {
 
   // The seven menu items; click routing chosen by the user (boot-to-mainMenu).
   const items: { label: string; size: number; dim?: boolean; tag?: string; onClick: () => void }[] = [
-    { label: 'Enter the Realm', size: 30, onClick: onNewGame },
+    { label: 'Enter the Realm', size: 30, onClick: onEnterRealm },
     { label: 'Continue', size: 23, dim: !saveExists, tag: saveExists ? `LV${player?.level ?? 1}` : undefined, onClick: onContinue },
-    { label: 'Characters', size: 22, onClick: () => setScene('charCreate') },
+    { label: 'New Character', size: 22, dim: slotsFull, tag: slotsFull ? 'FULL' : undefined, onClick: onNewCharacter },
     // { label: 'World Map', size: 22, onClick: () => setScene('worldMap') },
     { label: 'Settings', size: 22, onClick: () => setScene('hotkeys') }, // closest existing config screen
     { label: 'Credits', size: 18, dim: true, onClick: () => {} }, // stub: no credits screen yet

@@ -26,6 +26,7 @@ function jobName(jobId: string): string {
 
 export function CharacterCreationScreen() {
   const setScene = useGame((s) => s.setScene);
+  const newGame = useGame((s) => s.newGame);
   const loadGame = useGame((s) => s.loadGame);
   const deleteSave = useGame((s) => s.deleteSave);
   const exportSave = useGame((s) => s.exportSave);
@@ -47,6 +48,12 @@ export function CharacterCreationScreen() {
 
   const onPlay = (slot: number) => {
     loadGame(slot);
+    setScene('dungeon');
+  };
+
+  // Create a fresh character in an empty slot (makes it active) and drop straight in.
+  const onCreate = (slot: number) => {
+    newGame(slot);
     setScene('dungeon');
   };
 
@@ -130,6 +137,11 @@ export function CharacterCreationScreen() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {!meta && (
+                    <button style={panelBtn} onClick={() => onCreate(slot)}>
+                      Create
+                    </button>
+                  )}
                   {meta && (
                     <button style={panelBtn} onClick={() => onPlay(slot)}>
                       Play

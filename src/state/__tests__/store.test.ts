@@ -3,6 +3,7 @@ import { useGame } from '../store';
 import { makeEntity } from '../../engine';
 import { demoMap } from '../../data-map';
 import { xpToNext } from '../../config';
+import { MAX_SLOTS, getActiveSlot } from '../persist';
 import type { Entity, WorldState } from '../../types';
 
 // Minimal known world (mirrors the combat test helper) so a level-up is deterministic.
@@ -68,5 +69,41 @@ describe('game store', () => {
     useGame.getState().advance(1500); // kill fires -> XP -> level-up -> highlight
     expect(useGame.getState().world.entities.p1.level).toBeGreaterThan(20); // leveled up (xp tuning may grant >1)
     expect(useGame.getState().highlights.skills).toBe(true);
+  });
+});
+
+describe('game store — save slots', () => {
+  beforeEach(() => {
+    localStorage.clear(); // start each test with all slots empty and no active-slot key
+  });
+
+  it('firstEmptySlot returns the lowest empty slot', () => {
+    expect(useGame.getState().firstEmptySlot()).toBe(0); // all empty -> lowest is 0
+    useGame.getState().newGame(0); // fill slot 0
+    expect(useGame.getState().firstEmptySlot()).toBe(1); // next lowest empty
+    useGame.getState().newGame(2); // leave slot 1 empty, fill slot 2
+    expect(useGame.getState().firstEmptySlot()).toBe(1); // still the lowest gap
+  });
+
+  it('firstEmptySlot returns null when every slot is full', () => {
+    for (let slot = 0; slot < MAX_SLOTS; slot++) useGame.getState().newGame(slot);
+    expect(useGame.getState().firstEmptySlot()).toBeNull();
+  });
+
+  it('newGame(slot) writes to that slot and makes it active', () => {
+    useGame.getState().newGame(2);
+    expect(getActiveSlot()).toBe(2); // targeted slot became active
+    expect(useGame.getState().hasSave(2)).toBe(true); // ...and was saved into
+    expect(useGame.getState().hasSave(0)).toBe(false); // other slots untouched
+    expect(useGame.getState().listSlots()[2]).not.toBeNull(); // slot 2 populated
+  });
+
+  it('newGame() (no arg) defaults to the active slot', () => {
+    useGame.getState().newGame(3); // make slot 3 active
+    expect(getActiveSlot()).toBe(3);
+    useGame.getState().newGame(); // no arg -> active slot (3)
+    expect(getActiveSlot()).toBe(3);
+    expect(useGame.getState().hasSave(3)).toBe(true);
+    expect(useGame.getState().hasSave(0)).toBe(false);
   });
 });
