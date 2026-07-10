@@ -13,5 +13,5 @@ Wizard
 Druid
 Rogue
 Assassin
-Shadower
-Ninja
+Shadowblade
+Reaver

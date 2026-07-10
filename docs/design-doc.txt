@@ -314,10 +314,10 @@ Bracing Guard - block physical damage components for 5s, cooldown: lin(20, -1)
 
 Archer 1st job skills:
 
-Arrow Strike - 4x1 (non-piercing) 1 tile away, dmg: lin(1, 0.15)
 Piercing Shot - 4x1, 10 mp, dmg: lin(0.8, 0.15)
 Scatter Shot - 1x3 two tiles away, 16 mp, dmg(1.2, 0.2)
 Power Knockback - 1x1, pushes enemy up to 3 tiles back, uses: 2, cooldown: lin(30, -1), dmg: lin(1.4, 0.2)
+Improved Critical - passive, improves crit chance by lin(5,2) and crit damage by lin(10,4)
 
 Magician 1st job skills:
 
@@ -351,6 +351,6 @@ Druid
 
 Assassin
 Shadower
-Ninja
+Reaver
 
 ----

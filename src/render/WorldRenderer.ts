@@ -874,7 +874,7 @@ export class WorldRenderer {
 
     if (e.faction !== 'enemy') this.drawFacing(e, px, py); // enemies show no facing arrow
     const inFight = Object.values(world.groups).some((g) => g.memberIds.includes(e.id));
-    if (e.faction === 'enemy' && inFight) this.drawHpPip(px, py, e); // only engaged enemies show HP
+    if (e.faction === 'enemy' && inFight) this.drawHpBar(px, py, e); // only engaged enemies show HP
     if (inFight || e.armed) this.drawSquareTimer(e, px, py); // armed = out-of-combat wind-up
   }
 
@@ -913,7 +913,7 @@ export class WorldRenderer {
     return grad;
   }
 
-  private drawHpPip(px: number, py: number, e: Entity) {
+  private drawHpBar(px: number, py: number, e: Entity) {
     const m = 8 * UI;
     const h = 4 * UI;
     const w = CELL_PX - 2 * m;
@@ -923,7 +923,7 @@ export class WorldRenderer {
     const g = new Graphics();
     g.rect(x, y, w, h).fill({ color: 0x0a0d12, alpha: 0.85 }); // recessed dark track
     if (pct > 0) g.rect(x, y, w * pct, h).fill(this.hpFill(!!e.elite)); // vertical gradient fill
-    g.rect(x, y, w, h).stroke({ width: 1 * UI, color: 0x000000, alpha: 1, alignment: 0.5 }); // crisp black border, sharp corners
+    g.rect(x, y, w, h).stroke({ width: 2, color: 0x000000, alpha: 1, alignment: 0.5 }); // crisp black border, sharp corners
     this.actors.addChild(g);
   }
 

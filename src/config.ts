@@ -22,28 +22,28 @@ export const MAP_CONFIG: Record<Biome, MapConfig> = {
     height: 12,
     gen: { roomCount: 1, roomMin: 5, roomMax: 8, roomShape: 'rectangular', corridorWidth: 2, torchDensity: 4, obstacleCount: 2 },
     spawns: { maxAmount: 0, spawnInterval: 999, spawnAmount: 0 },
-    light: { duskColor: 0x0a0a12, ambientLightLevel: 0, torchGlowDistance: 7 },
+    light: { duskColor: 0x0a0a12, ambientDuskLevel: 0, torchGlowDistance: 7 },
   },
   forest: {
     width: 20,
     height: 15,
-    gen: { roomCount: 3, roomMin: 5, roomMax: 8, roomShape: 'natural', corridorWidth: 2, torchDensity: 3, obstacleCount: 4 },
-    spawns: { maxAmount: 5, spawnInterval: 7, spawnAmount: 1 },
-    light: { duskColor: 0x0a0a12, ambientLightLevel: 10, torchGlowDistance: 7 },
+    gen: { roomCount: 2, roomMin: 5, roomMax: 8, roomShape: 'natural', corridorWidth: 2, torchDensity: 3, obstacleCount: 4 },
+    spawns: { maxAmount: 5, spawnInterval: 6, spawnAmount: 1 },
+    light: { duskColor: 0x0a0a12, ambientDuskLevel: 10, torchGlowDistance: 7 },
   },
   lake: {
     width: 22,
     height: 17,
-    gen: { roomCount: 3, roomMin: 5, roomMax: 8, roomShape: 'natural', corridorWidth: 2, torchDensity: 3, obstacleCount: 4 },
-    spawns: { maxAmount: 5, spawnInterval: 7, spawnAmount: 1 },
-    light: { duskColor: 0x0a0e18, ambientLightLevel: 0, torchGlowDistance: 7 },
+    gen: { roomCount: 3, roomMin: 5, roomMax: 8, roomShape: 'natural', corridorWidth: 2, torchDensity: 3, obstacleCount: 7 },
+    spawns: { maxAmount: 7, spawnInterval: 6, spawnAmount: 1 },
+    light: { duskColor: 0x0a0e18, ambientDuskLevel: 0, torchGlowDistance: 7 },
   },
   deepForest: {
     width: 26,
     height: 20,
-    gen: { roomCount: 3, roomMin: 5, roomMax: 8, roomShape: 'natural', corridorWidth: 1, torchDensity: 6, obstacleCount: 4 },
-    spawns: { maxAmount: 5, spawnInterval: 7, spawnAmount: 1 },
-    light: { duskColor: 0x05060e, ambientLightLevel: 20, torchGlowDistance: 7 },
+    gen: { roomCount: 3, roomMin: 5, roomMax: 8, roomShape: 'natural', corridorWidth: 1, torchDensity: 6, obstacleCount: 7 },
+    spawns: { maxAmount: 6, spawnInterval: 10, spawnAmount: 1 },
+    light: { duskColor: 0x05060e, ambientDuskLevel: 20, torchGlowDistance: 7 },
   },
 };
 // ---------- Lighting & screen overlays (drawn in render/WorldRenderer.ts) ----------
@@ -69,7 +69,7 @@ export const LEVELUP_FX = {
 // full-dark edge (fractions of the screen's min/max side).
 export const VIGNETTE: Record<Biome, { edgeAlpha: number; warmAlpha: number; innerRadius: number; outerRadius: number }> = {
   town: { edgeAlpha: 0.35, warmAlpha: 0.0, innerRadius: 0.38, outerRadius: 0.68 },
-  forest: { edgeAlpha: 0.6, warmAlpha: 0.0, innerRadius: 0.3, outerRadius: 0.62 },
+  forest: { edgeAlpha: 0.65, warmAlpha: 0.0, innerRadius: 0.3, outerRadius: 0.62 },
   lake: { edgeAlpha: 0.42, warmAlpha: 0.05, innerRadius: 0.34, outerRadius: 0.66 },
   deepForest: { edgeAlpha: 0.8, warmAlpha: 0.0, innerRadius: 0.22, outerRadius: 0.56 },
 };
