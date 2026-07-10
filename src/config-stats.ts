@@ -112,7 +112,7 @@ export const CRIT_MULT = 1.8; // crit deals 180% damage
 // Hit rate = 1.2 - dodge/accuracy (5x accuracy over dodge => guaranteed hit).
 export function hitChance(accuracy: number, dodge: number): number {
   if (accuracy <= 0) return 0.05;
-  return Math.max(0.05, Math.min(1, 1.2 - dodge / accuracy));
+  return Math.max(0.2, Math.min(1, 1.2 - dodge / accuracy));
 }
 // Final damage from a rolled base value, the skill multiplier, and target defense.
 export function rawDamage(rolled: number, mult: number, def: number): number {

@@ -68,10 +68,11 @@ describe('derived stats', () => {
 });
 
 describe('combat math', () => {
-  it('hit chance is ~0.95 at equal stats and clamps to [0.05,1]', () => {
+  it('hit chance is ~0.95 at equal stats and clamps to [0.2,1] (0.05 only when accuracy<=0)', () => {
     expect(hitChance(100, 25)).toBeCloseTo(0.95, 5);
     expect(hitChance(100, 0)).toBe(1);
-    expect(hitChance(10, 1000)).toBe(0.05);
+    expect(hitChance(10, 1000)).toBe(0.2); // min-hit floor for a positive-accuracy attacker
+    expect(hitChance(0, 1000)).toBe(0.05); // no accuracy at all
   });
   it('rawDamage is rolled*mult minus defense, floored at 1', () => {
     expect(rawDamage(10, 1, 3)).toBe(7);
