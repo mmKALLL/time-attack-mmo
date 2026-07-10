@@ -287,7 +287,8 @@ export function SkillAllocationScreen() {
   };
 
   // power headline + NEXT LV deltas from the skill's param functions
-  const paramLabel = (k: string, s: Skill) => (k === 'dmg' ? 'Max damage' : k === 'heal' ? 'Healing' : k === 'pct' ? (s.kind === 'dot' ? 'Burn' : 'Effect') : k === 'dur' ? 'Duration' : k === 'tiles' ? 'Tiles' : k === 'hits' ? 'Hits' : k === 'cooldown' ? 'Cooldown' : k);
+  const paramLabel = (k: string, s: Skill) =>
+    k === 'dmg' ? 'Max damage' : k === 'heal' ? 'Healing' : k === 'pct' ? (s.kind === 'dot' ? 'Burn' : 'Effect') : k === 'dur' ? 'Duration' : k === 'tiles' ? 'Tiles' : k === 'hits' ? 'Hits' : k === 'cooldown' ? 'Cooldown' : k;
   const paramVal = (k: string, s: Skill, lv: number) => {
     const fn = s.params[k as keyof typeof s.params];
     if (!fn) return '';
@@ -357,7 +358,7 @@ export function SkillAllocationScreen() {
               </span>
             </div>
             <div style={{ height: 9, borderRadius: 2, background: '#0c0f14', boxShadow: 'inset 0 1px 2px #000', overflow: 'hidden', marginTop: 4 }}>
-              <div style={{ width: `${Math.min(100, (p.xp / xpToNext(p.level)) * 100)}%`, height: '100%', background: 'linear-gradient(#8fd0e0,#4a90c0)' }} />
+              <div style={{ width: `${Math.min(100, (p.xp / xpToNext(p.level)) * 100)}%`, height: '100%', background: 'linear-gradient(var(--gold-bright), var(--gold-dim))' }} />
             </div>
             <div style={{ fontSize: 11, color: '#8f8674', marginTop: 4 }}>
               {fmt(p.xp)} / {fmt(xpToNext(p.level))} <span style={{ color: '#5f5a4a' }}>XP to next</span>
@@ -429,15 +430,9 @@ export function SkillAllocationScreen() {
                       </span>
                     ) : (
                       <span>
-                        <span className="sa-px" style={{ fontSize: 16, color: '#f2e8d2' }}>
-                          {committed}
+                        <span className="sa-px" style={pend ? { fontSize: 19, color: '#ffd27a' } : { fontSize: 16, color: '#f2e8d2' }}>
+                          {committed + pend}
                         </span>
-                        {pend > 0 && (
-                          <span className="sa-px" style={{ fontSize: 13, color: '#8fe0a0' }}>
-                            {' '}
-                            +{pend}
-                          </span>
-                        )}
                       </span>
                     )}
                   </div>

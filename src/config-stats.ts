@@ -72,7 +72,7 @@ function critCurve(base: number): number {
 // class also sets how far minDmg sits below maxDmg.
 export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beginner'): Stats {
   const physical = p.str * 4 + p.dex * 2;
-  const magical = p.int * 4; // DEX's old magical share now lives in attackSpeed instead
+  const magical = p.int * 4;
   const { phys, minDamageRatio } = CLASS_COMBAT[cls];
   const power = (phys * physical + (1 - phys) * magical) * 2;
   const accuracy = p.dex * 2;
@@ -81,12 +81,12 @@ export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beg
     maxMp: p.int * 8 + level * 2 - 2,
     minDmg: Math.round(power * minDamageRatio),
     maxDmg: Math.round(power),
-    def: p.str * 4,
+    def: p.str * 2,
     accuracy,
     crit: critCurve(p.dex * 2 + p.int),
     dodge: accuracy * 0.25,
     statusResist: Math.floor(10 + p.vit / 2 - 2),
-    attackSpeed: 100 + 0.6 * p.dex - 3, // trigger-speed % (100 = normal); very gradual DEX scaling, base dex 5 = 100
+    attackSpeed: 100 + 0.6 * p.dex - 3, // trigger-speed % (100 = normal); very gradual DEX scaling, base dex 5 => 100%
   };
 }
 

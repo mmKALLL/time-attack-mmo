@@ -378,9 +378,9 @@ export function MainMenuScreen() {
   // The seven menu items; click routing chosen by the user (boot-to-mainMenu).
   const items: { label: string; size: number; dim?: boolean; tag?: string; onClick: () => void }[] = [
     { label: 'Enter the Realm', size: 30, onClick: () => setScene('dungeon') },
-    { label: 'Continue', size: 22, tag: `LV${player?.level ?? 1}`, onClick: () => setScene('dungeon') },
+    { label: 'Continue', size: 23, tag: `LV${player?.level ?? 1}`, onClick: () => setScene('dungeon') },
     { label: 'Characters', size: 22, onClick: () => setScene('charCreate') },
-    { label: 'World Map', size: 22, onClick: () => setScene('worldMap') },
+    // { label: 'World Map', size: 22, onClick: () => setScene('worldMap') },
     { label: 'Settings', size: 22, onClick: () => setScene('hotkeys') }, // closest existing config screen
     { label: 'Credits', size: 18, dim: true, onClick: () => {} }, // stub: no credits screen yet
     { label: 'Quit', size: 18, dim: true, onClick: () => {} }, // stub: no shell to quit to on web
@@ -446,7 +446,7 @@ export function MainMenuScreen() {
         </div>
 
         {/* FOOTER */}
-        <div className="mm-copyright">© 2026 Suomela Studios</div>
+        <div className="mm-copyright">© 2026 Studio Esagames</div>
         <div className="mm-build">v0.4.1 · BUILD 2026.07.09</div>
         <div className="mm-servers">
           <span className="mm-servers-dot" />

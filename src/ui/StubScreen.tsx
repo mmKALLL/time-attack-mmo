@@ -26,13 +26,10 @@ export function StubScreen({ title, children }: { title: string; children?: Reac
           cursor: 'pointer',
         }}
       >
-        ← Back to Dungeon
+        ← Back to Game
       </button>
       <h1 style={{ fontFamily: 'var(--font-header)', color: 'var(--gold-bright)', marginTop: 24 }}>{title}</h1>
-      <p style={{ color: 'var(--ink-dim)', maxWidth: 560 }}>
-        Placeholder screen — the engine, state store, and design tokens are all in place. Awaiting the Claude Design
-        layout for this screen.
-      </p>
+      <p style={{ color: 'var(--ink-dim)', maxWidth: 560 }}>Placeholder screen — the engine, state store, and design tokens are all in place. Awaiting the Claude Design layout for this screen.</p>
       {children}
     </div>
   );

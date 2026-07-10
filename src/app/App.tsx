@@ -21,14 +21,14 @@ const SCREENS: Record<Scene, () => JSX.Element> = {
 };
 
 const NAV: { scene: Scene; label: string }[] = [
-  { scene: 'mainMenu', label: 'Menu' },
-  { scene: 'dungeon', label: 'Dungeon' },
+  // { scene: 'mainMenu', label: 'Menu' },
+  { scene: 'dungeon', label: 'In-Game' },
+  { scene: 'skills', label: 'Skills' },
   { scene: 'worldMap', label: 'World Map' },
   { scene: 'shop', label: 'Shop' },
-  { scene: 'skills', label: 'Skills' },
-  { scene: 'charCreate', label: 'Create' },
+  // { scene: 'charCreate', label: 'Create' },
   { scene: 'hotkeys', label: 'Hotkeys' },
-  { scene: 'npcChat', label: 'NPC' },
+  // { scene: 'npcChat', label: 'NPC' },
 ];
 
 export default function App() {
@@ -43,38 +43,38 @@ export default function App() {
     <>
       <Screen />
       {showNav && (
-      <nav
-        style={{
-          position: 'fixed',
-          top: 8,
-          right: 8,
-          display: 'flex',
-          gap: 6,
-          zIndex: 50,
-          pointerEvents: 'auto',
-          opacity: 0.86,
-        }}
-      >
-        {NAV.map((n) => (
-          <button
-            key={n.scene}
-            onClick={() => setScene(n.scene)}
-            className={highlights[n.scene] ? 'nav-glow' : undefined}
-            style={{
-              fontFamily: 'var(--font-header)',
-              fontSize: 12,
-              background: scene === n.scene ? '#2a3a5a' : 'rgba(21,26,34,0.9)',
-              color: 'var(--ink)',
-              border: '1px solid var(--panel-edge)',
-              borderRadius: 4,
-              padding: '4px 9px',
-              cursor: 'pointer',
-            }}
-          >
-            {n.label}
-          </button>
-        ))}
-      </nav>
+        <nav
+          style={{
+            position: 'fixed',
+            top: 8,
+            right: 8,
+            display: 'flex',
+            gap: 6,
+            zIndex: 50,
+            pointerEvents: 'auto',
+            opacity: 0.86,
+          }}
+        >
+          {NAV.map((n) => (
+            <button
+              key={n.scene}
+              onClick={() => setScene(n.scene)}
+              className={highlights[n.scene] ? 'nav-glow' : undefined}
+              style={{
+                fontFamily: 'var(--font-header)',
+                fontSize: 12,
+                background: scene === n.scene ? '#2a3a5a' : 'rgba(21,26,34,0.9)',
+                color: 'var(--ink)',
+                border: '1px solid var(--panel-edge)',
+                borderRadius: 4,
+                padding: '4px 9px',
+                cursor: 'pointer',
+              }}
+            >
+              {n.label}
+            </button>
+          ))}
+        </nav>
       )}
     </>
   );
