@@ -1,5 +1,6 @@
 import type { Input, WorldState } from '../types';
 import { moveOrStick, advanceCombat, advanceArming, advanceTelegraphs, groupOf, castInterval } from './combat';
+import { advanceStatuses } from './status';
 import { exitAt, travelTo, advanceRespawns } from './maps';
 import { advanceRoaming } from './roaming';
 import { spendAttribute, levelUpSkill } from './progression';
@@ -83,6 +84,9 @@ export function tick(state: WorldState, inputs: Input[], dt: number): WorldState
   // at the top) is already reflected, so stepping off a marked tile dodges the hit.
   // A telegraph planted this same tick won't resolve yet (its full lead time remains).
   advanceTelegraphs(s, dt);
+  // Tick DoTs/buffs/debuffs and expiry AFTER all damage sources, BEFORE respawns so
+  // DoT deaths are cleaned up (cleanupDead) and the wave can top back up this tick.
+  advanceStatuses(s, dt);
   advanceRespawns(s, dt);
   s.tickCount += 1;
   return s;

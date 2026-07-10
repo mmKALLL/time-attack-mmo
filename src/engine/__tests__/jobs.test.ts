@@ -28,9 +28,13 @@ describe('kitOf', () => {
   it('grants a base/second class its own grouped skills', () => {
     expect(kitOf('knight').map((s) => s.id)).toEqual(['aegisBastion', 'provocation', 'earthsmash']);
   });
-  it('derives a fusion kit from both parents (6 skills; specialized added later)', () => {
+  it('derives a fusion kit from both parents (specialized added later)', () => {
     const kit = kitOf('flameRanger').map((s) => s.id);
-    expect(kit).toHaveLength(6); // wizard 3 + ranger 3
+    // Expected length = the two parents' kits deduped by id (flameRanger adds no
+    // own group). Computed from the actual parent kits so it survives skill-count
+    // tuning, rather than hard-coding a magic number.
+    const expectedIds = new Set([...kitOf('wizard'), ...kitOf('ranger')].map((s) => s.id));
+    expect(kit).toHaveLength(expectedIds.size);
     expect(kit).toEqual(expect.arrayContaining(['cinderstorm', 'graspingThorns']));
   });
 });

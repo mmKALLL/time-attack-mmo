@@ -3,11 +3,12 @@ import { DIRECTIONS, isWall, equals, key } from './grid';
 import { combatClassForJob } from '../data';
 import { getSkill } from '../data-skills';
 import { areEnemies, isAlive } from './entities';
-import { skillTargets, canCast, afterCast, tickCooldowns, magnitude } from './skills';
+import { skillTargets, canCast, afterCast, tickCooldowns, magnitude, targetsAllies } from './skills';
 import { shapeFor } from './shapes';
-import { ATTR_POINTS_PER_LEVEL, CLASS_COMBAT, CRIT_MULT, SKILL_POINTS_PER_LEVEL, deriveStats, hitChance, rawDamage } from '../config-stats';
+import { ATTR_POINTS_PER_LEVEL, CLASS_COMBAT, CRIT_MULT, SKILL_POINTS_PER_LEVEL, deriveStats, hitChance, rawDamage, effectiveStats, totalSlowPercent, totalAtkPercent, totalDefTakenPercent, totalDodgePercent, totalBlindPercent, harmfulCritMultiplier, harmfulStackCount, hasActiveStun } from '../config-stats';
 import { xpReward, xpToNext, COMBAT_TICK_MS, ENEMY_ATTACK_RANGE, ENEMY_APPROACH_MS } from '../config';
-import { nextRand } from './rng';
+import { nextRand, chance } from './rng';
+import { applyStatus } from './status';
 
 // ---------- Queries (never mutate) ----------
 export function groupOf(s: WorldState, id: EntityId): CombatGroup | undefined {
@@ -145,7 +146,8 @@ function orientCombatants(s: WorldState): void {
 export function castInterval(e: Entity): number {
   const rt = e.skills[e.activeSkillIndex];
   const trigger = rt ? (getSkill(rt.skillId).triggerMs ?? COMBAT_TICK_MS) : COMBAT_TICK_MS; // per-skill trigger (default 1.5s)
-  return trigger / ((CLASS_COMBAT[e.combatClass]?.speed ?? 1) * (e.stats.attackSpeed / 100));
+  const base = trigger / ((CLASS_COMBAT[e.combatClass]?.speed ?? 1) * (effectiveStats(e).attackSpeed / 100));
+  return base * (1 + totalSlowPercent(e) / 100); // slow lengthens the interval
 }
 
 // Advance combat clocks + resolve auto-casts for every group.
@@ -157,6 +159,9 @@ export function advanceCombat(s: WorldState, dt: number): void {
   for (const g of Object.values(s.groups)) {
     for (const m of membersOf(s, g)) {
       if (!isAlive(m)) continue;
+      // Stunned combatants cannot act: hold the cast timer (and skip approach) so
+      // they resume exactly where they were once the stun expires.
+      if (hasActiveStun(m)) continue;
       // Enemies approach on their own 2s clock (once per tick), independent of
       // the cast timer, so a slow attacker still creeps forward each frame.
       if (m.faction === 'enemy') advanceApproach(s, m, dt);
@@ -217,22 +222,23 @@ export function advanceArming(s: WorldState, dt: number): void {
     return;
   }
 
-  // Heal/self skills fire on the player themselves — no enemy needed (mirrors
-  // castSkill's heal branch), so Recover works out of combat.
-  if (skill.kind === 'heal') {
+  // Heal/self-buff skills fire on the player themselves — no enemy needed (mirrors
+  // castSkill's heal branch), so Recover / self-buffs work out of combat.
+  if (skill.kind === 'heal' || targetsAllies(skill)) {
     player.mp -= mpCost;
-    const heal = Math.round(player.stats.maxDmg * (skill.params.heal?.(rt.level) ?? 0)) + Math.round(player.stats.maxHp * (skill.params.healPercentage?.(rt.level) ?? 0));
+    const heal = Math.round(effectiveStats(player).maxDmg * (skill.params.heal?.(rt.level) ?? 0)) + Math.round(player.stats.maxHp * (skill.params.healPercentage?.(rt.level) ?? 0));
     if (heal > 0) {
       player.hp = Math.min(player.stats.maxHp, player.hp + heal);
       s.hits.push({ cell: { ...player.cell }, from: { ...player.cell }, kind: 'heal', amount: heal });
     }
+    if (skill.status) for (const app of Array.isArray(skill.status) ? skill.status : [skill.status]) applyStatus(s, player, app, player, skill, rt.level);
     player.skills = player.skills.map((r, i) => (i === player.activeSkillIndex ? afterCast(r, skill) : r));
     autoSelectUsableSkill(s);
     player.armed = false;
     return;
   }
 
-  // Attack skills: fire at the enemies the footprint covers, ENGAGING (sticking) them.
+  // Attack/debuff skills: fire at the enemies the footprint covers, ENGAGING (sticking) them.
   // AoE footprints hit everything they cover; single-target shapes strike the nearest.
   let foes = enemiesInFootprint(s, player, skill, rt.level);
   if (!isAoESkill(skill) && foes.length > 1) {
@@ -252,6 +258,7 @@ export function advanceArming(s: WorldState, dt: number): void {
       foe.hp = Math.max(0, foe.hp - r.amount);
       s.hits.push({ cell: { ...foe.cell }, from: { ...player.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
     }
+    if (skill.status) for (const app of Array.isArray(skill.status) ? skill.status : [skill.status]) applyStatus(s, foe, app, player, skill, rt.level);
     stick(s, player.id, foe.id); // engage: combat auto-cast takes over next frame
   }
   player.skills = player.skills.map((r, i) => (i === player.activeSkillIndex ? afterCast(r, skill) : r));
@@ -275,15 +282,22 @@ function enemyAttack(s: WorldState, caster: Entity): void {
   const usePrimary = !!primary && canCast(primary);
   const skill = usePrimary ? getSkill(primary.skillId) : getSkill('enemyStrike');
   const level = primary?.level ?? 1;
+  const isAoE = isAoESkill(skill);
   if (skill.params.dmg) {
     const mag = magnitude(skill, level);
-    if (isAoESkill(skill)) {
+    if (isAoE) {
       s.telegraphs.push(makeTelegraph(caster, target, skill, level, mag));
     } else {
       const r = resolveAttack(s, caster, target, mag);
       target.hp = Math.max(0, target.hp - r.amount);
       s.hits.push({ cell: { ...target.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
     }
+  }
+  // Direct (non-AoE) enemy skills apply their status to the struck hero. AoE enemy
+  // status-on-telegraph is out of scope this pass. Only the primary applies status.
+  if (usePrimary && skill.status && !isAoE) {
+    const apps = Array.isArray(skill.status) ? skill.status : [skill.status];
+    for (const app of apps) applyStatus(s, target, app, caster, skill, level);
   }
   if (usePrimary) caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
 }
@@ -369,23 +383,38 @@ function advanceApproach(s: WorldState, enemy: Entity, dt: number): void {
 
 // Frozen attacker inputs a damage roll needs — a caster's stats snapshotted so a
 // hit can resolve identically even after the caster is gone (telegraphed AoE).
-type DamageSource = { accuracy: number; minDmg: number; maxDmg: number; power: number; crit: number; mult: number };
+// `mult` already folds in the attacker's atkUp/atkDown; `blindPercent` is the
+// attacker's blind (an extra whiff roll). Both are baked at snapshot time.
+type DamageSource = { accuracy: number; minDmg: number; maxDmg: number; power: number; crit: number; mult: number; blindPercent?: number };
 function damageSource(caster: Entity, mult: number): DamageSource {
-  const { accuracy, minDmg, maxDmg, crit } = caster.stats;
+  const { accuracy, minDmg, maxDmg, crit } = effectiveStats(caster); // stat buffs feed the roll
   const power = CLASS_COMBAT[caster.combatClass]?.power ?? 1; // slow classes (mages) hit harder
-  return { accuracy, minDmg, maxDmg, power, crit, mult };
+  const atkMult = 1 + totalAtkPercent(caster) / 100; // atkUp/atkDown scale outgoing damage
+  return { accuracy, minDmg, maxDmg, power, crit, mult: mult * atkMult, blindPercent: totalBlindPercent(caster) };
 }
 
-// Roll one attack against a target: check hit (accuracy vs dodge), roll damage in
-// [minDmg,maxDmg], apply the skill×power multiplier and target defense, then a
-// chance to crit. Uses the world's seeded RNG so replays/networking stay
-// deterministic. Reads only the frozen `src`, so single-target and telegraph
-// resolution roll damage the exact same way.
+// An avoidance roll from a percent chance, clamped below 95% so nothing is ever
+// truly unhittable / unmissable. Deterministic (seeded RNG).
+function avoidRoll(s: WorldState, percent: number): boolean {
+  if (percent <= 0) return false;
+  return chance(s, Math.min(94.999, percent) / 100);
+}
+
+// Roll one attack against a target: an attacker-blind whiff roll, the normal hit
+// check (accuracy vs the target's dodge stat), an extra target-dodge avoidance
+// roll, then damage in [minDmg,maxDmg] with the skill×power×atk multiplier and the
+// target's defense (raised by defDown / lowered by defUp), then a crit whose
+// chance is amplified by the target's harmful-status stacks. Seeded RNG throughout.
 function rollDamage(s: WorldState, src: DamageSource, target: Entity): { amount: number; crit: boolean; miss: boolean } {
-  if (nextRand(s) > hitChance(src.accuracy, target.stats.dodge)) return { amount: 0, crit: false, miss: true };
+  if (avoidRoll(s, src.blindPercent ?? 0)) return { amount: 0, crit: false, miss: true }; // attacker blinded: whiff
+  const tStats = effectiveStats(target);
+  if (nextRand(s) > hitChance(src.accuracy, tStats.dodge)) return { amount: 0, crit: false, miss: true };
+  if (avoidRoll(s, totalDodgePercent(target))) return { amount: 0, crit: false, miss: true }; // extra dodge-status evade
   const rolled = src.minDmg + nextRand(s) * Math.max(0, src.maxDmg - src.minDmg);
-  let amount = rawDamage(rolled, src.mult * src.power, target.stats.def);
-  const crit = nextRand(s) < src.crit / 100;
+  const defMult = 1 + totalDefTakenPercent(target) / 100; // defDown raises damage taken; defUp lowers it
+  let amount = Math.max(1, Math.round(rawDamage(rolled, src.mult * src.power, tStats.def) * defMult));
+  const critChance = (src.crit / 100) * harmfulCritMultiplier(harmfulStackCount(target));
+  const crit = nextRand(s) < critChance;
   if (crit) amount = Math.round(amount * CRIT_MULT);
   return { amount, crit, miss: false };
 }
@@ -408,6 +437,24 @@ function autoSelectUsableSkill(s: WorldState): void {
   if (next >= 0) player.activeSkillIndex = next;
 }
 
+// Recipients of a skill's status(es): ally-targeting (buff/heal) statuses land on
+// the allies/self the skill's shape selects; enemy-targeting statuses land on the
+// enemies its footprint sweeps (engaging them, so a pure debuff/dot still bites).
+function statusRecipients(s: WorldState, g: CombatGroup, caster: Entity, skill: Skill, level: number): Entity[] {
+  if (targetsAllies(skill)) return skillTargets(caster, skill, membersOf(s, g).filter(isAlive), level);
+  const foes = enemiesInFootprint(s, caster, skill, level);
+  for (const f of foes) stick(s, caster.id, f.id); // engage foes the (possibly damage-less) skill reaches
+  return foes;
+}
+
+// Apply every StatusApplication on `skill` to the recipients its scope selects.
+function applySkillStatuses(s: WorldState, g: CombatGroup, caster: Entity, skill: Skill, level: number): void {
+  if (!skill.status) return;
+  const apps = Array.isArray(skill.status) ? skill.status : [skill.status];
+  const recipients = statusRecipients(s, g, caster, skill, level);
+  for (const app of apps) for (const r of recipients) applyStatus(s, r, app, caster, skill, level);
+}
+
 function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
   const rt = caster.skills[caster.activeSkillIndex];
   if (!rt || !canCast(rt)) return;
@@ -428,19 +475,19 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
     if (skill.kind === 'heal') {
       // Power heal (heal param x maxDmg) + a flat % of the target's max HP
       // (healPercentage param — e.g. Recover restores 50% of max HP).
-      const heal = Math.round(caster.stats.maxDmg * (skill.params.heal?.(rt.level) ?? 0)) + Math.round(t.stats.maxHp * (skill.params.healPercentage?.(rt.level) ?? 0));
+      const heal = Math.round(effectiveStats(caster).maxDmg * (skill.params.heal?.(rt.level) ?? 0)) + Math.round(t.stats.maxHp * (skill.params.healPercentage?.(rt.level) ?? 0));
       if (heal > 0) {
         t.hp = Math.min(t.stats.maxHp, t.hp + heal);
         s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: 'heal', amount: heal });
       }
     } else if (skill.params.dmg) {
-      // attack + damaging debuffs; pure buffs/debuffs/DoTs are inert until Phase 2.
       const r = resolveAttack(s, caster, t, mag);
       t.hp = Math.max(0, t.hp - r.amount);
       s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
       if (aoeAttack) stick(s, caster.id, t.id); // engage un-blocked foes the sweep caught
     }
   }
+  applySkillStatuses(s, g, caster, skill, rt.level); // buffs/debuffs/dots (incl. those with no direct damage)
   caster.skills = caster.skills.map((r, i) => (i === caster.activeSkillIndex ? afterCast(r, skill) : r));
   if (caster.id === s.playerId) autoSelectUsableSkill(s);
 }
@@ -471,7 +518,7 @@ function awardXp(s: WorldState, amount: number): void {
   }
 }
 
-function cleanupDead(s: WorldState): void {
+export function cleanupDead(s: WorldState): void {
   for (const g of Object.values(s.groups)) {
     g.memberIds = g.memberIds.filter((id) => s.entities[id] && isAlive(s.entities[id]));
     const factions = new Set(g.memberIds.map((id) => s.entities[id].faction));

@@ -32,9 +32,17 @@ export type Stats = {
   attackSpeed: number; // skill-trigger speed multiplier as a % (100 = normal); scales DEX
 };
 
-// ---------- Status effects (Phase 2 systems; type present now) ----------
-export type StatusKind = 'poison' | 'stun' | 'slow' | 'atkUp' | 'atkDown' | 'defDown';
-export type StatusEffect = { kind: StatusKind; potency: number; roundsLeft: number };
+// ---------- Status effects ----------
+export type StatusKind = 'poison' | 'bleed' | 'burn' | 'slow' | 'stun' | 'atkUp' | 'atkDown' | 'defUp' | 'defDown' | 'dodge' | 'blind' | 'statPercent' | 'statFlat';
+// An active status instance on an entity. `potency` is the RESOLVED magnitude
+// (computed at apply-time — no later dependency on the caster). `msLeft` ticks
+// down by dt; `sourceId` = `${casterId}:${skillId}` is the dedup/stack key;
+// `stat` is set only for statPercent/statFlat; `dotElapsedMs` accumulates dt
+// toward the next DoT tick (poison/bleed/burn only).
+export type StatusEffect = { kind: StatusKind; potency: number; msLeft: number; sourceId: string; stat?: PrimaryKey; dotElapsedMs?: number };
+// A status a skill applies on cast. `param` names the skill param that resolves
+// the magnitude (defaults to 'pct'); `stat` targets a primary (statPercent/statFlat).
+export type StatusApplication = { name: StatusKind; param?: ParamName; stat?: PrimaryKey };
 
 // ---------- Skills ----------
 export const MAX_SKILL_LEVEL = 5;
@@ -66,6 +74,7 @@ export type Skill = {
   uses?: number; // cooldown charges (distinct from the {uses}/{hits} display params)
   cooldownMs: number; // level-1 cooldown in ms, derived from params.cooldown; backs the Hud passive-tag read
   cooldownType: CooldownType;
+  status?: StatusApplication | StatusApplication[]; // status(es) applied to the skill's recipients on cast
 };
 export type SkillRuntime = {
   skillId: SkillId;
@@ -119,7 +128,8 @@ export type Entity = {
   approachTimerMs?: number; // enemy-only: accumulates toward one greedy approach step while out of range (engine/combat.ts); lazily initialized
   attrPoints: number; // unspent attribute points (heroes; +3/level)
   skillPoints: number; // unspent skill points (heroes; +1/level)
-  statuses: StatusEffect[]; // active DoTs/buffs/debuffs (empty in skeleton)
+  statuses: StatusEffect[]; // active DoTs/buffs/debuffs (engine/status.ts)
+  stunImmuneMs?: number; // remaining post-stun immunity window (engine/status.ts); lazily set
   attacksPerRound: number; // 1 normally; rogues stack 2–3 (Phase 2)
   elite?: boolean;
   home?: Cell; // spawn cell; roaming enemies have a small bias to drift back toward it

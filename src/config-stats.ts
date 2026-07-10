@@ -1,6 +1,6 @@
 // Character stat cluster: leveling grants/caps, primary-stat allocation,
 // class-combat tables, derived-stat formulas, and damage/accuracy math.
-import type { CombatClass, Primaries, Stats } from './types';
+import type { CombatClass, Entity, Primaries, PrimaryKey, Stats, StatusEffect, StatusKind } from './types';
 import { DEBUG } from './config';
 
 export const START_SKILL_LEVEL = DEBUG ? 2 : 1;
@@ -117,4 +117,104 @@ export function hitChance(accuracy: number, dodge: number): number {
 // Final damage from a rolled base value, the skill multiplier, and target defense.
 export function rawDamage(rolled: number, mult: number, def: number): number {
   return Math.max(1, Math.round(rolled * mult - def));
+}
+
+// ---------- Status effects ----------
+// Per-kind rules: total lifetime, DoT tick cadence (poison/bleed/burn only),
+// whether it counts as harmful (drives the attacker crit bonus), and how many
+// copies from the SAME source stack (bleed 5, everything else 1).
+export const STATUS: Record<StatusKind, { durationMs: number; tickMs?: number; harmful: boolean; maxStacksPerSource: number }> = {
+  poison: { durationMs: 10000, tickMs: 1000, harmful: true, maxStacksPerSource: 1 },
+  bleed: { durationMs: 10000, tickMs: 1000, harmful: true, maxStacksPerSource: 5 },
+  burn: { durationMs: 5000, tickMs: 500, harmful: true, maxStacksPerSource: 1 },
+  slow: { durationMs: 5000, harmful: true, maxStacksPerSource: 1 },
+  stun: { durationMs: 2000, harmful: true, maxStacksPerSource: 1 },
+  atkUp: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
+  atkDown: { durationMs: 10000, harmful: true, maxStacksPerSource: 1 },
+  defUp: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
+  defDown: { durationMs: 10000, harmful: true, maxStacksPerSource: 1 },
+  dodge: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
+  blind: { durationMs: 10000, harmful: true, maxStacksPerSource: 1 },
+  statPercent: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
+  statFlat: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
+};
+export const STUN_IMMUNITY_MS = 5000; // post-stun immunity window (blocks re-stun)
+export const HARMFUL_CRIT_STEP = 1.1; // attacker crit ×1.1 per harmful status STACK on the target
+
+// Poison deals a % of the target's max HP per 1s tick.
+export function poisonTickDamage(percentPerSecond: number, targetMaxHp: number): number {
+  return Math.round((targetMaxHp * percentPerSecond) / 100);
+}
+// Attacker crit multiplier vs a target carrying `stackCount` harmful statuses.
+export function harmfulCritMultiplier(stackCount: number): number {
+  return HARMFUL_CRIT_STEP ** stackCount;
+}
+
+// statPercent/statFlat count as harmful when their potency is a net penalty.
+export function statusIsHarmful(st: StatusEffect): boolean {
+  if (st.kind === 'statPercent' || st.kind === 'statFlat') return st.potency < 0;
+  return STATUS[st.kind].harmful;
+}
+
+// ---------- Status sums over an entity's active statuses ----------
+function sumPotency(statuses: StatusEffect[], kind: StatusKind): number {
+  return statuses.reduce((acc, st) => (st.kind === kind ? acc + st.potency : acc), 0);
+}
+export function totalSlowPercent(e: Entity): number {
+  return sumPotency(e.statuses, 'slow');
+}
+// Net outgoing-damage modifier %: ΣatkUp − ΣatkDown.
+export function totalAtkPercent(e: Entity): number {
+  return sumPotency(e.statuses, 'atkUp') - sumPotency(e.statuses, 'atkDown');
+}
+// Net incoming-damage modifier %: ΣdefDown − ΣdefUp (defDown raises damage taken).
+export function totalDefTakenPercent(e: Entity): number {
+  return sumPotency(e.statuses, 'defDown') - sumPotency(e.statuses, 'defUp');
+}
+export function totalDodgePercent(e: Entity): number {
+  return sumPotency(e.statuses, 'dodge');
+}
+export function totalBlindPercent(e: Entity): number {
+  return sumPotency(e.statuses, 'blind');
+}
+// Count each harmful STACK (so bleed×3 counts as 3).
+export function harmfulStackCount(e: Entity): number {
+  return e.statuses.reduce((acc, st) => (statusIsHarmful(st) ? acc + 1 : acc), 0);
+}
+export function hasActiveStun(e: Entity): boolean {
+  return e.statuses.some((st) => st.kind === 'stun');
+}
+
+// ---------- Effective (buffed) primaries + derived stats ----------
+// Base primaries adjusted by active statFlat (+potency) and statPercent
+// (×(1+Σpercent/100)) per stat. Order: flat first, then percent.
+export function effectivePrimaries(e: Entity): Primaries {
+  const out: Primaries = { ...e.primaries };
+  let touched = false;
+  for (const st of e.statuses) {
+    if (!st.stat) continue;
+    if (st.kind === 'statFlat') {
+      out[st.stat] += st.potency;
+      touched = true;
+    }
+  }
+  const percentByStat = { str: 0, dex: 0, int: 0, vit: 0 } as Record<PrimaryKey, number>;
+  for (const st of e.statuses) {
+    if (st.kind === 'statPercent' && st.stat) {
+      percentByStat[st.stat] += st.potency;
+      touched = true;
+    }
+  }
+  if (!touched) return out;
+  (Object.keys(percentByStat) as PrimaryKey[]).forEach((k) => {
+    if (percentByStat[k]) out[k] = Math.max(0, Math.round(out[k] * (1 + percentByStat[k] / 100)));
+  });
+  return out;
+}
+// The stats combat reads: re-derived from effective primaries when the entity
+// carries any stat buff/debuff, else the pre-derived `e.stats` (no extra work).
+export function effectiveStats(e: Entity): Stats {
+  const hasStatMod = e.statuses.some((st) => st.kind === 'statPercent' || st.kind === 'statFlat');
+  if (!hasStatMod) return e.stats;
+  return deriveStats(effectivePrimaries(e), e.level, e.combatClass);
 }
