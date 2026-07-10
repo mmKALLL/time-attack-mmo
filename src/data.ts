@@ -22,8 +22,8 @@ export const JOBS: Record<string, JobNode> = {
   wizard: { id: 'wizard', name: 'Wizard', requires: ['magician'], growth: 1.12, role: 'DPS', accent: '#e08a3a' },
   druid: { id: 'druid', name: 'Druid', requires: ['magician'], growth: 1.12, role: 'Healer', accent: '#8fbf6f' },
   assassin: { id: 'assassin', name: 'Assassin', requires: ['rogue'], growth: 1.12, role: 'DPS', accent: '#8f7ad6' },
-  shadower: { id: 'shadower', name: 'Shadower', requires: ['rogue'], growth: 1.12, role: 'Bruiser', accent: '#6a5aa0' },
-  ninja: { id: 'ninja', name: 'Ninja', requires: ['rogue'], growth: 1.12, role: 'Control', accent: '#5aa0c0' },
+  shadower: { id: 'shadower', name: 'Shadowblade', requires: ['rogue'], growth: 1.12, role: 'Bruiser', accent: '#6a5aa0' },
+  ninja: { id: 'ninja', name: 'Reaver', requires: ['rogue'], growth: 1.12, role: 'Control', accent: '#5aa0c0' },
   // Fusions: kit = both parents' skills (6). Specialized skills come later.
   flameRanger: { id: 'flameRanger', name: 'Flame Ranger', requires: ['wizard', 'ranger'], growth: 1.25, role: 'DPS', accent: '#e08a3a' },
   nimbleKnight: { id: 'nimbleKnight', name: 'Nimble Knight', requires: ['knight', 'shadower'], growth: 1.25, role: 'Tank', accent: '#43c7c0' },
