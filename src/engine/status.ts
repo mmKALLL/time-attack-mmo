@@ -1,5 +1,5 @@
 import type { Entity, Skill, StatusApplication, WorldState } from '../types';
-import { STATUS, STUN_IMMUNITY_MS, effectiveStats, poisonTickDamage } from '../config-stats';
+import { STATUS, STUN_IMMUNITY_MS, effectiveStats, poisonTickDamage, statusResistPercent } from '../config-stats';
 import { cleanupDead } from './combat';
 import { isAlive } from './entities';
 
@@ -25,12 +25,23 @@ export function applyStatus(_s: WorldState, target: Entity, application: StatusA
     potency = paramValue;
   }
 
+  // Status-resist: harmful effects still land, but the target's resist % scales
+  // their magnitude down (stun has no potency, so its DURATION shrinks instead).
+  // statPercent/statFlat only count as harmful when their potency is a net penalty.
+  const harmful = STATUS[kind].harmful || ((kind === 'statPercent' || kind === 'statFlat') && potency < 0);
+  const resist = statusResistPercent(target); // already clamped [0,95]
+  let msLeft = STATUS[kind].durationMs;
+  if (harmful && resist > 0) {
+    if (kind === 'stun') msLeft = Math.round(STATUS[kind].durationMs * (1 - resist / 100));
+    else potency *= 1 - resist / 100;
+  }
+
   const sourceId = `${caster.id}:${skill.id}`;
   const cap = STATUS[kind].maxStacksPerSource;
   const sameSource = target.statuses.filter((st) => st.kind === kind && st.sourceId === sourceId);
 
   if (sameSource.length < cap) {
-    target.statuses.push({ kind, potency, msLeft: STATUS[kind].durationMs, sourceId, stat: application.stat, dotElapsedMs: 0 });
+    target.statuses.push({ kind, potency, msLeft, sourceId, stat: application.stat, dotElapsedMs: 0 });
     return;
   }
   // At cap. Single-stack kinds hold the existing instance (re-applies after it
@@ -38,7 +49,7 @@ export function applyStatus(_s: WorldState, target: Entity, application: StatusA
   if (cap > 1) {
     let smallest = sameSource[0];
     for (const st of sameSource) if (st.msLeft < smallest.msLeft) smallest = st;
-    smallest.msLeft = STATUS[kind].durationMs;
+    smallest.msLeft = msLeft;
     smallest.potency = potency;
     smallest.dotElapsedMs = 0;
   }

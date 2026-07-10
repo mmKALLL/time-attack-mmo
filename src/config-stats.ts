@@ -53,6 +53,19 @@ export const CLASS_COMBAT: Record<CombatClass, { phys: number; minDamageRatio: n
 // Enemy class -> combat class (enemies use 'mage'; players use 'magician').
 export const ENEMY_CLASS_COMBAT: Record<string, CombatClass> = { fighter: 'fighter', archer: 'archer', mage: 'magician', rogue: 'rogue', leader: 'leader' };
 
+// % that harmful-status effect params are reduced by, per enemy combat class
+// (warriors=fighter). Leaders shrug off most debuffs; archers/mages take them
+// in full. See statusResistPercent (clamped [0,95]; never fully immune).
+export const CLASS_STATUS_RESIST: Record<CombatClass, number> = { fighter: 25, rogue: 25, leader: 75, archer: 0, magician: 0, beginner: 0 };
+
+// A target's harmful-status resist %, clamped to [0,95] (negative statuses always
+// apply — resist only scales their effect down). Enemies use the per-class table;
+// heroes use the derived statusResist stat so it stays meaningful for players.
+export function statusResistPercent(e: Entity): number {
+  const raw = e.faction === 'enemy' ? (CLASS_STATUS_RESIST[e.combatClass] ?? 0) : effectiveStats(e).statusResist;
+  return Math.max(0, Math.min(95, raw));
+}
+
 // Early enemies (level <= maxLevel) take a flat stat penalty so a fresh, under-
 // leveled player isn't overwhelmed. Applied to enemy derived stats only.
 export const ENEMY_STAT_PENALTY = { maxLevel: 9, factor: 0.7 };
