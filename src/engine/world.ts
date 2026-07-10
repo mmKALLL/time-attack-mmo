@@ -1,5 +1,5 @@
 import type { Input, WorldState } from '../types';
-import { moveOrStick, advanceCombat, advanceArming, advanceTelegraphs, groupOf, castInterval } from './combat';
+import { moveOrStick, advanceCombat, advanceArming, advanceKnockback, advanceTelegraphs, groupOf, castInterval } from './combat';
 import { advanceStatuses } from './status';
 import { exitAt, travelTo, advanceRespawns } from './maps';
 import { advanceRoaming } from './roaming';
@@ -80,6 +80,10 @@ export function tick(state: WorldState, inputs: Input[], dt: number): WorldState
   // covers, engaging them. AFTER advanceCombat so an engage this frame is combat's
   // to drive next frame; BEFORE telegraphs so a stick lands before AoEs resolve.
   advanceArming(s, dt);
+  // Slide any knocked-back foes AFTER their hit is applied (advanceCombat/advanceArming
+  // set the shove) and BEFORE telegraphs resolve, so a foe pushed off a marked tile
+  // this tick dodges the AoE — same window a hero's own move gets.
+  advanceKnockback(s, dt);
   // Resolve telegraphed AoEs AFTER input+combat: a hero's move this tick (applied
   // at the top) is already reflected, so stepping off a marked tile dodges the hit.
   // A telegraph planted this same tick won't resolve yet (its full lead time remains).

@@ -76,6 +76,7 @@ export type Skill = {
   cooldownType: CooldownType;
   status?: StatusApplication | StatusApplication[]; // status(es) applied to the skill's recipients on cast
   pierce?: boolean; // line/arc attacks hit every enemy on the footprint by default; pierce:false hits only the nearest one (stops at the first enemy)
+  knockback?: number; // tiles a landed hit shoves the foe backward, away from the caster (engine/combat.ts applyKnockback/advanceKnockback)
 };
 export type SkillRuntime = {
   skillId: SkillId;
@@ -138,6 +139,11 @@ export type Entity = {
   // enemies alternate wait/move phases: `timerMs` counts down the current phase,
   // `dir`/`tilesLeft` describe the in-progress move sequence. Lazily initialized.
   roam?: { phase: 'wait' | 'move'; timerMs: number; dir: Direction; tilesLeft: number };
+  // In-progress knockback slide (engine-owned; engine/combat.ts). A landed
+  // knockback hit sets it; advanceKnockback shoves the foe one tile per
+  // KNOCKBACK_STEP_MS in `dir` (away from the caster) until `tilesLeft` hits 0 or
+  // it collides. `timerMs` accumulates dt toward the next step. Lazily set.
+  knockback?: { dir: Direction; tilesLeft: number; timerMs: number };
 };
 
 // ---------- Combat groups (sticky blocks) ----------

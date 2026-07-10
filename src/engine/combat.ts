@@ -1,12 +1,12 @@
 import type { Cell, CombatGroup, Direction, Entity, EntityId, Offset, ShapeKind, Skill, SkillRuntime, Telegraph, WorldState } from '../types';
-import { DIRECTIONS, isWall, equals, key } from './grid';
+import { DIRECTIONS, isWall, inBounds, equals, key, step } from './grid';
 import { combatClassForJob } from '../data';
 import { getSkill } from '../data-skills';
 import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude, targetsAllies } from './skills';
 import { shapeFor } from './shapes';
 import { ATTR_POINTS_PER_LEVEL, CLASS_COMBAT, CRIT_MULT, SKILL_POINTS_PER_LEVEL, deriveStats, hitChance, rawDamage, effectiveStats, totalSlowPercent, totalAtkPercent, totalDefTakenPercent, totalDodgePercent, totalBlindPercent, harmfulCritMultiplier, harmfulStackCount, hasActiveStun } from '../config-stats';
-import { xpReward, xpToNext, COMBAT_TICK_MS, ENEMY_ATTACK_RANGE, ENEMY_APPROACH_MS } from '../config';
+import { xpReward, xpToNext, COMBAT_TICK_MS, ENEMY_ATTACK_RANGE, ENEMY_APPROACH_MS, KNOCKBACK_STEP_MS } from '../config';
 import { nextRand, chance } from './rng';
 import { applyStatus } from './status';
 
@@ -140,6 +140,18 @@ export function moveOrStick(s: WorldState, id: EntityId, dir: Direction): void {
 function dirFromDelta(dx: number, dy: number): Direction {
   if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 'right' : 'left';
   return dy >= 0 ? 'down' : 'up';
+}
+
+// Arm a knockback slide on `target`: it will be shoved `tiles` cells backward,
+// away from `caster` (see advanceKnockback). Direction is the cardinal axis of
+// the caster->target delta; when they share a cell, fall back to the caster's
+// facing so the shove still points sensibly forward. Block membership is left
+// alone — the foe stays engaged while it slides ("B" behavior).
+function applyKnockback(_s: WorldState, caster: Entity, target: Entity, tiles: number): void {
+  const dx = target.cell.x - caster.cell.x;
+  const dy = target.cell.y - caster.cell.y;
+  const dir = dx === 0 && dy === 0 ? caster.facing : dirFromDelta(dx, dy);
+  target.knockback = { dir, tilesLeft: tiles, timerMs: 0 };
 }
 
 // AI combatants (allies + enemies) face their nearest foe so directional attacks
@@ -281,6 +293,7 @@ export function advanceArming(s: WorldState, dt: number): void {
       const r = resolveAttack(s, player, foe, mag);
       foe.hp = Math.max(0, foe.hp - r.amount);
       s.hits.push({ cell: { ...foe.cell }, from: { ...player.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
+      if (!r.miss && skill.knockback && isAlive(foe)) applyKnockback(s, player, foe, skill.knockback); // landed knockback: shove the foe back
     }
     if (skill.status) for (const app of Array.isArray(skill.status) ? skill.status : [skill.status]) applyStatus(s, foe, app, player, skill, rt.level);
     stick(s, player.id, foe.id); // engage: combat auto-cast takes over next frame
@@ -380,6 +393,32 @@ export function advanceTelegraphs(s: WorldState, dt: number): void {
     }
   }
   s.telegraphs = survivors;
+}
+
+// Advance every living entity's in-progress knockback slide. Called from tick()
+// right after advanceArming (before telegraphs). Each entity slides one tile per
+// KNOCKBACK_STEP_MS in its `dir`, stopping (and clearing state) when it would
+// enter a wall / off-map cell or a cell another entity occupies (the "hits
+// another foe" case) — or once it has travelled its full knockback distance. A
+// dt larger than the step interval resolves multiple tiles in one call, but the
+// stop conditions are checked before each step. Block membership is untouched.
+export function advanceKnockback(s: WorldState, dt: number): void {
+  for (const e of Object.values(s.entities)) {
+    const kb = e.knockback;
+    if (!kb || !isAlive(e)) continue;
+    kb.timerMs += dt;
+    while (kb.timerMs >= KNOCKBACK_STEP_MS && kb.tilesLeft > 0) {
+      const next = step(e.cell, kb.dir);
+      if (isWall(s.map, next) || !inBounds(s.map, next) || occupiedBy(s, next, e.id)) {
+        e.knockback = undefined; // slammed into a wall/edge or another entity: stop here
+        break;
+      }
+      e.cell = next;
+      kb.tilesLeft -= 1;
+      kb.timerMs -= KNOCKBACK_STEP_MS;
+    }
+    if (kb.tilesLeft <= 0) e.knockback = undefined; // travelled the full distance
+  }
 }
 
 // Accumulate an out-of-range enemy's approach clock; when it fills, take ONE
@@ -514,6 +553,7 @@ function castSkill(s: WorldState, g: CombatGroup, caster: Entity): void {
       t.hp = Math.max(0, t.hp - r.amount);
       s.hits.push({ cell: { ...t.cell }, from: { ...caster.cell }, kind: r.miss ? 'miss' : r.crit ? 'crit' : 'damage', amount: r.amount });
       if (aoeAttack) stick(s, caster.id, t.id); // engage un-blocked foes the sweep caught
+      if (!r.miss && skill.knockback && isAlive(t)) applyKnockback(s, caster, t, skill.knockback); // landed knockback: shove the foe back
     }
   }
   applySkillStatuses(s, g, caster, skill, rt.level); // buffs/debuffs/dots (incl. those with no direct damage)

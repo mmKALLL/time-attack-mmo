@@ -36,6 +36,7 @@ function sk(s: {
   cooldownType?: CooldownType;
   status?: StatusApplication | StatusApplication[]; // status(es) the skill applies on cast
   pierce?: boolean; // false = single-target (nearest enemy on the footprint); spread via ...rest onto the Skill
+  knockback?: number; // tiles a landed hit shoves the foe backward; spread via ...rest onto the Skill
 }): Skill {
   const { cooldown, cooldownMs, trigger, triggerMs, params = {}, ...rest } = s;
   // Precedence: the `cooldown` shorthand > an explicit params.cooldown > legacy cooldownMs.
@@ -91,7 +92,7 @@ export const SKILLS: Record<string, Skill[]> = {
   archer: [
     sk({ id: 'piercingShot', name: 'Piercing Shot', description: 'Pierce {tiles} tiles in a line for {dmg} damage.', kind: 'attack', target: 'line', element: 'air', shapeKind: 'line', params: { dmg: lin(0.8, 0.15), tiles: flat(5) }, mpCost: 10 }),
     sk({ id: 'scatterShot', name: 'Scatter Shot', description: 'Scatter arrows over {tiles} tiles for {dmg} damage.', kind: 'attack', target: 'arc', element: 'air', shapeKind: 'arc', params: { dmg: lin(1.2, 0.2), tiles: flat(3) }, mpCost: 16 }), // TODO: offset 2 tiles out
-    sk({ id: 'powerKnockback', name: 'Power Knockback', description: 'Blast one foe for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'ranged', element: 'air', shapeKind: 'point', params: { dmg: lin(1.4, 0.2) }, uses: 2, cooldown: lin(30, -1) }), // TODO: knockback (push foe up to 3 tiles)
+    sk({ id: 'powerKnockback', name: 'Power Knockback', description: 'Blast one foe for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'ranged', element: 'air', shapeKind: 'point', params: { dmg: lin(1.4, 0.2) }, uses: 2, cooldown: lin(30, -1), knockback: 3 }), // pushes the foe back 3 tiles
     sk({ id: 'improvedCritical', name: 'Improved Critical', description: 'Passive: +{crit} crit chance, +{critDmg} crit damage.', kind: 'buff', target: 'self (passive)', element: 'air', shapeKind: 'self', params: { crit: lin(5, 2), critDmg: lin(10, 4) } }), // TODO: passive crit boost (unwired)
   ],
   hunter: [
