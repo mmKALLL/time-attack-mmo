@@ -46,7 +46,7 @@ function removeItem(key: string): void {
 // Clone the world with transient combat fields emptied so saves don't carry a
 // frozen snapshot of hits/xp floats/pending AoEs.
 function stripTransient(world: WorldState): WorldState {
-  return { ...world, hits: [], xpGains: [], telegraphs: [] };
+  return { ...world, hits: [], xpGains: [], telegraphs: [], pendingNpc: undefined };
 }
 
 // Structural guard: the minimum shape loadSlotRaw/importJson require before

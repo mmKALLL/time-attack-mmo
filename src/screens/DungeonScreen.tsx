@@ -6,6 +6,7 @@ import { startGameLoop } from '../app/GameLoop';
 import { PixiStage } from '../render/PixiStage';
 import { Hud } from '../render/hud/Hud';
 import { DeathOverlay } from '../render/hud/DeathOverlay';
+import { NpcDialog } from '../render/hud/NpcDialog';
 
 const KEY_TO_DIR: Record<string, Direction> = {
   ArrowUp: 'up',
@@ -80,6 +81,7 @@ export function DungeonScreen() {
       <PixiStage />
       <Hud />
       <DeathOverlay />
+      <NpcDialog />
     </>
   );
 }

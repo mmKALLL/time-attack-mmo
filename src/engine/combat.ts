@@ -20,6 +20,10 @@ export function membersOf(s: WorldState, g: CombatGroup): Entity[] {
 export function enemyAt(s: WorldState, c: Cell): Entity | undefined {
   return Object.values(s.entities).find((e) => e.faction === 'enemy' && isAlive(e) && equals(e.cell, c));
 }
+// The town NPC (if any) occupying `c`. NPCs are solid + bump-to-talk (moveOrStick).
+export function npcAt(s: WorldState, c: Cell): Entity | undefined {
+  return Object.values(s.entities).find((e) => e.faction === 'npc' && equals(e.cell, c));
+}
 
 // Chebyshev distance (max axis): the range metric for enemy attacks — diagonals
 // count the same as orthogonals, so a 4-range mage hits a full 9x9 box.
@@ -64,7 +68,7 @@ export function nearestHero(s: WorldState, enemy: Entity): Entity | undefined {
   let best: Entity | undefined;
   let bestDist = Infinity;
   for (const m of membersOf(s, g)) {
-    if (m.faction === 'enemy' || !isAlive(m)) continue;
+    if ((m.faction !== 'player' && m.faction !== 'ally') || !isAlive(m)) continue; // heroes only (never an enemy/NPC)
     const dist = chebyshevDistance(enemy.cell, m.cell);
     if (dist < bestDist) {
       bestDist = dist;
@@ -105,6 +109,15 @@ export function moveOrStick(s: WorldState, id: EntityId, dir: Direction): void {
   if (!g) {
     const target: Cell = { x: e.cell.x + off.dx, y: e.cell.y + off.dy };
     if (isWall(s.map, target)) return;
+    // Bumping a town NPC opens its dialog (UI reads s.pendingNpc). NPCs are solid:
+    // face them and DON'T move onto them — only the player triggers a chat.
+    if (id === s.playerId) {
+      const npc = npcAt(s, target);
+      if (npc) {
+        s.pendingNpc = npc.id;
+        return;
+      }
+    }
     const foe = enemyAt(s, target);
     if (foe) return void stick(s, id, foe.id);
     e.cell = target; // players/allies may share a cell; move freely
@@ -642,7 +655,7 @@ function levelUp(e: Entity): void {
 function awardXp(s: WorldState, amount: number): void {
   s.xpGains.push(amount); // one entry per killed enemy, regardless of how many heroes share the XP
   for (const e of Object.values(s.entities)) {
-    if (e.faction !== 'enemy' && isAlive(e)) {
+    if ((e.faction === 'player' || e.faction === 'ally') && isAlive(e)) {
       e.xp += amount;
       levelUp(e);
     }

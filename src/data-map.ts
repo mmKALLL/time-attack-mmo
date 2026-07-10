@@ -32,7 +32,8 @@ const link = (a: string, dir: Compass, b: string) => {
 };
 
 // A safe town: town tileset, no spawns. Defaults come from MAP_CONFIG.town.
-function town(id: string, name: string, description: string): MapDef {
+// `npcCount` overrides the town default (townsfolk to spawn on entry).
+function town(id: string, name: string, description: string, npcCount = MAP_CONFIG.town.gen.npcCount): MapDef {
   const cfg = MAP_CONFIG.town;
   return {
     id,
@@ -40,7 +41,7 @@ function town(id: string, name: string, description: string): MapDef {
     biome: 'town',
     recommended: [1, 1],
     description,
-    gen: { width: cfg.width, height: cfg.height, tileset: 'town', roomCountMin: cfg.gen.roomCount, roomCountMax: cfg.gen.roomCount, roomShape: cfg.gen.roomShape, corridorWidth: cfg.gen.corridorWidth, roomMin: cfg.gen.roomMin, roomMax: cfg.gen.roomMax, torchDensity: cfg.gen.torchDensity, obstacleCount: cfg.gen.obstacleCount },
+    gen: { width: cfg.width, height: cfg.height, tileset: 'town', roomCountMin: cfg.gen.roomCount, roomCountMax: cfg.gen.roomCount, roomShape: cfg.gen.roomShape, corridorWidth: cfg.gen.corridorWidth, roomMin: cfg.gen.roomMin, roomMax: cfg.gen.roomMax, torchDensity: cfg.gen.torchDensity, obstacleCount: cfg.gen.obstacleCount, npcCount },
     connections: [],
     spawns: [{ pool: [], ...cfg.spawns }],
   };
@@ -55,7 +56,7 @@ function field(id: string, name: string, biome: Biome, lo: number, hi: number, r
     name: name || biomeName(biome),
     biome,
     recommended: [lo, hi],
-    gen: { width, height, tileset: biome, roomCountMin: rooms, roomCountMax: rooms + 1, roomShape: cfg.gen.roomShape, corridorWidth: cfg.gen.corridorWidth, roomMin: cfg.gen.roomMin, roomMax: cfg.gen.roomMax, torchDensity: cfg.gen.torchDensity, obstacleCount: cfg.gen.obstacleCount },
+    gen: { width, height, tileset: biome, roomCountMin: rooms, roomCountMax: rooms + 1, roomShape: cfg.gen.roomShape, corridorWidth: cfg.gen.corridorWidth, roomMin: cfg.gen.roomMin, roomMax: cfg.gen.roomMax, torchDensity: cfg.gen.torchDensity, obstacleCount: cfg.gen.obstacleCount, npcCount: cfg.gen.npcCount },
     connections: [],
     spawns: [{ pool: poolFor(lo, hi), ...cfg.spawns }],
   };

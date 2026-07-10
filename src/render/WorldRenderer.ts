@@ -907,7 +907,7 @@ export class WorldRenderer {
       this.actors.addChild(sp);
     }
 
-    if (e.faction !== 'enemy') this.drawFacing(e, px, py); // enemies show no facing arrow
+    if (e.faction === 'player' || e.faction === 'ally') this.drawFacing(e, px, py); // enemies + static town NPCs show no facing arrow
     const inFight = Object.values(world.groups).some((g) => g.memberIds.includes(e.id));
     if (e.faction === 'enemy' && inFight) this.drawHpBar(px, py, e); // only engaged enemies show HP
     // Status badges ride the HP bar, so only for engaged enemies; hide otherwise.

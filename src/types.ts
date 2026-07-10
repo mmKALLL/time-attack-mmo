@@ -98,7 +98,7 @@ export type JobNode = {
 };
 
 // ---------- Entities ----------
-export type Faction = 'player' | 'ally' | 'enemy';
+export type Faction = 'player' | 'ally' | 'enemy' | 'npc';
 // Reference into an enemy spritesheet: a filename (within assets/) + one or more
 // "q<quadrant>-<index>" tiles (1 = single, 2 = stacked, 4 = 2x2), and which way
 // the art faces (right by default).
@@ -110,6 +110,7 @@ export type Entity = {
   name: string;
   sprite: string; // procedural (sprites.js) builder name for players
   asset?: EnemyAsset; // spritesheet art for asset-based enemies (overrides sprite)
+  dialogue?: string[]; // town NPCs only: the themed lines shown when talked to (see data-npc.ts)
   cell: Cell;
   facing: Direction;
   level: number;
@@ -191,6 +192,7 @@ export type GenParams = {
   roomMax: number;
   torchDensity: number; // torches per 100 wall tiles
   obstacleCount: number;
+  npcCount: number; // town-only: townsfolk NPCs to spawn on entry (0 elsewhere; capped to MAX_TOWN_NPCS)
 };
 
 // Per-biome map defaults. MapDef.gen/MapDef.spawns hold the fully-resolved
@@ -207,6 +209,7 @@ export type MapConfig = {
     corridorWidth: number;
     torchDensity: number; // torches per 100 wall tiles
     obstacleCount: number;
+    npcCount: number; // town-only: townsfolk NPCs to spawn on entry (0 for combat biomes)
   };
   spawns: {
     maxAmount: number;
@@ -275,6 +278,7 @@ export type WorldState = {
   hits: HitEvent[]; // combat text events from the latest tick
   xpGains: number[]; // per-kill XP awards from the latest tick (transient, reset each tick like `hits`)
   telegraphs: Telegraph[]; // pending dodgeable AoEs on the current map (map-local)
+  pendingNpc?: EntityId; // the NPC the player just bumped, for the UI to open its dialog. Transient: NOT reset each tick — persists until a closeNpc input clears it.
 };
 
 // ---------- Inputs ----------
@@ -285,4 +289,5 @@ export type Input =
   | { type: 'spendAttr'; key: PrimaryKey } // raise a primary from the attribute pool
   | { type: 'levelUpSkill'; index: number } // raise a skill from the skill pool
   | { type: 'travelToMap'; mapId: MapId } // quick-travel to a discovered town from the world map
-  | { type: 'respawn' }; // return to the starting town at full health
+  | { type: 'respawn' } // return to the starting town at full health
+  | { type: 'closeNpc' }; // dismiss the town-NPC dialog box (clears WorldState.pendingNpc)

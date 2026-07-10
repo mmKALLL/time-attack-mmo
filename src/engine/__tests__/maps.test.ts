@@ -6,7 +6,7 @@ import type { WorldState } from '../../types';
 
 const heroIds = (s: WorldState) =>
   Object.values(s.entities)
-    .filter((e) => e.faction !== 'enemy')
+    .filter((e) => e.faction === 'player' || e.faction === 'ally') // the hero party (excludes enemies AND town NPCs)
     .map((e) => e.id)
     .sort();
 const enemyCount = (s: WorldState) => Object.values(s.entities).filter((e) => e.faction === 'enemy').length;

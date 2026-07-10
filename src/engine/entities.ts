@@ -1,7 +1,8 @@
-import type { Cell, CombatClass, EnemyAsset, Entity, EntityId, Faction, JobId, Primaries, Skill, SkillRuntime } from '../types';
+import type { Cell, EnemyAsset, Entity, EntityId, CombatClass, Faction, JobId, Primaries, Skill, SkillRuntime } from '../types';
 import { JOBS, archetypeForJob, combatClassForJob } from '../data';
 import { ARCHETYPE_WEIGHTS, allocatePrimaries, deriveStats, scaleStats, START_SKILL_LEVEL } from '../config-stats';
 import { kitOf } from './jobs';
+import { NPC_ASSET_FILE } from '../data-npc';
 
 export function skillRuntime(skill: Skill): SkillRuntime {
   return { skillId: skill.id, level: START_SKILL_LEVEL, usesLeft: skill.uses ?? -1, cooldownLeftMs: 0 };
@@ -61,12 +62,36 @@ export function makeEntity(params: {
   };
 }
 
+// A non-combatant town NPC: neutral faction, spritesheet portrait from
+// town-npc.png, and the themed dialogue lines shown when talked to. Builds on
+// makeEntity with an unknown jobId ('npc') so archetype/class default to a
+// balanced beginner and kitOf resolves to an empty skill list (they never fight).
+// Level 1 with trivial derived stats; fully serializable.
+export function makeNpc(params: { id: EntityId; name: string; tile: string; cell: Cell; dialogue: string[] }): Entity {
+  const e = makeEntity({
+    id: params.id,
+    faction: 'npc',
+    name: params.name,
+    asset: { filename: NPC_ASSET_FILE, tiles: params.tile },
+    cell: params.cell,
+    level: 1,
+    jobId: 'npc', // unknown job => balanced archetype, beginner class, empty kit (no skills)
+    skills: [], // explicit: townsfolk carry no skills
+  });
+  e.dialogue = params.dialogue;
+  e.attrPoints = 0; // townsfolk don't level/allocate
+  e.skillPoints = 0;
+  return e;
+}
+
 export function isAlive(e: Entity): boolean {
   return e.hp > 0;
 }
 
 // Enemy faction is hostile to everyone non-enemy; players/allies are friendly.
+// NPCs are neutral to everyone (never fight, never targeted).
 export function areEnemies(a: Entity, b: Entity): boolean {
+  if (a.faction === 'npc' || b.faction === 'npc') return false;
   const hostile = (f: Faction) => f === 'enemy';
   return hostile(a.faction) !== hostile(b.faction);
 }

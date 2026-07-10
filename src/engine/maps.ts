@@ -3,11 +3,13 @@ import { MAPS } from '../data-map';
 import { ENEMIES, enemyPrimaries, CLASS_BIOME_SKILL } from '../data-enemy';
 import { getSkill } from '../data-skills';
 import { ENEMY_CLASS_COMBAT, enemyStatMult } from '../config-stats';
-import { makeEntity } from './entities';
+import { makeEntity, makeNpc } from './entities';
 import { DIRECTIONS, isWall, equals, key } from './grid';
 import { randInt, pick } from './rng';
 import { generateMap } from './map-generator';
 import { DEFAULT_SEED } from '../config';
+import { MAX_TOWN_NPCS, NPC_DIALOGUE, NPC_NAMES, NPC_THEMES, NPC_TILES } from '../data-npc';
+import type { NpcTheme } from '../data-npc';
 
 // Stable geometry seed per map id (derived from the fixed base seed) so a map
 // keeps the same layout across visits; only its enemies re-roll.
@@ -92,6 +94,43 @@ export function spawnEnemies(s: WorldState, amount: number): void {
   }
 }
 
+// Pick `count` DISTINCT themes at random via the seeded RNG (a partial
+// Fisher-Yates shuffle of NPC_THEMES). count >= NPC_THEMES.length returns all.
+function pickThemes(s: WorldState, count: number): NpcTheme[] {
+  const pool = [...NPC_THEMES];
+  for (let i = 0; i < count && i < pool.length; i++) {
+    const j = randInt(s, i, pool.length - 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(count, pool.length));
+}
+
+// Spawn the current town's non-combatant NPCs (one per distinct theme). Called
+// from travelTo only for town-biome maps. The count comes from the map's data
+// (gen.npcCount), clamped to [0, MAX_TOWN_NPCS] (warns + caps if configured higher).
+// Each NPC gets a random tile + name (seeded) at a portal-safe floor cell (reusing
+// the same off-portal placement as spawnEnemies) carrying its theme's dialogue.
+export function spawnNpcs(s: WorldState): void {
+  let count = MAPS[s.mapId]?.gen.npcCount ?? 0;
+  if (count > MAX_TOWN_NPCS) {
+    console.warn(`town ${s.mapId} configured ${count} NPCs; capping to ${MAX_TOWN_NPCS}`);
+    count = MAX_TOWN_NPCS;
+  }
+  count = Math.max(0, Math.min(MAX_TOWN_NPCS, count));
+  if (count <= 0) return;
+  const themes = pickThemes(s, count);
+  const occupied = new Set(Object.values(s.entities).map((e) => key(e.cell)));
+  const player = s.entities[s.playerId];
+  const avoid = player ? player.cell : { x: Math.floor(s.map.width / 2), y: Math.floor(s.map.height / 2) };
+  for (const theme of themes) {
+    const cell = randomFreeCell(s, occupied, avoid);
+    if (!cell) break;
+    occupied.add(key(cell));
+    const id = 'npc' + s.seq++;
+    s.entities[id] = makeNpc({ id, name: pick(s, NPC_NAMES), tile: pick(s, NPC_TILES), cell, dialogue: NPC_DIALOGUE[theme] });
+  }
+}
+
 // Enter `toMap`: generate its geometry, keep the party (carrying their state),
 // place them at the portal back to `fromMap` (or the map's entry), fill enemies.
 export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId, arrivalDir?: Direction): void {
@@ -106,6 +145,7 @@ export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId, arrivalDi
   s.groups = {};
   s.spawnClockMs = 0;
   s.telegraphs = []; // telegraphs are map-local: drop any pending AoEs on a map change
+  s.pendingNpc = undefined; // any open NPC dialog belongs to the map we're leaving
 
   let arrival = gen.entry;
   if (fromMap) {
@@ -119,7 +159,9 @@ export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId, arrivalDi
   }
   arrival = nearestFloor(s, arrival); // never land inside an obstacle/wall
 
-  const heroes = Object.values(s.entities).filter((e) => e.faction !== 'enemy');
+  // Carry only the hero party across maps; enemies AND town NPCs are map-local
+  // (re-spawned per map), so they must not follow the party through a portal.
+  const heroes = Object.values(s.entities).filter((e) => e.faction === 'player' || e.faction === 'ally');
   const occupied = new Set<string>();
   const player = heroes.find((h) => h.id === s.playerId);
   const ordered = player ? [player, ...heroes.filter((h) => h.id !== s.playerId)] : heroes;
@@ -142,6 +184,7 @@ export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId, arrivalDi
   if (def.biome === 'town') for (const h of heroes) h.mp = h.stats.maxMp; // MP fully heals on town entry (walk-in, fast-travel, or respawn); not otherwise
 
   spawnEnemies(s, def.spawns[0]?.maxAmount ?? 0);
+  if (def.biome === 'town') spawnNpcs(s); // townsfolk NPCs (data-driven count)
 }
 
 // Respawn wave: every spawnInterval seconds, top up by spawnAmount (up to the cap).

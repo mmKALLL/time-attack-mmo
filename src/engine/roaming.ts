@@ -63,15 +63,16 @@ function stepOnce(s: WorldState, e: Entity, roam: RoamState): StepResult {
 
   const occupant = occupiedBy(s, target, e.id);
   if (occupant) {
-    // Bumping a hero starts combat, anchored on the player, exactly like the
-    // player's own moveOrStick does when it walks into an enemy. The enemy is
-    // then in a group and stops roaming. We never step onto the hero's cell.
-    if (occupant.faction !== 'enemy') {
+    // Bumping a hero (player/ally) starts combat, anchored on the player, exactly
+    // like the player's own moveOrStick does when it walks into an enemy. The enemy
+    // is then in a group and stops roaming. We never step onto the hero's cell.
+    if (occupant.faction === 'player' || occupant.faction === 'ally') {
       e.facing = roam.dir;
       stick(s, s.playerId, e.id);
       return 'grouped';
     }
-    // Another enemy blocks the path — end the sequence (never stack enemies).
+    // Another enemy — or a neutral town NPC — blocks the path: end the sequence
+    // (never stack onto them; NPCs are non-combatants and never engage).
     return 'rest';
   }
 
