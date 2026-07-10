@@ -1,6 +1,7 @@
 import type { Cell, Direction, MapExit, MapId, WorldState } from '../types';
 import { MAPS } from '../data-map';
-import { ENEMIES, enemyPrimaries } from '../data-enemy';
+import { ENEMIES, enemyPrimaries, CLASS_BIOME_SKILL } from '../data-enemy';
+import { getSkill } from '../data-skills';
 import { ENEMY_CLASS_COMBAT, enemyStatMult } from '../config-stats';
 import { makeEntity } from './entities';
 import { DIRECTIONS, isWall, equals, key } from './grid';
@@ -63,11 +64,15 @@ export function spawnEnemies(s: WorldState, amount: number): void {
   const occupied = new Set(Object.values(s.entities).map((e) => key(e.cell)));
   const player = s.entities[s.playerId];
   const avoid = player ? player.cell : { x: Math.floor(s.map.width / 2), y: Math.floor(s.map.height / 2) };
+  const biome = MAPS[s.mapId]?.biome;
   for (let n = 0; n < room; n++) {
     const cell = randomFreeCell(s, occupied, avoid);
     if (!cell) break;
     occupied.add(key(cell));
     const def = ENEMIES[pick(s, rule.pool)];
+    // Prefer the biome-themed skill for this class; fall back to the def's generic skill.
+    const biomeSkillId = biome ? CLASS_BIOME_SKILL[biome]?.[def.cls] : undefined;
+    const skills = biomeSkillId ? [getSkill(biomeSkillId)] : def.skills;
     const id = 'e' + s.seq++;
     s.entities[id] = makeEntity({
       id,
@@ -81,7 +86,7 @@ export function spawnEnemies(s: WorldState, amount: number): void {
       combatClass: ENEMY_CLASS_COMBAT[def.cls],
       statMult: enemyStatMult(def.level),
       growth: def.growth,
-      skills: def.skills,
+      skills,
       elite: def.elite,
     });
   }

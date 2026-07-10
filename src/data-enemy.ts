@@ -1,4 +1,4 @@
-import type { EnemyAsset, Primaries, Skill } from './types';
+import type { Biome, EnemyAsset, Primaries, Skill } from './types';
 import { getSkill } from './data-skills';
 import { ARCHETYPE_WEIGHTS, ENEMY_CLASS_ARCHETYPE, allocatePrimaries } from './config-stats';
 
@@ -18,6 +18,12 @@ export type EnemyDef = { id: string; name: string; asset: EnemyAsset; cls: Enemy
 
 const CLASS_OFFSET: Record<EnemyClass, number> = { fighter: 0, archer: 1, rogue: 2, mage: 4, leader: 12 };
 const CLASS_SKILL: Record<EnemyClass, string> = { fighter: 'enemyStrike', archer: 'enemyShot', mage: 'enemyHex', rogue: 'enemyGouge', leader: 'enemyRuin' };
+// Per-biome skill overrides: enemies spawned in a combat biome pick the themed variant for their class (else fall back to CLASS_SKILL).
+export const CLASS_BIOME_SKILL: Partial<Record<Biome, Record<EnemyClass, string>>> = {
+  forest: { fighter: 'forestStrike', archer: 'forestShot', mage: 'forestHex', rogue: 'forestGouge', leader: 'forestRuin' },
+  lake: { fighter: 'lakeStrike', archer: 'lakeShot', mage: 'lakeHex', rogue: 'lakeGouge', leader: 'lakeRuin' },
+  deepForest: { fighter: 'deepStrike', archer: 'deepShot', mage: 'deepHex', rogue: 'deepGouge', leader: 'deepRuin' },
+};
 const CLASS_GROWTH: Record<EnemyClass, number> = { fighter: 1.0, archer: 0.95, rogue: 0.95, mage: 1.0, leader: 1.25 };
 const CLASS_TITLE: Record<EnemyClass, string> = { fighter: 'Fighter', archer: 'Archer', mage: 'Magician', rogue: 'Rogue', leader: 'Chief' };
 const CLASS_TILE: Record<Exclude<EnemyClass, 'leader'>, [number, number]> = { fighter: [1, 2], archer: [3, 4], mage: [5, 6], rogue: [7, 8] };

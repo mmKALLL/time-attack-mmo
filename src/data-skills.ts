@@ -135,8 +135,8 @@ export const SKILLS: Record<string, Skill[]> = {
   rogue: [
     sk({ id: 'doubleStrike', name: 'Double Strike', description: 'Stab one foe {hits} times for {dmg} damage each.', kind: 'attack', target: 'melee', element: 'dark', shapeKind: 'point', params: { dmg: lin(0.6, 0.04), hits: flat(2) }, mpCost: 6, trigger: 1 }), // TODO: multi-hit
     sk({ id: 'venomSlash', name: 'Venom Slash', description: 'Slash {tiles} tiles for {dmg} damage, {pct}% to poison (cooldown: {cooldown}).', kind: 'attack', target: 'adjacent-arc', element: 'dark', shapeKind: 'arc', params: { dmg: lin(1.0, 0.08), tiles: flat(3), pct: flat(75) }, mpCost: 10, trigger: 1, uses: 2, cooldown: lin(30, -1) }), // TODO: poison status (pct% chance)
-    sk({ id: 'hamstring', name: 'Hamstring', description: 'Cut {tiles} tiles for {dmg}, slowing {pct}% for {dur}s.', kind: 'attack', target: 'adjacent-arc', element: 'dark', shapeKind: 'arc', params: { dmg: lin(0.8, 0.1), tiles: flat(3), pct: lin(40, 2), dur: lin(4, 0.02) }, mpCost: 16 }), // TODO: non-piercing + slow status
-    sk({ id: 'lifeOrDeath', name: 'Life or Death', description: 'Deal and take +50% damage for {dur}s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'dark', shapeKind: 'self', params: { dur: lin(4, 0.04) }, cooldown: lin(20, -0.04), cooldownType: 'active' }), // TODO: +50% damage dealt AND received for the duration
+    sk({ id: 'hamstring', name: 'Hamstring', description: 'Cut {tiles} tiles for {dmg}, slowing {pct}% for {dur}s.', kind: 'attack', target: 'adjacent-arc', element: 'dark', shapeKind: 'arc', params: { dmg: lin(0.8, 0.1), tiles: flat(3), pct: lin(40, 2), dur: flat(5) }, mpCost: 16 }), // TODO: non-piercing + slow status
+    sk({ id: 'lifeOrDeath', name: 'Life and Death', description: 'Deal and take +50% damage for {dur}s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'dark', shapeKind: 'self', params: { dur: lin(4, 0.04) }, cooldown: lin(20, -0.5), cooldownType: 'active' }), // TODO: +50% damage dealt AND received for the duration
   ],
   assassin: [
     sk({ id: 'venom', name: 'Venom', description: 'Poison a foe for {pct}% max HP/round over {dur}s.', kind: 'dot', target: 'melee', element: 'dark', shapeKind: 'melee', params: { pct: lin(10, 2), dur: lin(3, 1) } }),
@@ -168,6 +168,32 @@ export const SKILLS: Record<string, Skill[]> = {
     sk({ id: 'enemyHex', name: 'Hex', description: 'Blast {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'arcane', shapeKind: 'area', params: { dmg: lin(1.4, 0.12), tiles: flat(6) }, uses: 1, triggerMs: 1750, telegraphMs: 4000 }),
     sk({ id: 'enemyGouge', name: 'Gouge', description: 'Gouge {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'dark', shapeKind: 'area', params: { dmg: lin(1.4, 0.12), tiles: flat(3) }, uses: 2, triggerMs: 1000, cooldownMs: 5000, telegraphMs: 3000 }),
     sk({ id: 'enemyRuin', name: 'Ruin', description: 'Devastate {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'earth', shapeKind: 'area', params: { dmg: lin(1.8, 0.2), tiles: flat(12) }, uses: 2, cooldownMs: 10000, telegraphMs: 5000 }),
+  ],
+
+  // --- Biome-themed enemy skills: same structure as enemyClass, re-themed element+name per biome ---
+  // forest → earth (roots/thorns/bramble/vines/grove)
+  enemyForest: [
+    sk({ id: 'forestStrike', name: 'Root Strike', description: 'Lash a foe with roots for {dmg} damage.', kind: 'attack', target: 'melee', element: 'earth', shapeKind: 'melee', params: { dmg: lin(1.0, 0.1) } }),
+    sk({ id: 'forestShot', name: 'Thorn Shot', description: 'Loose a thorn at a foe for {dmg}.', kind: 'attack', target: 'ranged', element: 'earth', shapeKind: 'point', params: { dmg: lin(0.9, 0.1) } }),
+    sk({ id: 'forestHex', name: 'Bramble Snare', description: 'Ensnare {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'earth', shapeKind: 'area', params: { dmg: lin(1.4, 0.12), tiles: flat(6) }, uses: 1, triggerMs: 1750, telegraphMs: 4000 }),
+    sk({ id: 'forestGouge', name: 'Vine Lash', description: 'Whip {tiles} tiles with vines for {dmg}.', kind: 'attack', target: 'area', element: 'earth', shapeKind: 'area', params: { dmg: lin(1.3, 0.12), tiles: flat(3) }, uses: 2, triggerMs: 1000, cooldownMs: 5000, telegraphMs: 3000 }),
+    sk({ id: 'forestRuin', name: 'Grovewrath', description: 'Erupt {tiles} tiles of grove for {dmg}.', kind: 'attack', target: 'area', element: 'earth', shapeKind: 'area', params: { dmg: lin(1.8, 0.2), tiles: flat(12) }, uses: 2, cooldownMs: 10000, telegraphMs: 5000 }),
+  ],
+  // lake → ice (frost/mist/tide/chill)
+  enemyLake: [
+    sk({ id: 'lakeStrike', name: 'Frost Strike', description: 'Strike a foe with frost for {dmg} damage.', kind: 'attack', target: 'melee', element: 'ice', shapeKind: 'melee', params: { dmg: lin(1.0, 0.1) } }),
+    sk({ id: 'lakeShot', name: 'Icicle Shot', description: 'Hurl an icicle at a foe for {dmg}.', kind: 'attack', target: 'ranged', element: 'ice', shapeKind: 'point', params: { dmg: lin(0.95, 0.1) } }),
+    sk({ id: 'lakeHex', name: 'Mist Veil', description: 'Chill {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'ice', shapeKind: 'area', params: { dmg: lin(1.4, 0.12), tiles: flat(6) }, uses: 1, triggerMs: 1750, telegraphMs: 4000 }),
+    sk({ id: 'lakeGouge', name: 'Chill Rend', description: 'Rend {tiles} tiles with frost for {dmg}.', kind: 'attack', target: 'area', element: 'ice', shapeKind: 'area', params: { dmg: lin(1.4, 0.12), tiles: flat(3) }, uses: 2, triggerMs: 1000, cooldownMs: 5000, telegraphMs: 3000 }),
+    sk({ id: 'lakeRuin', name: 'Deluge', description: 'Flood {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'ice', shapeKind: 'area', params: { dmg: lin(1.9, 0.2), tiles: flat(12) }, uses: 2, cooldownMs: 10000, telegraphMs: 5000 }),
+  ],
+  // deepForest → dark (shadow/gloom/dread/umbra)
+  enemyDeep: [
+    sk({ id: 'deepStrike', name: 'Shadow Strike', description: 'Strike a foe from shadow for {dmg} damage.', kind: 'attack', target: 'melee', element: 'dark', shapeKind: 'melee', params: { dmg: lin(1.05, 0.1) } }),
+    sk({ id: 'deepShot', name: 'Gloom Bolt', description: 'Loose a gloom bolt at a foe for {dmg}.', kind: 'attack', target: 'ranged', element: 'dark', shapeKind: 'point', params: { dmg: lin(0.9, 0.1) } }),
+    sk({ id: 'deepHex', name: 'Dread Hex', description: 'Curse {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'dark', shapeKind: 'area', params: { dmg: lin(1.5, 0.12), tiles: flat(6) }, uses: 1, triggerMs: 1750, telegraphMs: 4000 }),
+    sk({ id: 'deepGouge', name: 'Umbra Rend', description: 'Rend {tiles} tiles with shadow for {dmg}.', kind: 'attack', target: 'area', element: 'dark', shapeKind: 'area', params: { dmg: lin(1.4, 0.12), tiles: flat(3) }, uses: 2, triggerMs: 1000, cooldownMs: 5000, telegraphMs: 3000 }),
+    sk({ id: 'deepRuin', name: 'Witherstorm', description: 'Wither {tiles} tiles for {dmg}.', kind: 'attack', target: 'area', element: 'dark', shapeKind: 'area', params: { dmg: lin(1.9, 0.2), tiles: flat(12) }, uses: 2, cooldownMs: 10000, telegraphMs: 5000 }),
   ],
 };
 
