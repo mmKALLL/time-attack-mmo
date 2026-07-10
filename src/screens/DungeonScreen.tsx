@@ -58,6 +58,10 @@ export function DungeonScreen() {
       }
       if (e.key === 'm' || e.key === 'M') {
         useGame.getState().setScene('worldMap'); // open the world map (pauses the sim loop)
+        return;
+      }
+      if (e.key === 's' || e.key === 'S') {
+        useGame.getState().setScene('skills'); // open the skill allocation menu (pauses the sim loop)
       }
     };
     const onUp = (e: KeyboardEvent) => {
