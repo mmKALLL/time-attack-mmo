@@ -19,6 +19,20 @@ describe('shapeFor', () => {
   it('melee resolves to the single faced tile', () => {
     expect(shapeFor(getSkill('strike'), 1)).toEqual([{ dx: 1, dy: 0 }]);
   });
+  it('surround covers exactly the 8 ring tiles around the caster', () => {
+    const cells = shapeFor(getSkill('spinSlash'), 1);
+    expect(cells).toHaveLength(8);
+    expect(cells.some((c) => c.dx === 0 && c.dy === 0)).toBe(false); // never the caster's own tile
+    expect(cells.every((c) => Math.abs(c.dx) <= 1 && Math.abs(c.dy) <= 1)).toBe(true);
+  });
+  it('surround is fixed at 8 and does NOT scale with the {tiles} param', () => {
+    expect(shapeFor(getSkill('spinSlash'), 1)).toHaveLength(8);
+    expect(shapeFor(getSkill('spinSlash'), 20)).toHaveLength(8);
+    expect(shapeFor(getSkill('spinSlash'), 1)).toEqual(shapeFor(getSkill('spinSlash'), 20));
+  });
+  it('Spin Slash uses the surround shape', () => {
+    expect(getSkill('spinSlash').shapeKind).toBe('surround');
+  });
 });
 
 describe('facing rotation', () => {

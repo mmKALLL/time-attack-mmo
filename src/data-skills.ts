@@ -69,7 +69,7 @@ export const SKILLS: Record<string, Skill[]> = {
   fighter: [
     sk({ id: 'powerStrike', name: 'Power Strike', description: 'Strike one foe for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'earth', shapeKind: 'point', params: { dmg: lin(1.5, 0.25) }, uses: 3, cooldown: 15 }),
     sk({ id: 'cleave', name: 'Cleave', description: 'Sweep {tiles} tiles in front for {dmg} damage.', kind: 'attack', target: 'adjacent-arc', element: 'earth', shapeKind: 'arc', params: { dmg: lin(0.8, 0.12), tiles: flat(3) }, mpCost: 6 }),
-    sk({ id: 'spinSlash', name: 'Spin Slash', description: 'Whirl, hitting {tiles} surrounding tiles for {dmg} damage.', kind: 'attack', target: 'area', element: 'earth', shapeKind: 'area', params: { dmg: lin(1.1, 0.15), tiles: flat(8) }, mpCost: 14 }), // TODO: 8-adjacent (surround) shape
+    sk({ id: 'spinSlash', name: 'Spin Slash', description: 'Whirl, hitting {tiles} surrounding tiles for {dmg} damage.', kind: 'attack', target: 'area', element: 'earth', shapeKind: 'surround', params: { dmg: lin(1.1, 0.15), tiles: flat(8) }, mpCost: 14 }),
     sk({ id: 'bracingGuard', name: 'Bracing Guard', description: 'Brace, cutting damage taken {pct}% for 10s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'earth', shapeKind: 'self', params: { pct: lin(40, 4) }, cooldown: lin(20, -1), cooldownType: 'active', status: { name: 'defUp' } }),
   ],
   knight: [

@@ -25,6 +25,7 @@ const DEFAULT_TILES: Record<ShapeKind, number> = {
   area: 6,
   cross: 5,
   party: 9,
+  surround: 8,
 };
 
 function line(n: number): Offset[] {
@@ -73,6 +74,12 @@ function party(): Offset[] {
   ];
 }
 
+// The 8 tiles ringing the caster (the party() footprint minus its own centre).
+// FIXED at the 8-ring — does not scale with {tiles}; rotation-symmetric.
+function surround(): Offset[] {
+  return party().filter((o) => o.dx !== 0 || o.dy !== 0);
+}
+
 // The footprint a skill hits at a given level, rotated to the caster's facing.
 // AoE footprints grow with the skill's {tiles} param (design §"shapes scale").
 export function shapeFor(skill: Skill, level: number, facing: Direction = 'right'): Offset[] {
@@ -87,6 +94,8 @@ function baseShape(shapeKind: ShapeKind, tiles: number): Offset[] {
       return [{ dx: 0, dy: 0 }];
     case 'party':
       return party();
+    case 'surround':
+      return surround();
     case 'melee':
     case 'point':
       return [{ dx: 1, dy: 0 }]; // the single tile the caster faces
