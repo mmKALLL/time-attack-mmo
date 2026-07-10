@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../state/store';
 import { JOBS } from '../data';
+import { PLAYER_TILE_SRC, keyedSheet, playerTile } from '../render/player-art';
 import './mainmenu.css';
 
 const W = 1920;
@@ -93,16 +94,26 @@ function useFitScale(): number {
   return scale;
 }
 
-// Portrait for the last-played panel: a static wizard bust on a dark tile.
-function HeroPortrait() {
+// Portrait for the last-played panel: the character's actual class sprite.
+function HeroPortrait({ jobId }: { jobId: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const ctx = ref.current?.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, 96, 96);
-    ctx.imageSmoothingEnabled = false;
-    drawWizard(ctx, 0, 0, 3, 0);
-  }, []);
+    const tile = playerTile(jobId);
+    const canvas = ref.current;
+    if (!tile || !canvas) return;
+    let cancelled = false;
+    void keyedSheet(tile.filename).then((sheet) => {
+      if (cancelled || !sheet) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.clearRect(0, 0, 96, 96);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(sheet, tile.sx, tile.sy, PLAYER_TILE_SRC, PLAYER_TILE_SRC, 0, 0, 96, 96);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [jobId]);
   return <canvas ref={ref} width={96} height={96} />;
 }
 
@@ -251,6 +262,7 @@ export function MainMenuScreen() {
       ctx.restore();
       ctx.globalAlpha = 1;
       // moon reflection column
+      const moonX = 566; // nudged right to sit under the title's M
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       const rg = ctx.createLinearGradient(0, HORIZON, 0, H);
@@ -259,31 +271,33 @@ export function MainMenuScreen() {
       ctx.fillStyle = rg;
       for (let y = HORIZON; y < H; y += 4) {
         const w = 40 + (y - HORIZON) * 0.5 + Math.sin(t / 500 + y) * 6;
-        ctx.fillRect(560 - w / 2, y, w, 2);
+        ctx.fillRect(moonX - w / 2, y, w, 2);
       }
       ctx.restore();
 
       // ---- moon ----
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      const mg = ctx.createRadialGradient(560, 180, 4, 560, 180, 90);
+      const mg = ctx.createRadialGradient(moonX, 180, 4, moonX, 180, 90);
       mg.addColorStop(0, 'rgba(220,232,240,0.5)');
       mg.addColorStop(1, 'rgba(220,232,240,0)');
       ctx.fillStyle = mg;
-      ctx.fillRect(430, 50, 260, 260);
+      ctx.fillRect(moonX - 130, 50, 260, 260);
       ctx.restore();
       ctx.fillStyle = '#e8eef2';
       ctx.beginPath();
-      ctx.arc(560, 180, 26, 0, 6.3);
+      ctx.arc(moonX, 180, 26, 0, 6.3);
       ctx.fill();
       ctx.fillStyle = '#c8d4dc';
       ctx.beginPath();
-      ctx.arc(552, 174, 5, 0, 6.3);
-      ctx.arc(568, 188, 4, 0, 6.3);
+      ctx.arc(moonX - 8, 174, 5, 0, 6.3);
+      ctx.arc(moonX + 8, 188, 4, 0, 6.3);
       ctx.fill();
 
-      // ---- dock + hero + campfire ----
+      // ---- dock + hero + campfire (shifted flush to the left screen edge) ----
       const dockY = 760;
+      ctx.save();
+      ctx.translate(-120, 0);
       ctx.fillStyle = '#3a2a1c';
       ctx.fillRect(120, dockY, 150, 10);
       for (let x = 120; x < 270; x += 22) {
@@ -315,12 +329,13 @@ export function MainMenuScreen() {
       ctx.fill();
       ctx.fillStyle = '#5a3a1c';
       ctx.fillRect(232, dockY - 3, 16, 4);
+      ctx.restore();
 
       // ---- drifting mist bands ----
       ctx.save();
       for (let i = 0; i < 4; i++) {
         const y = HORIZON - 30 + i * 70;
-        const off = (t * (0.006 + i * 0.004)) % (W + 400) - 200;
+        const off = ((t * (0.006 + i * 0.004)) % (W + 400)) - 200;
         ctx.globalAlpha = 0.05 + i * 0.015;
         ctx.fillStyle = '#aebccb';
         for (let k = 0; k < 3; k++) {
@@ -390,7 +405,7 @@ export function MainMenuScreen() {
           <div className="mm-tagline">
             A land of endless forests, frozen fells,
             <br />
-            and the old magic that still stirs beneath the snow.
+            and old magic that stirs beneath the snow.
           </div>
         </div>
 
@@ -412,7 +427,7 @@ export function MainMenuScreen() {
           <div className="mm-panel-label">LAST PLAYED</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 12 }}>
             <div className="mm-portrait">
-              <HeroPortrait />
+              <HeroPortrait jobId={player?.jobId ?? 'beginner'} />
             </div>
             <div style={{ flex: 1 }}>
               <div className="mm-hero-name">{heroName}</div>
