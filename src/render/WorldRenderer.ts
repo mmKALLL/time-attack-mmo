@@ -66,6 +66,7 @@ import {
   COLORS,
   COMBAT_TICK_MS,
   DAMAGE_FLOAT_MS,
+  DAMAGE_FLOAT_STACK_TILES,
   DESIGN_H,
   DESIGN_W,
   ENEMY_GLOW,
@@ -109,7 +110,7 @@ const OBS_SRC: Record<ObstacleSize, [number, number, number, number]> = {
   '3x3': [1, 1, 3, 3],
 };
 
-type Float = { text: Text; born: number; x: number; y: number; driftX: number };
+type Float = { text: Text; born: number; x: number; y: number; driftX: number; cx: number; cy: number }; // cx/cy = source cell, for per-character stacking
 // Per-entity movement tween: the sprite eases from `from` (old pixel top-left)
 // toward `to` (target = cell * CELL_PX) over MOVE_LERP_MS. `elapsed` accumulates
 // render delta time. `cell` is the last cell we saw so we can detect a step and
@@ -1004,7 +1005,6 @@ export class WorldRenderer {
   private spawnHitFloats(world: WorldState, elapsedMs: number) {
     if (world.tickCount === this.lastFloatTick) return;
     this.lastFloatTick = world.tickCount;
-    const em = 16 * UI;
     for (const h of world.hits) {
       const crit = h.kind === 'crit';
       const miss = h.kind === 'miss';
@@ -1021,15 +1021,17 @@ export class WorldRenderer {
       });
       t.anchor.set(0.5);
       const x = h.cell.x * CELL_PX + CELL_PX / 2;
-      // stack numbers that appeared near here in the last 0.2s, 2em apart
-      const stack = this.floats.filter((f) => elapsedMs - f.born < 200 && Math.abs(f.x - x) < CELL_PX).length;
-      const y = h.cell.y * CELL_PX + 12 * UI - stack * 2 * em;
+      // stack only numbers on the SAME character (same cell) from the last 0.2s,
+      // each raised a configurable fraction of a tile — so vertically-adjacent foes
+      // keep their numbers at their own heights.
+      const stack = this.floats.filter((f) => elapsedMs - f.born < 200 && f.cx === h.cell.x && f.cy === h.cell.y).length;
+      const y = h.cell.y * CELL_PX + 12 * UI - stack * DAMAGE_FLOAT_STACK_TILES * CELL_PX;
       const away = h.from ? Math.sign(h.cell.x - h.from.x) : 0;
       // drift away from the attacker, a random amount between straight-up and full
       const driftX = (away || (stack % 2 ? 1 : -1)) * 26 * UI * Math.random();
       t.position.set(x, y);
       this.floatLayer.addChild(t);
-      this.floats.push({ text: t, born: elapsedMs, x, y, driftX });
+      this.floats.push({ text: t, born: elapsedMs, x, y, driftX, cx: h.cell.x, cy: h.cell.y });
     }
   }
 

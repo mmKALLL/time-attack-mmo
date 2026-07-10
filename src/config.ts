@@ -81,6 +81,7 @@ export const COMBAT_TICK_MS = 1500; // default per-skill trigger interval (6 * S
 export const ANIM_FRAME_MS = 420; // renderer 2-frame idle cadence
 export const ANIM_FRAMES = 2; // handoff sprites have 2 animation frames
 export const DAMAGE_FLOAT_MS = 1150;
+export const DAMAGE_FLOAT_STACK_TILES = 0.3; // vertical gap between numbers stacking on the SAME character (in tiles)
 export const MOVE_REPEAT_DELAY_MS = 40; // delay after the first step before auto-repeat kicks in
 export const MOVE_REPEAT_MS = 220; // held-key auto-repeat cadence (screens/DungeonScreen.tsx)
 // Draw-only glide for a one-tile step; logic cell updates instantly (render/WorldRenderer.ts).
