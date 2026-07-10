@@ -112,7 +112,7 @@ export const SKILLS: Record<string, Skill[]> = {
   // --- Magician ---
   magician: [
     sk({ id: 'magicClaw', name: 'Magic Claw', description: 'Claw {tiles} tiles {hits} times for {dmg} damage each.', kind: 'attack', target: 'adjacent-arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(0.6, 0.08), tiles: flat(3), hits: flat(2) }, mpCost: 12, pierce: false }), // TODO: multi-hit
-    sk({ id: 'crossBlast', name: 'Cross Blast', description: 'Blast the diagonal tiles for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'area (cross)', element: 'arcane', shapeKind: 'cross', params: { dmg: lin(1.0, 0.15) }, mpCost: 16, uses: 4, cooldown: lin(20, -1) }), // TODO: diagonal cross (hits diagonals, not orthogonals)
+    sk({ id: 'crossBlast', name: 'Cross Blast', description: 'Blast the diagonal tiles for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'area (cross)', element: 'arcane', shapeKind: 'diagonalCross', params: { dmg: lin(1.0, 0.15) }, mpCost: 16, uses: 4, cooldown: lin(20, -1) }),
     sk({ id: 'arcaneArc', name: 'Arcane Arc', description: 'Detonate {tiles} tiles for {dmg} damage after a delay.', kind: 'attack', target: 'arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(1.6, 0.2), tiles: flat(5) }, mpCost: 22, telegraphMs: 5000 }), // TODO: player-side AoE telegraph (5s delay); offset 3 tiles out
     sk({ id: 'shockingGrasp', name: 'Shocking Grasp', description: 'Shock one foe for {dmg}, slowing it {pct}% for 5s (cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'arcane', shapeKind: 'point', params: { dmg: lin(1.4, 0.2), pct: lin(25, 5) }, mpCost: 8, cooldown: lin(30, -1), status: { name: 'slow' } }),
   ],

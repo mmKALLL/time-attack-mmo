@@ -33,6 +33,28 @@ describe('shapeFor', () => {
   it('Spin Slash uses the surround shape', () => {
     expect(getSkill('spinSlash').shapeKind).toBe('surround');
   });
+  it('diagonalCross lays an X: centre a cell ahead plus four diagonal arms', () => {
+    const cells = shapeFor(getSkill('crossBlast'), 1); // crossBlast has no {tiles}: DEFAULT_TILES.diagonalCross = 5
+    expect(cells).toHaveLength(5);
+    expect(cells.some((c) => c.dx === 2 && c.dy === 0)).toBe(true); // the ahead-centre tile
+    const arms = cells.filter((c) => !(c.dx === 2 && c.dy === 0));
+    expect(arms).toHaveLength(4);
+    // Every non-centre cell sits on a diagonal from the centre (2,0).
+    expect(arms.every((c) => Math.abs(c.dx - 2) === Math.abs(c.dy) && c.dy !== 0)).toBe(true);
+  });
+  it('diagonalCross scales with the {tiles} param, capped at the r<=4 arms', () => {
+    // crossBlast has no {tiles} param, so exercise scaling via a synthetic skill.
+    const skill = { ...getSkill('crossBlast'), params: { ...getSkill('crossBlast').params, tiles: (lvl: number) => lvl } };
+    const lo = shapeFor(skill, 5).length; // tiles = 5 -> centre + one ring
+    const hi = shapeFor(skill, 9).length; // tiles = 9 -> centre + two rings
+    expect(hi).toBeGreaterThan(lo);
+    // The r<=4 cap tops out at the centre + four diagonal rings = 17 cells.
+    expect(shapeFor(skill, 100).length).toBe(17);
+  });
+  it('Cross Blast uses the diagonalCross shape; Radiant Smite stays on the orthogonal cross', () => {
+    expect(getSkill('crossBlast').shapeKind).toBe('diagonalCross');
+    expect(getSkill('radiantSmite').shapeKind).toBe('cross');
+  });
 });
 
 describe('facing rotation', () => {

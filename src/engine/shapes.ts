@@ -24,6 +24,7 @@ const DEFAULT_TILES: Record<ShapeKind, number> = {
   arc: 3,
   area: 6,
   cross: 5,
+  diagonalCross: 5,
   party: 9,
   surround: 8,
 };
@@ -57,6 +58,14 @@ function cross(n: number): Offset[] {
   const cx = 2;
   const out: Offset[] = [{ dx: cx, dy: 0 }];
   for (let r = 1; out.length < n && r <= 4; r++) out.push({ dx: cx + r, dy: 0 }, { dx: cx - r, dy: 0 }, { dx: cx, dy: -r }, { dx: cx, dy: r });
+  return out.slice(0, n);
+}
+
+// An X centered a cell ahead; the four arms run along the diagonals, growing with `n`.
+function diagonalCross(n: number): Offset[] {
+  const cx = 2;
+  const out: Offset[] = [{ dx: cx, dy: 0 }];
+  for (let r = 1; out.length < n && r <= 4; r++) out.push({ dx: cx + r, dy: -r }, { dx: cx + r, dy: r }, { dx: cx - r, dy: -r }, { dx: cx - r, dy: r });
   return out.slice(0, n);
 }
 
@@ -107,5 +116,7 @@ function baseShape(shapeKind: ShapeKind, tiles: number): Offset[] {
       return area(tiles);
     case 'cross':
       return cross(tiles);
+    case 'diagonalCross':
+      return diagonalCross(tiles);
   }
 }

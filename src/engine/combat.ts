@@ -222,7 +222,7 @@ export function advanceCombat(s: WorldState, dt: number): void {
 // A skill's role lives in its shape: line/arc/area/cross paint an AoE footprint
 // (telegraphed + dodgeable); self/melee/point hit a single target. Classified
 // here so enemy roles are data-driven (see src/data.ts), not class special-cases.
-const AOE_SHAPES: ReadonlySet<ShapeKind> = new Set<ShapeKind>(['line', 'arc', 'area', 'cross', 'surround']);
+const AOE_SHAPES: ReadonlySet<ShapeKind> = new Set<ShapeKind>(['line', 'arc', 'area', 'cross', 'diagonalCross', 'surround']);
 function isAoESkill(skill: Skill): boolean {
   return AOE_SHAPES.has(skill.shapeKind);
 }
