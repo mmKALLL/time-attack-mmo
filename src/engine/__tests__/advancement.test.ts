@@ -8,7 +8,7 @@ import { tick } from '../world';
 import { spawnNpcs, travelTo } from '../maps';
 import { combatClassForJob, JOBS } from '../../data';
 import { kitOf } from '../jobs';
-import { MAPS, START_MAP } from '../../data-map';
+import { MAPS, START_MAP, GUILD_MASTERS } from '../../data-map';
 
 // A lone hero at a given job/level with a controllable skill-point pool.
 function hero(jobId: string, level: number): Entity {
@@ -61,6 +61,22 @@ describe('canAdvanceTo', () => {
     expect(r.reason).toContain('30');
     p.level = 30;
     expect(canAdvanceTo(p, 'knight').ok).toBe(true);
+  });
+
+  it('a 1st-job character cannot cross to a sibling 1st job (only its own 2nd jobs)', () => {
+    const p = hero('fighter', 30);
+    p.attainedJobs = ['beginner', 'fighter'];
+    p.skillPoints = 0;
+    // No sideways move to another 1st job (all still require only 'beginner').
+    for (const sibling of ['archer', 'magician', 'rogue']) {
+      const r = canAdvanceTo(p, sibling);
+      expect(r.ok).toBe(false);
+      expect(r.reason).toBe('Not available');
+    }
+    // Fighter's own 2nd jobs follow the normal level rule (level 30 met -> ok).
+    for (const second of ['knight', 'paladin', 'duelist']) {
+      expect(canAdvanceTo(p, second).ok).toBe(true);
+    }
   });
 });
 
@@ -182,20 +198,62 @@ describe('fusions removed', () => {
   });
 });
 
-describe('job-advancement NPC spawning', () => {
+describe('job-advancement NPC spawning (distributed Guildmasters)', () => {
   const jobNpcs = (s: WorldState) => Object.values(s.entities).filter((e) => e.npcRole === 'jobAdvance');
 
-  it('a town spawns exactly one jobAdvance NPC plus the townsfolk', () => {
-    const s = createDemoWorld(); // starts in the START_MAP town
-    expect(MAPS[START_MAP].biome).toBe('town');
+  // Walk from the start town into a Guildmaster town so a jobAdvance NPC is present.
+  // savonlinna (fighter) is reachable from the start map via its field chain.
+  function worldInGuildTown(guildMap: string): WorldState {
+    const s = createDemoWorld(); // starts in mantyharju (no Guildmaster)
+    travelTo(s, guildMap);
+    return s;
+  }
+
+  it('GUILD_MASTERS maps the four towns to fighter/rogue/magician/archer and nothing else', () => {
+    expect(GUILD_MASTERS).toEqual({ savonlinna: 'fighter', varkaus: 'rogue', jyvaskyla: 'magician', kuopio: 'archer' });
+  });
+
+  it('a Guildmaster town spawns exactly one jobAdvance NPC (with the town class) plus townsfolk', () => {
+    const s = worldInGuildTown('savonlinna');
+    expect(MAPS.savonlinna.biome).toBe('town');
     const job = jobNpcs(s);
     expect(job).toHaveLength(1);
     expect(job[0].name).toBeTruthy();
     expect(job[0].faction).toBe('npc');
+    expect(job[0].advanceTo).toBe('fighter'); // savonlinna's single class
     expect(Array.isArray(job[0].asset?.tiles)).toBe(true); // 2x2 tile array
     // townsfolk (chat) NPCs are present alongside it
     const chat = Object.values(s.entities).filter((e) => e.npcRole === 'chat');
     expect(chat.length).toBeGreaterThan(0);
+  });
+
+  it('each Guildmaster town offers exactly its own class', () => {
+    for (const [mapId, jobId] of Object.entries(GUILD_MASTERS)) {
+      const s = worldInGuildTown(mapId);
+      const job = jobNpcs(s);
+      expect(job).toHaveLength(1);
+      expect(job[0].advanceTo).toBe(jobId);
+    }
+  });
+
+  it('the start town (mantyharju) has no Guildmaster', () => {
+    const s = createDemoWorld();
+    expect(MAPS[START_MAP].biome).toBe('town');
+    expect(GUILD_MASTERS[START_MAP]).toBeUndefined();
+    expect(jobNpcs(s)).toHaveLength(0);
+    // townsfolk still spawn in the start town
+    expect(Object.values(s.entities).filter((e) => e.npcRole === 'chat').length).toBeGreaterThan(0);
+  });
+
+  it('non-Guildmaster towns (kajaani 2nd-job, lieksa) spawn no jobAdvance NPC but keep townsfolk', () => {
+    for (const townId of ['kajaani', 'lieksa']) {
+      const s = createDemoWorld();
+      travelTo(s, townId);
+      expect(MAPS[townId].biome).toBe('town');
+      expect(GUILD_MASTERS[townId]).toBeUndefined();
+      expect(jobNpcs(s)).toHaveLength(0);
+      expect(Object.values(s.entities).filter((e) => e.npcRole === 'chat').length).toBeGreaterThan(0);
+    }
   });
 
   it('non-town (field) maps spawn no jobAdvance NPC', () => {
@@ -207,7 +265,7 @@ describe('job-advancement NPC spawning', () => {
   });
 
   it('spawnNpcs places the job NPC off portals and off other entities', () => {
-    const s = createDemoWorld();
+    const s = worldInGuildTown('savonlinna');
     const job = jobNpcs(s)[0];
     const t = s.map.tiles[job.cell.y * s.map.width + job.cell.x];
     expect(t).toBe('floor');
@@ -216,8 +274,10 @@ describe('job-advancement NPC spawning', () => {
     for (const o of others) expect(`${o.cell.x},${o.cell.y}`).not.toBe(`${job.cell.x},${job.cell.y}`);
   });
 
-  it('makeJobNpc / makeNpc set the right npcRole', () => {
-    expect(makeJobNpc({ id: 'j', cell: { x: 1, y: 1 } }).npcRole).toBe('jobAdvance');
+  it('makeJobNpc sets npcRole + advanceTo; makeNpc sets chat', () => {
+    const j = makeJobNpc({ id: 'j', cell: { x: 1, y: 1 }, job: 'archer' });
+    expect(j.npcRole).toBe('jobAdvance');
+    expect(j.advanceTo).toBe('archer');
     expect(makeNpc({ id: 'n', name: 'N', tile: 'q3-1', cell: { x: 1, y: 1 }, dialogue: ['hi'] }).npcRole).toBe('chat');
   });
 
@@ -226,9 +286,9 @@ describe('job-advancement NPC spawning', () => {
       const j = Object.values(w.entities).find((e) => e.npcRole === 'jobAdvance')!;
       return `${j.cell.x},${j.cell.y}`;
     };
-    expect(posOf(createDemoWorld())).toBe(posOf(createDemoWorld()));
-    // spawnNpcs is callable directly without crashing
-    const s = createDemoWorld();
+    expect(posOf(worldInGuildTown('savonlinna'))).toBe(posOf(worldInGuildTown('savonlinna')));
+    // spawnNpcs is callable directly without crashing (re-run tops up townsfolk; Guildmaster stays a singleton via occupancy)
+    const s = worldInGuildTown('savonlinna');
     spawnNpcs(s);
     expect(Object.values(s.entities).filter((e) => e.npcRole === 'jobAdvance').length).toBeGreaterThanOrEqual(1);
   });

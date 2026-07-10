@@ -1,4 +1,4 @@
-import type { Biome, Compass, MapDef, TileKind, TileMap } from './types';
+import type { Biome, Compass, JobId, MapDef, MapId, TileKind, TileMap } from './types';
 import { ENEMIES } from './data-enemy';
 import { MAP_CONFIG } from './config';
 
@@ -165,6 +165,16 @@ for (const e of EDGES) {
 
 export const MAPS = maps;
 export const START_MAP = 'mantyharju';
+
+// The Guildmaster is DISTRIBUTED: each of these towns hosts exactly ONE that
+// offers advancement into that town's single 1st-job class. Towns not listed
+// (Mäntyharju start, Kajaani 2nd-job, Lieksa) and all field maps have none.
+export const GUILD_MASTERS: Partial<Record<MapId, JobId>> = {
+  savonlinna: 'fighter',
+  varkaus: 'rogue',
+  jyvaskyla: 'magician',
+  kuopio: 'archer',
+};
 
 // Simple test/util map (border walls + a couple props).
 export function demoMap(width = 30, height = 17): TileMap {

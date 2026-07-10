@@ -1,5 +1,6 @@
 import { useGame } from '../../state/store';
-import { advancementOptions } from '../../engine/progression';
+import { canAdvanceTo, advancementLevelReq } from '../../engine/progression';
+import { JOBS } from '../../data';
 import { OfferPanel } from './OfferPanel';
 import type { OfferOption } from './OfferPanel';
 
@@ -13,9 +14,10 @@ export function orList(names: string[]): string {
 }
 
 // The Guildmaster (npcRole === 'jobAdvance') accept/decline advancement panel,
-// rendered off world.pendingNpc in place of the chat NpcDialog. Lists every job the
-// player could advance into (enabled/disabled per advancementOptions). Accepting a
-// job dispatches advanceJob then closeNpc; declining just closes.
+// rendered off world.pendingNpc in place of the chat NpcDialog. Each Guildmaster is
+// DISTRIBUTED: it offers exactly ONE 1st-job class (the town's class, on the NPC's
+// `advanceTo`). We present that single option, enabled/disabled per canAdvanceTo.
+// Accepting dispatches advanceJob(advanceTo) then closeNpc; declining just closes.
 export function AdvancementPanel() {
   const world = useGame((s) => s.world);
   const dispatch = useGame((s) => s.dispatch);
@@ -24,23 +26,33 @@ export function AdvancementPanel() {
 
   if (!npc || !player) return null;
 
-  const opts = advancementOptions(player);
-  const options: OfferOption[] = opts.map((o) => ({
-    key: o.jobId,
-    label: o.name,
-    sublabel: `Requires Lv ${o.levelReq}`,
-    disabled: !o.ok,
-    disabledReason: o.reason,
-  }));
+  const advanceTo = npc.advanceTo;
+  const job = advanceTo ? JOBS[advanceTo] : undefined;
+  // The single option this Guildmaster offers (if any). A missing/unknown advanceTo
+  // yields no option -> the empty-state body + "Close" (never crash).
+  const option = advanceTo && job ? { jobId: advanceTo, name: job.name, levelReq: advancementLevelReq(advanceTo), ...canAdvanceTo(player, advanceTo) } : undefined;
+
+  const options: OfferOption[] = option
+    ? [
+        {
+          key: option.jobId,
+          label: option.name,
+          sublabel: `Requires Lv ${option.levelReq}`,
+          disabled: !option.ok,
+          disabledReason: option.reason,
+        },
+      ]
+    : [];
 
   const greeting = npc.dialogue?.[0] ?? 'What path will you walk?';
-  // Dynamic line naming the classes currently on offer (from the option names).
-  const pathLine = opts.length ? `I can set you on the path of the ${orList(opts.map((o) => o.name))}.` : 'No path lies open to you yet — return when you are ready.';
+  // Dynamic line naming the single class on offer (or an empty-state line when the
+  // Guildmaster has no path for this player — e.g. already this class, or ineligible).
+  const pathLine = option ? `I can set you on the path of the ${option.name}.` : 'No path lies open to you here — this is not your road to walk.';
 
   const body = (
     <>
       <p style={{ margin: '0 0 8px' }}>{greeting}</p>
-      <p style={{ margin: 0, fontStyle: opts.length ? 'italic' : 'normal', color: opts.length ? 'var(--ink)' : 'var(--ink-dim)' }}>{pathLine}</p>
+      <p style={{ margin: 0, fontStyle: option ? 'italic' : 'normal', color: option ? 'var(--ink)' : 'var(--ink-dim)' }}>{pathLine}</p>
     </>
   );
 
@@ -56,7 +68,7 @@ export function AdvancementPanel() {
       body={body}
       options={options}
       acceptLabel="Advance"
-      declineLabel={opts.length ? 'Decline' : 'Close'}
+      declineLabel={option ? 'Decline' : 'Close'}
       onAccept={accept}
       onDecline={close}
     />

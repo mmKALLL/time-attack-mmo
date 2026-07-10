@@ -113,6 +113,7 @@ export type Entity = {
   dialogue?: string[]; // town NPCs only: the themed lines shown when talked to (see data-npc.ts)
   dialogueIndex?: number; // town NPCs only: which of `dialogue` to speak NEXT (0-based, cycles). Advanced by closeNpc so each interaction shows the next line; per-NPC (persists on the entity), not shared UI state.
   npcRole?: 'chat' | 'jobAdvance'; // NPCs only: 'chat' = townsfolk dialogue; 'jobAdvance' = the per-town job-advancement NPC
+  advanceTo?: JobId; // jobAdvance NPCs only: the single 1st-job class this Guildmaster offers (the town's class)
   cell: Cell;
   facing: Direction;
   level: number;

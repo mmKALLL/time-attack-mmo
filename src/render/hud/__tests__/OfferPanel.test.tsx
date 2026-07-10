@@ -21,38 +21,44 @@ describe('OfferPanel keyboard + selection', () => {
     { key: 'archer', label: 'Archer', sublabel: 'Requires Lv 10', disabled: true, disabledReason: 'Reach level 10 first' },
   ];
 
-  it('Enter accepts the currently-selected (first enabled) option', () => {
+  it('Enter, Space, and Escape all DECLINE (accept is click-only, never a key)', () => {
+    for (const key of ['Enter', ' ', 'Escape']) {
+      const onAccept = vi.fn();
+      const onDecline = vi.fn();
+      render(<OfferPanel title="Guild" body="body" options={opts} onAccept={onAccept} onDecline={onDecline} />);
+      fireEvent.keyDown(window, { key });
+      expect(onDecline).toHaveBeenCalledTimes(1);
+      expect(onAccept).not.toHaveBeenCalled();
+      cleanup();
+    }
+  });
+
+  it('clicking the Accept button accepts the currently-selected (first enabled) option', () => {
     const onAccept = vi.fn();
     const onDecline = vi.fn();
-    render(<OfferPanel title="Guild" body="body" options={opts} onAccept={onAccept} onDecline={onDecline} />);
-    fireEvent.keyDown(window, { key: 'Enter' });
+    render(<OfferPanel title="Guild" body="body" options={opts} acceptLabel="Advance" onAccept={onAccept} onDecline={onDecline} />);
+    fireEvent.click(screen.getByText('Advance'));
     expect(onAccept).toHaveBeenCalledWith('fighter');
     expect(onDecline).not.toHaveBeenCalled();
   });
 
-  it('Escape declines', () => {
-    const onAccept = vi.fn();
-    const onDecline = vi.fn();
-    render(<OfferPanel title="Guild" body="body" options={opts} onAccept={onAccept} onDecline={onDecline} />);
-    fireEvent.keyDown(window, { key: 'Escape' });
-    expect(onDecline).toHaveBeenCalledTimes(1);
-    expect(onAccept).not.toHaveBeenCalled();
-  });
-
-  it('does not accept while a disabled option is selected', () => {
+  it('does not accept via keyboard even when an enabled option is selected', () => {
     const onAccept = vi.fn();
     render(<OfferPanel title="Guild" body="body" options={opts} onAccept={onAccept} onDecline={() => {}} />);
-    // Move selection down onto the disabled 'archer' option, then try to accept.
+    // Arrow-selection still moves the highlight, but no key accepts.
     fireEvent.keyDown(window, { key: 'ArrowDown' });
     fireEvent.keyDown(window, { key: 'Enter' });
+    fireEvent.keyDown(window, { key: ' ' });
     expect(onAccept).not.toHaveBeenCalled();
   });
 
-  it('with no options, Enter is a plain confirm (undefined key)', () => {
+  it('with no options, keys only decline (no plain-confirm on Enter)', () => {
     const onAccept = vi.fn();
-    render(<OfferPanel title="Guild" body="Nothing on offer" onAccept={onAccept} onDecline={() => {}} />);
+    const onDecline = vi.fn();
+    render(<OfferPanel title="Guild" body="Nothing on offer" onAccept={onAccept} onDecline={onDecline} />);
     fireEvent.keyDown(window, { key: 'Enter' });
-    expect(onAccept).toHaveBeenCalledWith(undefined);
+    expect(onAccept).not.toHaveBeenCalled();
+    expect(onDecline).toHaveBeenCalledTimes(1);
   });
 
   it('renders each option label', () => {

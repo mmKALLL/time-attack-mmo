@@ -86,10 +86,10 @@ export function makeNpc(params: { id: EntityId; name: string; tile: string; cell
 }
 
 // The per-town job-advancement NPC (the Guildmaster): a neutral, non-combatant
-// entity with the 2x2 Guildmaster sprite and npcRole 'jobAdvance'. Talking to it
-// (later UI) opens the advancement panel. No random dialogue — carries a single
-// fixed greeting line.
-export function makeJobNpc(params: { id: EntityId; cell: Cell }): Entity {
+// entity with the 2x2 Guildmaster sprite and npcRole 'jobAdvance'. Distributed —
+// each Guildmaster offers exactly ONE 1st-job class (`job`), stored on `advanceTo`
+// for the panel. No random dialogue — carries a single fixed greeting line.
+export function makeJobNpc(params: { id: EntityId; cell: Cell; job: JobId }): Entity {
   const e = makeEntity({
     id: params.id,
     faction: 'npc',
@@ -102,6 +102,7 @@ export function makeJobNpc(params: { id: EntityId; cell: Cell }): Entity {
   });
   e.dialogue = [JOB_NPC_GREETING];
   e.npcRole = 'jobAdvance';
+  e.advanceTo = params.job; // the single class this Guildmaster sets you on
   e.attrPoints = 0;
   e.skillPoints = 0;
   return e;

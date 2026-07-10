@@ -50,21 +50,17 @@ export function OfferPanel({
     onAccept(selectedOption?.key);
   };
 
-  // Capture-phase key trap: Enter = accept, Escape = decline, Up/Down move the
-  // selection, and movement/skill keys are swallowed so the game underneath is
-  // inert while the offer is open. Registered before DungeonScreen's window handler.
+  // Capture-phase key trap. Accepting is CLICK-ONLY (the Accept button): no key ever
+  // triggers it, so a spammed Space/Enter can't cause an accidental, irreversible
+  // choice (e.g. a job advancement). Enter, Space, AND Escape all DECLINE/close.
+  // Up/Down still move the selection highlight; movement/skill keys are swallowed so
+  // the game underneath is inert. Registered before DungeonScreen's window handler.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' || e.key === 'Escape' || e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
         e.stopPropagation();
-        accept();
-        return;
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        onDecline();
+        onDecline(); // no keyboard accept — decline/close only
         return;
       }
       if (selectable && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -77,7 +73,7 @@ export function OfferPanel({
         return;
       }
       // Swallow the remaining movement + skill hotkeys so they don't drive the game.
-      if (e.key.startsWith('Arrow') || (e.key >= '1' && e.key <= '9') || e.key === ' ' || e.key === 'Spacebar') {
+      if (e.key.startsWith('Arrow') || (e.key >= '1' && e.key <= '9')) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -188,7 +184,7 @@ export function OfferPanel({
             </button>
           )}
         </div>
-        <div style={{ marginTop: 8, fontSize: 10, color: 'var(--ink-dim-2)', textAlign: 'right', letterSpacing: 1 }}>ENTER / ESC</div>
+        <div style={{ marginTop: 8, fontSize: 10, color: 'var(--ink-dim-2)', textAlign: 'right', letterSpacing: 1 }}>CLICK TO CONFIRM · ENTER / ESC TO CLOSE</div>
       </div>
     </div>
   );

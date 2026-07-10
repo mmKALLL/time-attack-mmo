@@ -1,5 +1,5 @@
 import type { Cell, Direction, MapExit, MapId, WorldState } from '../types';
-import { MAPS } from '../data-map';
+import { MAPS, GUILD_MASTERS } from '../data-map';
 import { ENEMIES, enemyPrimaries, CLASS_BIOME_SKILL } from '../data-enemy';
 import { getSkill } from '../data-skills';
 import { ENEMY_CLASS_COMBAT, enemyStatMult } from '../config-stats';
@@ -145,13 +145,18 @@ export function spawnNpcs(s: WorldState): void {
       s.entities[id] = makeNpc({ id, name: pick(s, NPC_NAMES), tile: tiles[i], cell, dialogue: triplet });
     });
   }
-  // Every town gets exactly one job-advancement NPC (the Guildmaster), placed on a
-  // portal-safe floor cell not shared with the party, townsfolk, or a portal.
-  const jobCell = randomFreeCell(s, occupied, avoid);
-  if (jobCell) {
-    occupied.add(key(jobCell));
-    const id = 'npc' + s.seq++;
-    s.entities[id] = makeJobNpc({ id, cell: jobCell });
+  // Guildmasters are distributed: only the towns in GUILD_MASTERS host one, each
+  // offering that town's single 1st-job class. Towns not listed (start, 2nd-job,
+  // Lieksa) and field maps get none. Placed on a portal-safe floor cell not shared
+  // with the party, townsfolk, or a portal.
+  const guildJob = GUILD_MASTERS[s.mapId];
+  if (guildJob) {
+    const jobCell = randomFreeCell(s, occupied, avoid);
+    if (jobCell) {
+      occupied.add(key(jobCell));
+      const id = 'npc' + s.seq++;
+      s.entities[id] = makeJobNpc({ id, cell: jobCell, job: guildJob });
+    }
   }
 }
 

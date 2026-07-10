@@ -47,13 +47,19 @@ export function advancementLevelReq(targetJobId: JobId): number {
 }
 
 // Whether the player may advance into targetJobId right now. Requires: the target
-// is a valid next step for the attained jobs, ZERO unspent skill points, and the
-// level requirement met. Returns a reason on failure (for the future panel/tooltip).
+// is a valid next step for the attained jobs, DIRECTLY reachable from the current
+// class (its `requires` names p.jobId — so a fighter can't jump to another 1st job),
+// ZERO unspent skill points, and the level requirement met. Returns a reason on
+// failure (for the future panel/tooltip).
 export function canAdvanceTo(p: Entity, targetJobId: JobId): { ok: boolean; reason?: string } {
   if (!availableJobs(p.attainedJobs).includes(targetJobId)) return { ok: false, reason: 'Not available' };
-  if (p.skillPoints !== 0) return { ok: false, reason: 'Spend your skill points first' };
+  // Advance one step from the CURRENT class only: beginner -> a 1st job, a 1st job ->
+  // its own 2nd jobs. Blocks a fighter from taking another sibling 1st job (all of
+  // which still require only 'beginner', which stays in attainedJobs).
+  if (!JOBS[targetJobId]?.requires.includes(p.jobId)) return { ok: false, reason: 'Not available' };
   const req = advancementLevelReq(targetJobId);
   if (p.level < req) return { ok: false, reason: `Reach level ${req} first` };
+  if (p.skillPoints !== 0) return { ok: false, reason: 'Spend your skill points first' };
   return { ok: true };
 }
 
