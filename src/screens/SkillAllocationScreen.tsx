@@ -523,12 +523,15 @@ export function SkillAllocationScreen() {
                       const lvl = effSkillLv(i) + (previewing ? 1 : 0);
                       const sel = selected === i;
                       const ecol = elemOf(sk);
+                      // Level-0 = owned but UNLEARNED (granted by a job advancement, not yet
+                      // castable): dim the row until the first point "learns" it (0 -> 1).
+                      const unlearned = effSkillLv(i) === 0;
                       return (
                         <div
                           key={rt.skillId + i}
                           className="sa-skillrow"
                           onClick={() => setSelected(i)}
-                          style={{ display: 'flex', alignItems: 'flex-start', gap: 12, border: `1px solid ${sel ? ecol : '#262b34'}`, borderRadius: 7, padding: '10px 12px', background: sel ? 'rgba(240,135,58,.12)' : '#12151c' }}
+                          style={{ display: 'flex', alignItems: 'flex-start', gap: 12, border: `1px solid ${sel ? ecol : '#262b34'}`, borderRadius: 7, padding: '10px 12px', background: sel ? 'rgba(240,135,58,.12)' : '#12151c', opacity: unlearned ? 0.62 : 1 }}
                         >
                           <div style={{ width: 48, height: 48, borderRadius: 6, background: '#0d1016', border: `1px solid ${ecol}66`, flex: 'none' }}>
                             <SkillIcon skill={sk} size={48} />
@@ -539,6 +542,11 @@ export function SkillAllocationScreen() {
                               <span className="sa-px" style={{ fontSize: 7, color: ecol }}>
                                 {sk.shapeKind.toUpperCase()}
                               </span>
+                              {unlearned && (
+                                <span className="sa-px" style={{ fontSize: 7, color: '#8fa8cc', border: '1px solid #3a4f66', borderRadius: 3, padding: '2px 4px' }}>
+                                  UNLEARNED
+                                </span>
+                              )}
                               <span style={{ fontSize: 11, color: '#7a7360', marginLeft: 'auto' }}>
                                 {sk.kind} · {sk.element}
                               </span>
@@ -553,8 +561,8 @@ export function SkillAllocationScreen() {
                                 return <span key={k} style={{ width: 18, height: 9, borderRadius: 2, background: filled ? ecol : '#242b36', border: `1px solid ${accentPip ? '#e6c583' : filled ? ecol : '#1a1e26'}` }} />;
                               })}
                               <span style={{ fontSize: 11, color: '#8f8674', marginLeft: 6 }}>
-                                Lv {effSkillLv(i)}
-                                {previewing ? <span style={{ color: '#ffd27a' }}> → {effSkillLv(i) + 1}</span> : <span>/{cap}</span>}
+                                {unlearned && !previewing ? <span style={{ color: '#8fa8cc' }}>Unlearned</span> : <>Lv {effSkillLv(i)}</>}
+                                {previewing ? <span style={{ color: '#ffd27a' }}> → {effSkillLv(i) + 1}</span> : unlearned ? null : <span>/{cap}</span>}
                               </span>
                             </div>
                           </div>

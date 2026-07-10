@@ -7,6 +7,7 @@ import { PixiStage } from '../render/PixiStage';
 import { Hud } from '../render/hud/Hud';
 import { DeathOverlay } from '../render/hud/DeathOverlay';
 import { NpcDialog } from '../render/hud/NpcDialog';
+import { AdvancementPanel } from '../render/hud/AdvancementPanel';
 
 const KEY_TO_DIR: Record<string, Direction> = {
   ArrowUp: 'up',
@@ -17,6 +18,14 @@ const KEY_TO_DIR: Record<string, Direction> = {
 
 export function DungeonScreen() {
   useEffect(() => startGameLoop(), []);
+
+  // A bumped NPC opens ONE panel, chosen by its role: the Guildmaster
+  // (npcRole === 'jobAdvance') shows the accept/decline AdvancementPanel; every
+  // other NPC shows the chat NpcDialog. Both key off world.pendingNpc.
+  const pendingRole = useGame((s) => {
+    const id = s.world.pendingNpc;
+    return id ? s.world.entities[id]?.npcRole : undefined;
+  });
 
   useEffect(() => {
     // Held arrow keys: an immediate step, then after MOVE_REPEAT_DELAY_MS the
@@ -85,7 +94,7 @@ export function DungeonScreen() {
       <PixiStage />
       <Hud />
       <DeathOverlay />
-      <NpcDialog />
+      {pendingRole === 'jobAdvance' ? <AdvancementPanel /> : <NpcDialog />}
     </>
   );
 }
