@@ -64,11 +64,15 @@ function Bar({ kind, cur, max, label }: { kind: 'hp' | 'mp' | 'xp'; cur: number;
 }
 
 function ShapeGrid({ shape }: { shape: Offset[] }) {
-  const set = new Set(shape.map((o) => `${o.dx},${o.dy}`));
+  // Caster at (1,2) facing right, matching the skill-assignment preview: leaves 3
+  // tiles of forward room so ahead-projected shapes (offset/arc) aren't clipped.
+  const cx = 1;
+  const cy = 2;
+  const set = new Set(shape.map((o) => `${cx + o.dx},${cy + o.dy}`));
   const cells = [];
-  for (let gy = -2; gy <= 2; gy++)
-    for (let gx = -2; gx <= 2; gx++) {
-      const self = gx === 0 && gy === 0;
+  for (let gy = 0; gy < 5; gy++)
+    for (let gx = 0; gx < 5; gx++) {
+      const self = gx === cx && gy === cy;
       const on = set.has(`${gx},${gy}`);
       cells.push(<i key={`${gx},${gy}`} className={self ? 'self' : on ? 'on' : ''} />);
     }
