@@ -47,6 +47,15 @@ export function WorldMapScreen() {
   const discoveredCount = layout.nodes.filter((n) => disc.has(n.id)).length;
   const current = layout.nodes.find((n) => n.id === mapId);
 
+  // 'm' (or Esc) toggles back to the dungeon — mirrors the in-game 'm' that opened this.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') setScene('dungeon');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [setScene]);
+
   // Open pre-scrolled to the party's vertical position — centred if there's room,
   // otherwise clamped to the very bottom (the browser clamps scrollTop for us).
   useEffect(() => {

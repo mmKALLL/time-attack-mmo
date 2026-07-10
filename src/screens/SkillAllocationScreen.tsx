@@ -181,6 +181,14 @@ export function SkillAllocationScreen() {
   const [hover, setHover] = useState<{ type: 'stat' | 'skill' | null; key: string | number | null }>({ type: null, key: null });
   const [scale, setScale] = useState(1);
   useEffect(() => {
+    // 's' (or Esc) toggles back to the dungeon — mirrors the in-game 's' that opened this.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 's' || e.key === 'S' || e.key === 'Escape') setScene('dungeon');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [setScene]);
+  useEffect(() => {
     const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
     fit();
     window.addEventListener('resize', fit);
