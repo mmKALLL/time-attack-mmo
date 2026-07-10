@@ -1,5 +1,6 @@
 import { useGame, type Scene } from '../state/store';
 import './app.css';
+import { MainMenuScreen } from '../screens/MainMenuScreen';
 import { DungeonScreen } from '../screens/DungeonScreen';
 import { WorldMapScreen } from '../screens/WorldMapScreen';
 import { ShopScreen } from '../screens/ShopScreen';
@@ -9,6 +10,7 @@ import { HotkeyConfigScreen } from '../screens/HotkeyConfigScreen';
 import { NpcChatScreen } from '../screens/NpcChatScreen';
 
 const SCREENS: Record<Scene, () => JSX.Element> = {
+  mainMenu: MainMenuScreen,
   dungeon: DungeonScreen,
   worldMap: WorldMapScreen,
   shop: ShopScreen,
@@ -19,6 +21,7 @@ const SCREENS: Record<Scene, () => JSX.Element> = {
 };
 
 const NAV: { scene: Scene; label: string }[] = [
+  { scene: 'mainMenu', label: 'Menu' },
   { scene: 'dungeon', label: 'Dungeon' },
   { scene: 'worldMap', label: 'World Map' },
   { scene: 'shop', label: 'Shop' },
@@ -35,7 +38,7 @@ export default function App() {
   const Screen = SCREENS[scene];
   // The full-screen character / world-map views own their whole canvas (incl. the
   // top-right), so hide the debug nav there — each has its own "Return" control.
-  const showNav = scene !== 'skills' && scene !== 'worldMap';
+  const showNav = scene !== 'skills' && scene !== 'worldMap' && scene !== 'mainMenu';
   return (
     <>
       <Screen />

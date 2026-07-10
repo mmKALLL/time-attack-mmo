@@ -3,6 +3,7 @@ import type { Input, WorldState } from '../types';
 import { applyAction, createDemoWorld, tick } from '../engine';
 
 export type Scene =
+  | 'mainMenu'
   | 'worldMap'
   | 'dungeon'
   | 'shop'
@@ -24,7 +25,7 @@ type GameStore = {
 };
 
 export const useGame = create<GameStore>((set) => ({
-  scene: 'dungeon',
+  scene: 'mainMenu',
   world: createDemoWorld(),
   inputQueue: [],
   highlights: {},

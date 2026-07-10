@@ -1,0 +1,270 @@
+/* Main Menu (title) screen — ported from the Claude Design handoff.
+   1920x1080 stage scaled to fit the viewport; the animated scene draws to
+   <canvas> beneath an absolutely-positioned HTML overlay. */
+.mm-fit {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #0a0e16;
+}
+.mm-root {
+  width: 1920px;
+  height: 1080px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  font-family: Spectral, Georgia, serif;
+  color: #e9ddc4;
+  user-select: none;
+}
+.mm-canvas {
+  position: absolute;
+  inset: 0;
+  image-rendering: pixelated;
+}
+/* two stacked vignettes over the scene */
+.mm-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.mm-vignette.radial {
+  background: radial-gradient(1200px 900px at 32% 46%, transparent 40%, rgba(6, 8, 13, 0.55) 100%);
+}
+.mm-vignette.linear {
+  background: linear-gradient(180deg, rgba(8, 10, 18, 0.4) 0%, transparent 22%, transparent 74%, rgba(6, 8, 13, 0.7) 100%);
+}
+
+/* ---- title ---- */
+.mm-title {
+  position: absolute;
+  left: 150px;
+  top: 150px;
+}
+.mm-eyebrow {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  letter-spacing: 6px;
+  color: #8fb0c8;
+  text-shadow: 0 2px 8px #000;
+  margin-bottom: 20px;
+  opacity: 0.9;
+}
+.mm-titlewrap {
+  position: relative;
+}
+.mm-suomela {
+  font-family: Cinzel, serif;
+  font-weight: 900;
+  font-size: 150px;
+  line-height: 0.86;
+  color: #f2e8d2;
+  text-shadow: 0 4px 2px rgba(0, 0, 0, 0.5), 0 0 42px rgba(126, 180, 200, 0.35), 0 0 90px rgba(90, 140, 170, 0.25);
+  letter-spacing: 2px;
+}
+.mm-mmo {
+  position: absolute;
+  right: 6px;
+  bottom: -40px;
+  font-family: Cinzel, serif;
+  font-weight: 700;
+  font-size: 40px;
+  letter-spacing: 16px;
+  color: #e6c583;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7), 0 0 24px rgba(224, 165, 58, 0.4);
+  padding-left: 16px;
+}
+.mm-tagline {
+  margin-top: 44px;
+  font-style: italic;
+  font-size: 20px;
+  color: #b7c3cf;
+  text-shadow: 0 2px 8px #000;
+  max-width: 520px;
+  line-height: 1.5;
+}
+
+/* ---- menu ---- */
+.mm-menu {
+  position: absolute;
+  left: 158px;
+  bottom: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mmbtn {
+  position: relative;
+  font-family: Cinzel, serif;
+  letter-spacing: 2px;
+  cursor: pointer;
+  user-select: none;
+  color: #e9ddc4;
+  padding: 11px 6px 11px 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: color 0.15s;
+}
+.mmbtn:hover {
+  color: #ffe6a6;
+}
+.mmbtn:hover .mmb-ic {
+  opacity: 1;
+  transform: translateX(0);
+}
+.mmb-ic {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: all 0.18s;
+  color: #e6c583;
+  font-size: 14px;
+}
+.mmbtn:hover .mmb-line {
+  width: 100%;
+  opacity: 1;
+}
+.mmb-line {
+  position: absolute;
+  left: 22px;
+  bottom: 5px;
+  height: 1px;
+  width: 0;
+  background: linear-gradient(90deg, #c2a06a, transparent);
+  opacity: 0;
+  transition: width 0.25s;
+}
+.mmbtn.dim {
+  color: #7a7360;
+}
+.mmbtn.dim:hover {
+  color: #a99a7c;
+}
+.mmb-tag {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #8f8674;
+  letter-spacing: 1px;
+  margin-left: 6px;
+}
+
+/* ---- last-played panel ---- */
+.mm-panel {
+  position: absolute;
+  right: 120px;
+  bottom: 150px;
+  width: 340px;
+  background: linear-gradient(#1a1f2aee, #10141cee);
+  border: 1px solid #0a0d12;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 #3a4552, 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px #2a3140;
+  padding: 16px 18px;
+  backdrop-filter: blur(2px);
+}
+.mm-panel-gold {
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(184, 146, 90, 0.28);
+  border-radius: 5px;
+  pointer-events: none;
+}
+.mm-panel-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #8f8674;
+  letter-spacing: 1px;
+}
+.mm-portrait {
+  width: 66px;
+  height: 66px;
+  border-radius: 7px;
+  background: #0d1016;
+  border: 1px solid #b8925a66;
+  box-shadow: inset 0 0 0 1px #000;
+  overflow: hidden;
+  flex: none;
+  position: relative;
+}
+.mm-portrait canvas {
+  position: absolute;
+  left: -4px;
+  top: 2px;
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+}
+.mm-hero-name {
+  font-family: Cinzel, serif;
+  font-size: 19px;
+  color: #f2e8d2;
+}
+.mm-hero-sub {
+  font-size: 12.5px;
+  color: #e0906a;
+  margin-top: 1px;
+}
+.mm-badge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  border-radius: 3px;
+  padding: 3px 5px;
+}
+.mm-badge.faction {
+  color: #8fb0c8;
+  background: #12202c;
+  border: 1px solid #24455a;
+}
+.mm-badge.city {
+  color: #c2a06a;
+  background: #241c11;
+  border: 1px solid #4a3a20;
+}
+.mm-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #b8925a44, transparent);
+  margin: 14px 0;
+}
+.mm-status {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #9c927a;
+}
+
+/* ---- footer ---- */
+.mm-copyright {
+  position: absolute;
+  left: 150px;
+  bottom: 56px;
+  font-size: 12px;
+  color: #6f6a5a;
+  letter-spacing: 1px;
+}
+.mm-build {
+  position: absolute;
+  right: 40px;
+  bottom: 24px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #5f5a4a;
+  letter-spacing: 1px;
+}
+.mm-servers {
+  position: absolute;
+  right: 40px;
+  top: 32px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #8f8674;
+}
+.mm-servers-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #8fe0a0;
+  box-shadow: 0 0 8px #8fe0a0;
+}

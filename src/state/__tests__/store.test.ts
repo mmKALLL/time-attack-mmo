@@ -25,9 +25,18 @@ function world(entities: Entity[]): WorldState {
   };
 }
 
+// Runs before reset() is ever called, so it sees the true boot state.
+describe('game store boot', () => {
+  it('boots to the main menu with a demo world', () => {
+    const st = useGame.getState();
+    expect(st.scene).toBe('mainMenu');
+    expect(Object.keys(st.world.entities).length).toBeGreaterThan(0);
+  });
+});
+
 describe('game store', () => {
   beforeEach(() => useGame.getState().reset());
-  it('starts on the dungeon scene with a demo world', () => {
+  it('reset() returns to the dungeon scene with a demo world', () => {
     const st = useGame.getState();
     expect(st.scene).toBe('dungeon');
     expect(Object.keys(st.world.entities).length).toBeGreaterThan(0);
