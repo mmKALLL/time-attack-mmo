@@ -125,7 +125,26 @@ export function MainMenuScreen() {
   const scale = useFitScale();
   const setScene = useGame((s) => s.setScene);
   const world = useGame((s) => s.world);
+  const newGame = useGame((s) => s.newGame);
+  const loadGame = useGame((s) => s.loadGame);
+  const getActiveSlot = useGame((s) => s.getActiveSlot);
+  const hasSave = useGame((s) => s.hasSave);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const activeSlot = getActiveSlot();
+  const saveExists = hasSave(activeSlot);
+
+  // New game: warn before clobbering an existing save in the active slot.
+  const onNewGame = () => {
+    if (saveExists && !window.confirm('Starting a new game overwrites your current save. Continue?')) return;
+    newGame();
+    setScene('dungeon');
+  };
+  // Continue the active slot's save (only offered when one exists).
+  const onContinue = () => {
+    if (!saveExists) return;
+    loadGame(activeSlot);
+    setScene('dungeon');
+  };
 
   // Animated scene: one rAF loop; scene constants precomputed once per mount.
   useEffect(() => {
@@ -381,8 +400,8 @@ export function MainMenuScreen() {
 
   // The seven menu items; click routing chosen by the user (boot-to-mainMenu).
   const items: { label: string; size: number; dim?: boolean; tag?: string; onClick: () => void }[] = [
-    { label: 'Enter the Realm', size: 30, onClick: () => setScene('dungeon') },
-    { label: 'Continue', size: 23, tag: `LV${player?.level ?? 1}`, onClick: () => setScene('dungeon') },
+    { label: 'Enter the Realm', size: 30, onClick: onNewGame },
+    { label: 'Continue', size: 23, dim: !saveExists, tag: saveExists ? `LV${player?.level ?? 1}` : undefined, onClick: onContinue },
     { label: 'Characters', size: 22, onClick: () => setScene('charCreate') },
     // { label: 'World Map', size: 22, onClick: () => setScene('worldMap') },
     { label: 'Settings', size: 22, onClick: () => setScene('hotkeys') }, // closest existing config screen
