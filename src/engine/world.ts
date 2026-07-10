@@ -31,6 +31,11 @@ export function applyInput(s: WorldState, input: Input): void {
   }
   if (input.type === 'respawn') return respawnAtStart(s);
   if (input.type === 'closeNpc') {
+    // Advance the bumped NPC's line pointer (cycling) BEFORE clearing pendingNpc, so
+    // the next chat with THIS NPC shows its next line. The pointer lives on the entity
+    // (per-NPC, persists across interactions), not in shared dialog UI state.
+    const npc = s.pendingNpc ? s.entities[s.pendingNpc] : undefined;
+    if (npc?.dialogue?.length) npc.dialogueIndex = ((npc.dialogueIndex ?? 0) + 1) % npc.dialogue.length;
     s.pendingNpc = undefined; // dismiss the town-NPC dialog box
     return;
   }

@@ -111,6 +111,7 @@ export type Entity = {
   sprite: string; // procedural (sprites.js) builder name for players
   asset?: EnemyAsset; // spritesheet art for asset-based enemies (overrides sprite)
   dialogue?: string[]; // town NPCs only: the themed lines shown when talked to (see data-npc.ts)
+  dialogueIndex?: number; // town NPCs only: which of `dialogue` to speak NEXT (0-based, cycles). Advanced by closeNpc so each interaction shows the next line; per-NPC (persists on the entity), not shared UI state.
   npcRole?: 'chat' | 'jobAdvance'; // NPCs only: 'chat' = townsfolk dialogue; 'jobAdvance' = the per-town job-advancement NPC
   cell: Cell;
   facing: Direction;

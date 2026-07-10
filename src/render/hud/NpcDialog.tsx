@@ -1,15 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../state/store';
 
-// Dismissible dialog box for a bumped town NPC (WorldState.pendingNpc). Shows the
-// NPC's name and one dialogue line at a time; Space / Enter / clicking OK advances,
-// and advancing past the last line closes it (dispatch closeNpc). Keyboard is
-// captured while open so those keys drive the dialog instead of moving the player.
+// Dismissible dialog box for a bumped town NPC (WorldState.pendingNpc). Townsfolk
+// speak ONE line per interaction: we feed this box just the NPC's current line
+// (dialogue[dialogueIndex]); Space / Enter / clicking OK closes it (dispatch closeNpc),
+// and closeNpc advances that NPC's pointer so the next chat shows its next line.
+// The box keeps its generic "advance through an N-line array, show n/N, close past
+// the last" behaviour so future multi-line callers still work — it just gets a
+// single-line array here. Keyboard is captured while open so those keys drive the
+// dialog instead of moving the player.
 export function NpcDialog() {
   const world = useGame((s) => s.world);
   const dispatch = useGame((s) => s.dispatch);
   const npc = world.pendingNpc ? world.entities[world.pendingNpc] : undefined;
-  const lines = npc?.dialogue ?? [];
+  // Only the NPC's current line — the engine cycles dialogueIndex on closeNpc.
+  const all = npc?.dialogue ?? [];
+  const lines = all.length ? [all[(npc?.dialogueIndex ?? 0) % all.length]] : [];
   const [line, setLine] = useState(0);
 
   // Reset to the first line whenever a different NPC is opened.

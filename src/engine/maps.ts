@@ -105,6 +105,18 @@ function pickThemes(s: WorldState, count: number): NpcTheme[] {
   return pool.slice(0, Math.min(count, pool.length));
 }
 
+// Pick `count` DISTINCT NPC tiles at random via the seeded RNG (a partial
+// Fisher-Yates shuffle of NPC_TILES), so no two townsfolk in a town share a sprite.
+// NPC_TILES has >= MAX_TOWN_NPCS entries, so this always fills the count.
+function pickDistinctTiles(s: WorldState, count: number): string[] {
+  const pool = [...NPC_TILES];
+  for (let i = 0; i < count && i < pool.length; i++) {
+    const j = randInt(s, i, pool.length - 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(count, pool.length));
+}
+
 // Spawn the current town's non-combatant NPCs (one per distinct theme). Called
 // from travelTo only for town-biome maps. The count comes from the map's data
 // (gen.npcCount), clamped to [0, MAX_TOWN_NPCS] (warns + caps if configured higher).
@@ -122,13 +134,16 @@ export function spawnNpcs(s: WorldState): void {
   const avoid = player ? player.cell : { x: Math.floor(s.map.width / 2), y: Math.floor(s.map.height / 2) };
   if (count > 0) {
     const themes = pickThemes(s, count);
-    for (const theme of themes) {
+    const tiles = pickDistinctTiles(s, count); // one distinct sprite per townsperson (no duplicates in a town)
+    themes.forEach((theme, i) => {
       const cell = randomFreeCell(s, occupied, avoid);
-      if (!cell) break;
+      if (!cell) return;
       occupied.add(key(cell));
       const id = 'npc' + s.seq++;
-      s.entities[id] = makeNpc({ id, name: pick(s, NPC_NAMES), tile: pick(s, NPC_TILES), cell, dialogue: NPC_DIALOGUE[theme] });
-    }
+      // Each NPC speaks one random triplet (3 related lines) from its theme's pool.
+      const triplet = pick(s, NPC_DIALOGUE[theme]);
+      s.entities[id] = makeNpc({ id, name: pick(s, NPC_NAMES), tile: tiles[i], cell, dialogue: triplet });
+    });
   }
   // Every town gets exactly one job-advancement NPC (the Guildmaster), placed on a
   // portal-safe floor cell not shared with the party, townsfolk, or a portal.

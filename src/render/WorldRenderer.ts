@@ -69,6 +69,7 @@ import {
   DESIGN_H,
   DESIGN_W,
   ENEMY_GLOW,
+  FACING_ARROW_DISTANCE,
   FLOOR_CHECKER_SIZE,
   LEVELUP_FX,
   MAP_CONFIG,
@@ -890,6 +891,7 @@ export class WorldRenderer {
   private drawEntity(world: WorldState, e: Entity, frame: number, bob: number, px: number, py: number) {
     // px/py are the entity's interpolated (glide) pixel top-left this frame;
     // everything pinned to it below (shadow, sprite, facing, pips) rides along.
+    if (e.faction === 'npc') bob = 0; // static townsfolk: no idle bob
 
     // contact shadow
     const shadow = new Graphics();
@@ -924,8 +926,8 @@ export class WorldRenderer {
   // Small yellow arrowhead near the character showing its facing direction.
   private drawFacing(e: Entity, px: number, py: number) {
     const [dx, dy] = FACING[e.facing];
-    const cx = px + CELL_PX / 2 + dx * 30 * UI; // ~0.6 arrow-lengths further out
-    const cy = py + CELL_PX / 2 + dy * 30 * UI;
+    const cx = px + CELL_PX / 2 + dx * FACING_ARROW_DISTANCE * UI;
+    const cy = py + CELL_PX / 2 + dy * FACING_ARROW_DISTANCE * UI;
     const perpx = -dy;
     const perpy = dx;
     const a = 6 * UI;

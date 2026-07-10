@@ -13,7 +13,8 @@ export const CELL_PX = 256; // logical tile size (px); 1 enemy-asset tile == 1 c
 export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
 export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
 export const CAMERA_ZOOM_PERCENT = 50; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
-export const PLAYER_SPRITE_SCALE = 1.0; // player sprite render size vs one cell; scales taller+wider from the feet
+export const PLAYER_SPRITE_SCALE = 1.1; // player sprite render size vs one cell; scales taller+wider from the feet
+export const FACING_ARROW_DISTANCE = 30; // player/ally facing triangle: distance out from the cell centre (UI units)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
 // Per-biome map defaults: footprint, generator params, spawn cadence, and
 // lighting. A data-map field segment can override width/height and room count.
@@ -57,14 +58,14 @@ export const TORCH_GLOW = { color: 0xffc27a, intensity: 0.5, pulseMs: 8000 };
 // golden pillar + expanding rings + rotating starburst rays + rising sparkles +
 // a popped "LEVEL UP!" banner. Tuned live; colors are the game's ember/gold.
 export const LEVELUP_FX = {
-  durationMs: 2800, // total lifetime of one burst (flash..banner fade)
+  durationMs: 3400, // total lifetime of one burst (flash..banner fade)
   coreColor: 0xffffff, // the initial flash + brightest cores
   goldColor: 0xffce6b, // pillar / rays / banner glow (COLORS.emberHi)
   warmColor: 0xe08a3a, // warm accent on outer rings (COLORS.ember)
-  pillarCells: 3.2, // pillar height, in tiles, rising from the character
+  pillarCells: 3.4, // pillar height, in tiles, rising from the character
   ringCount: 3, // staggered expanding halos at the feet/torso
   rayCount: 12, // starburst spokes radiating from the character
-  particleCount: 16, // rising twinkling sparkle glints (capped, no per-frame textures)
+  particleCount: 20, // rising twinkling sparkle glints (capped, no per-frame textures)
 } as const;
 // Screen-edge vignette per biome. innerRadius = fully-clear centre, outerRadius =
 // full-dark edge (fractions of the screen's min/max side).
@@ -109,7 +110,7 @@ export const ENEMY_APPROACH_MS = 2000;
 // Ungrouped, alive enemies wander lazily (see engine/roaming.ts).
 export const ENEMY_ROAM = {
   minDelayMs: 2000,
-  maxDelayMs: 8000,
+  maxDelayMs: 7000,
   minTiles: 1,
   maxTiles: 4,
   tileDelayMs: 1000,
