@@ -108,7 +108,11 @@ function HeroPortrait({ jobId }: { jobId: string }) {
       if (!ctx) return;
       ctx.clearRect(0, 0, 96, 96);
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(sheet, tile.sx, tile.sy, PLAYER_TILE_SRC, PLAYER_TILE_SRC, 0, 0, 96, 96);
+      // Zoom in: crop a square, centered horizontally but anchored to the tile top.
+      const z = 0.71;
+      const src = PLAYER_TILE_SRC * z;
+      const offX = (PLAYER_TILE_SRC - src) / 2 + 48;
+      ctx.drawImage(sheet, tile.sx + offX, tile.sy, src, src, 0, 0, 96, 96);
     });
     return () => {
       cancelled = true;
