@@ -135,6 +135,8 @@ export const STATUS: Record<StatusKind, { durationMs: number; tickMs?: number; h
   defDown: { durationMs: 10000, harmful: true, maxStacksPerSource: 1 },
   dodge: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
   blind: { durationMs: 10000, harmful: true, maxStacksPerSource: 1 },
+  critUp: { durationMs: 90000, harmful: false, maxStacksPerSource: 1 }, // +crit chance % (self-buff, e.g. Improved Critical)
+  critDmgUp: { durationMs: 90000, harmful: false, maxStacksPerSource: 1 }, // +crit damage % (self-buff, e.g. Improved Critical)
   statPercent: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
   statFlat: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
 };
@@ -176,6 +178,14 @@ export function totalDodgePercent(e: Entity): number {
 }
 export function totalBlindPercent(e: Entity): number {
   return sumPotency(e.statuses, 'blind');
+}
+// Flat crit-chance % added by active critUp buffs.
+export function totalCritPercent(e: Entity): number {
+  return sumPotency(e.statuses, 'critUp');
+}
+// Crit-damage bonus % added by active critDmgUp buffs (added to CRIT_MULT on a crit).
+export function totalCritDamagePercent(e: Entity): number {
+  return sumPotency(e.statuses, 'critDmgUp');
 }
 // Count each harmful STACK (so bleed×3 counts as 3).
 export function harmfulStackCount(e: Entity): number {

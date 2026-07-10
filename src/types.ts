@@ -33,7 +33,7 @@ export type Stats = {
 };
 
 // ---------- Status effects ----------
-export type StatusKind = 'poison' | 'bleed' | 'burn' | 'slow' | 'stun' | 'atkUp' | 'atkDown' | 'defUp' | 'defDown' | 'dodge' | 'blind' | 'statPercent' | 'statFlat';
+export type StatusKind = 'poison' | 'bleed' | 'burn' | 'slow' | 'stun' | 'atkUp' | 'atkDown' | 'defUp' | 'defDown' | 'dodge' | 'blind' | 'critUp' | 'critDmgUp' | 'statPercent' | 'statFlat';
 // An active status instance on an entity. `potency` is the RESOLVED magnitude
 // (computed at apply-time — no later dependency on the caster). `msLeft` ticks
 // down by dt; `sourceId` = `${casterId}:${skillId}` is the dedup/stack key;
@@ -255,7 +255,8 @@ export type Telegraph = {
   minDmg: number;
   maxDmg: number;
   power: number; // CLASS_COMBAT[class].power
-  crit: number; // crit chance %
+  crit: number; // crit chance % (already folds in the caster's critUp bonus, via damageSource)
+  critDmg: number; // crit-damage bonus % from the caster's critDmgUp (added to CRIT_MULT on a crit)
   mag: number; // skill damage multiplier = magnitude(skill, level)
 };
 

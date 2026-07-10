@@ -20,6 +20,8 @@ export const STATUS_VISUALS: Record<StatusKind, { color: string }> = {
   defDown: { color: '#b06a6a' }, // dull-red
   dodge: { color: '#3fc7b0' }, // teal
   blind: { color: '#8a8f9c' }, // grey
+  critUp: { color: '#f4c430' }, // gold (crit-chance buff)
+  critDmgUp: { color: '#e8933f' }, // amber (crit-damage buff)
   statPercent: { color: '#8f96a4' }, // neutral (tinted by sign at draw time)
   statFlat: { color: '#8f96a4' }, // neutral (tinted by sign at draw time)
 };

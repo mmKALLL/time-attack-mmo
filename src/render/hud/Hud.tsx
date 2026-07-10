@@ -96,6 +96,8 @@ const STATUS_LABEL: Record<StatusBadgeGroup['kind'], string> = {
   defDown: 'Defense Down',
   dodge: 'Dodge Up',
   blind: 'Blind',
+  critUp: 'Crit Up',
+  critDmgUp: 'Crit Damage Up',
   statPercent: 'Stat %',
   statFlat: 'Stat +',
 };
