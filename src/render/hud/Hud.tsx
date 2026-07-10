@@ -8,6 +8,8 @@ import { shapeFor } from '../../engine/shapes';
 import { useGame } from '../../state/store';
 import { Sprites } from '../sprites';
 import { PLAYER_TILE_SRC, keyedSheet, playerTile } from '../player-art';
+import { drawStatusBadge, groupStatuses } from '../statusBadge';
+import type { StatusBadgeGroup } from '../statusBadge';
 import './hud.css';
 
 function SpriteCanvas({ name, size }: { name: string; size: number }) {
@@ -77,6 +79,53 @@ function heroes(entities: Record<string, Entity>): Entity[] {
   return Object.values(entities).filter((e) => e.faction !== 'enemy');
 }
 
+// Display names for the status-badge tooltips.
+const STATUS_LABEL: Record<StatusBadgeGroup['kind'], string> = {
+  poison: 'Poison',
+  bleed: 'Bleed',
+  burn: 'Burn',
+  slow: 'Slow',
+  stun: 'Stun',
+  atkUp: 'Attack Up',
+  atkDown: 'Attack Down',
+  defUp: 'Defense Up',
+  defDown: 'Defense Down',
+  dodge: 'Dodge Up',
+  blind: 'Blind',
+  statPercent: 'Stat %',
+  statFlat: 'Stat +',
+};
+function badgeTitle(g: StatusBadgeGroup): string {
+  const stat = g.stat ? ` ${g.stat.toUpperCase()}` : '';
+  const dir = (g.kind === 'statPercent' || g.kind === 'statFlat') && !g.up ? ' (down)' : '';
+  const count = g.count > 1 ? ` ×${g.count}` : '';
+  return `${STATUS_LABEL[g.kind]}${stat}${dir}${count}`;
+}
+
+// One 32×32 status badge: paints a canvas via the shared drawStatusBadge routine.
+// Redraws whenever the group's appearance changes (kind/stat/count/up).
+function StatusBadge({ group, size = 32 }: { group: StatusBadgeGroup; size?: number }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const ctx = ref.current?.getContext('2d');
+    if (ctx) drawStatusBadge(ctx, group, size);
+  }, [group.kind, group.stat, group.count, group.up, size]);
+  return <canvas ref={ref} width={size} height={size} className="status-badge" style={{ imageRendering: 'pixelated' }} title={badgeTitle(group)} />;
+}
+
+// The row of status badges for a party member, top-right of the portrait card.
+function StatusBadges({ entity }: { entity: Entity }) {
+  const groups = groupStatuses(entity.statuses);
+  if (!groups.length) return null;
+  return (
+    <div className="status-badges">
+      {groups.map((g) => (
+        <StatusBadge key={`${g.kind}:${g.stat ?? ''}`} group={g} />
+      ))}
+    </div>
+  );
+}
+
 function ZoneBanner() {
   const world = useGame((s) => s.world);
   const def = MAPS[world.mapId];
@@ -121,6 +170,7 @@ function PartyFrames() {
         const job = JOBS[e.jobId];
         return (
           <div key={e.id} className={`member${e.id === world.playerId ? ' active' : ''}`}>
+            <StatusBadges entity={e} />
             <div className="portrait">
               <Portrait entity={e} size={44} />
               <span className="lvl">{e.level}</span>

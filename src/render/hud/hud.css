@@ -140,6 +140,7 @@
   gap: 8px;
 }
 .party .member {
+  position: relative; /* anchors the status-badge row to the card's top-right */
   display: grid;
   grid-template-columns: 44px 1fr;
   gap: 8px;
@@ -176,6 +177,23 @@
 }
 .party .cls {
   font-size: 10px;
+}
+
+/* ---- Status badges (party frames) ---- */
+/* 32x32 badges from the card's top-right, laid out leftward, 8px margin/gap. */
+.party .status-badges {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: row-reverse; /* first group sits rightmost, later ones grow left */
+  gap: 8px;
+  pointer-events: auto; /* allow the per-badge title tooltip */
+}
+.party .status-badge {
+  width: 32px;
+  height: 32px;
+  display: block;
 }
 
 /* ---- Skill hotbar ---- */

@@ -80,6 +80,8 @@ import {
 } from '../config';
 import { castInterval } from '../engine/combat';
 import { Sprites } from './sprites';
+import { groupStatuses, renderBadgeCanvas, renderOverflowBadgeCanvas } from './statusBadge';
+import type { StatusBadgeGroup } from './statusBadge';
 import { backOvershoot, easeOutCubic, lerp, shouldSnap } from './tween';
 
 const KEY = (x: number, y: number) => `${x},${y}`;
@@ -87,6 +89,11 @@ const FACING: Record<string, [number, number]> = { up: [0, -1], down: [0, 1], le
 const UI = CELL_PX / 64; // world-space HUD/text was tuned for 64px cells; scale to the current cell size
 // Pulse factor in ~[0.4,1] for a glow; pulseMs<=0 means steady. `phase` desyncs instances.
 const glowPulse = (pulseMs: number, elapsedMs: number, phase: number) => (pulseMs > 0 ? 0.7 + 0.3 * Math.sin((elapsedMs / pulseMs) * 2 * Math.PI + phase) : 1);
+// Enemy HP-bar status badges: 16px squares, up to 4 slots (4th is a "…" overflow
+// badge when there are more groups). Counts above the cap share one texture.
+const STATUS_BADGE_PX = 16;
+const STATUS_BADGE_MAX = 4;
+const BADGE_COUNT_CAP = 9; // ×N textures cached up to this; higher counts reuse it
 
 // Map tile sheets (2048x2048): four biome quadrants of 1024x1024, each a 4x4
 // grid of CELL_PX tiles. Floor quadrants are tileable ground fields; obstacle
@@ -148,6 +155,7 @@ export class WorldRenderer {
   private fx = new Container();
   private actors = new Container();
   private levelUpFx = new Container(); // celebratory level-up bursts, above the actors
+  private statusBadges = new Container(); // pooled per-enemy status-badge sprites (not cleared each frame)
   private lights = new Container(); // dusk veil + additive torch glows (world-space)
   private floatLayer = new Container();
   private vignette: Sprite | null = null;
@@ -160,6 +168,8 @@ export class WorldRenderer {
   private pAtlasReady = new Map<string, Texture>(); // player sheets, corner-color keyed
   private pAtlasLoading = new Set<string>();
   private subCache = new Map<string, Texture>();
+  private badgeTexCache = new Map<string, Texture>(); // status-badge textures keyed by appearance (kind:stat:count:up | '…')
+  private badgeSprites = new Map<string, Sprite[]>(); // pooled badge Sprites per enemy, reused across frames
   private hpGradients: Partial<Record<'enemy' | 'elite', FillGradient>> = {}; // cached vertical HP-bar fills
   private bgTilesReady = false; // floor + obstacle sheets loaded when the current bg was built
   private propCells = new Set<string>(); // cells carrying an obstacle prop (wall ring + features)
@@ -174,7 +184,7 @@ export class WorldRenderer {
   private vignetteBiome: Biome | null = null; // vignette is rebuilt when the biome changes
 
   constructor(private app: Application) {
-    this.root.addChild(this.bg, this.fx, this.actors, this.levelUpFx, this.lights, this.floatLayer);
+    this.root.addChild(this.bg, this.fx, this.actors, this.levelUpFx, this.statusBadges, this.lights, this.floatLayer);
     app.stage.addChild(this.root);
   }
 
@@ -680,6 +690,11 @@ export class WorldRenderer {
     // reap tracking maps for entities that no longer exist
     for (const id of [...this.prevLevel.keys()]) if (!world.entities[id]) this.prevLevel.delete(id);
     for (const id of [...this.tweens.keys()]) if (!world.entities[id]) this.tweens.delete(id);
+    for (const id of [...this.badgeSprites.keys()]) {
+      if (world.entities[id]) continue;
+      for (const sp of this.badgeSprites.get(id)!) sp.destroy(); // texture is cached+shared, don't destroy it
+      this.badgeSprites.delete(id);
+    }
 
     this.updateFloats(elapsedMs);
     this.updateLevelUps(elapsedMs, pos); // advance/animate active bursts (following their character); reap finished ones
@@ -890,7 +905,15 @@ export class WorldRenderer {
     if (e.faction !== 'enemy') this.drawFacing(e, px, py); // enemies show no facing arrow
     const inFight = Object.values(world.groups).some((g) => g.memberIds.includes(e.id));
     if (e.faction === 'enemy' && inFight) this.drawHpBar(px, py, e); // only engaged enemies show HP
+    // Status badges ride the HP bar, so only for engaged enemies; hide otherwise.
+    if (e.faction === 'enemy' && inFight && e.statuses.length) this.drawStatusBadges(e, px, py);
+    else this.hideStatusBadges(e.id);
     if (inFight || e.armed) this.drawSquareTimer(e, px, py); // armed = out-of-combat wind-up
+  }
+
+  private hideStatusBadges(id: string) {
+    const pool = this.badgeSprites.get(id);
+    if (pool) for (const sp of pool) sp.visible = false;
   }
 
   // Small yellow arrowhead near the character showing its facing direction.
@@ -940,6 +963,65 @@ export class WorldRenderer {
     if (pct > 0) g.rect(x, y, w * pct, h).fill(this.hpFill(!!e.elite)); // vertical gradient fill
     g.rect(x, y, w, h).stroke({ width: 2, color: 0x000000, alpha: 1, alignment: 0.5 }); // crisp black border, sharp corners
     this.actors.addChild(g);
+  }
+
+  // Cached Pixi texture for one distinct badge appearance. The set of keys is
+  // small and finite (kind × stat × count-bucket × up), so this builds each
+  // canvas + Texture once and reuses it across every enemy and frame.
+  private badgeTex(key: string, group: StatusBadgeGroup | null, size: number): Texture {
+    let t = this.badgeTexCache.get(key);
+    if (!t) {
+      // Clamp the drawn count to the cache cap so its ×N matches the shared key.
+      const g = group && group.count > BADGE_COUNT_CAP ? { ...group, count: BADGE_COUNT_CAP } : group;
+      const cv = g ? renderBadgeCanvas(g, size) : renderOverflowBadgeCanvas(size);
+      t = Texture.from(cv);
+      t.source.scaleMode = 'nearest';
+      this.badgeTexCache.set(key, t);
+    }
+    return t;
+  }
+
+  private badgeKey(g: StatusBadgeGroup): string {
+    return `${g.kind}:${g.stat ?? ''}:${Math.min(g.count, BADGE_COUNT_CAP)}:${g.up ? 1 : 0}`;
+  }
+
+  // Lay out the first few status badges above an enemy's HP bar, reusing a pooled
+  // row of Sprites per enemy (hidden when unused). px/py is the enemy's glide
+  // top-left; the badge row starts at the HP bar's top-left and runs right.
+  private drawStatusBadges(e: Entity, px: number, py: number) {
+    const groups = groupStatuses(e.statuses);
+    const pool = this.badgeSprites.get(e.id) ?? [];
+    if (!this.badgeSprites.has(e.id)) this.badgeSprites.set(e.id, pool);
+
+    // Match the HP bar's geometry (drawHpBar): margin m, sitting just above it.
+    const m = 8 * UI;
+    const barY = py + 4 * UI; // drawHpBar's y = py + h, h = 4*UI
+    const bx = px + m;
+    const bySize = STATUS_BADGE_PX * UI;
+    const gap = 2 * UI;
+    const by = barY - bySize - 2 * UI; // sit just above the bar
+
+    // First N groups, plus an overflow "…" badge when there are more.
+    const shown: (StatusBadgeGroup | null)[] = groups.slice(0, STATUS_BADGE_MAX);
+    if (groups.length > STATUS_BADGE_MAX) {
+      shown[STATUS_BADGE_MAX - 1] = null; // last slot becomes the overflow badge
+    }
+
+    shown.forEach((g, i) => {
+      let sp = pool[i];
+      if (!sp) {
+        sp = new Sprite();
+        sp.setSize(bySize, bySize);
+        this.statusBadges.addChild(sp);
+        pool[i] = sp;
+      }
+      const key = g ? this.badgeKey(g) : '…';
+      sp.texture = this.badgeTex(key, g, STATUS_BADGE_PX);
+      sp.setSize(bySize, bySize);
+      sp.position.set(bx + i * (bySize + gap), by);
+      sp.visible = true;
+    });
+    for (let i = shown.length; i < pool.length; i++) pool[i].visible = false;
   }
 
   private drawSquareTimer(e: Entity, px: number, py: number) {
