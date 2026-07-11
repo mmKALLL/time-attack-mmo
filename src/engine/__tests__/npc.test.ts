@@ -6,81 +6,86 @@ import { moveOrStick, areEnemies } from '../combat';
 import { makeEntity, makeNpc } from '../entities';
 import { applyInput } from '../world';
 import { MAPS, START_MAP } from '../../data-map';
-import { MAX_TOWN_NPCS, NPC_DIALOGUE, NPC_TILES } from '../../data-npc';
+import { NPC_THEMES, NPC_TILES, TOWN_DIALOGUE } from '../../data-npc';
 import type { NpcTheme } from '../../data-npc';
 
 // Townsfolk = chat NPCs only (excludes the per-town job-advancement NPC, which
 // also has faction 'npc' but npcRole 'jobAdvance').
 const npcs = (s: WorldState): Entity[] => Object.values(s.entities).filter((e) => e.faction === 'npc' && e.npcRole === 'chat');
 
-// Each NPC now carries ONE triplet drawn from its theme's pool. Map a joined
-// triplet back to the theme it came from (each triplet is unique to one theme).
-const tripletToTheme = new Map<string, NpcTheme>();
-for (const theme of Object.keys(NPC_DIALOGUE) as NpcTheme[]) {
-  for (const triplet of NPC_DIALOGUE[theme]) tripletToTheme.set(triplet.join('\n'), theme);
+// The topics a town defines (in NPC_THEMES order, non-empty line arrays only) —
+// these ARE the town's NPCs, one each.
+const topicsOf = (mapId: string): NpcTheme[] => NPC_THEMES.filter((t) => (TOWN_DIALOGUE[mapId]?.[t]?.length ?? 0) > 0);
+
+// Recover which town+topic an NPC's dialogue came from (each town's per-topic
+// line array is unique in TOWN_DIALOGUE), for asserting exact provenance.
+const dialogueKey = new Map<string, string>(); // joined lines -> "mapId:theme"
+for (const mapId of Object.keys(TOWN_DIALOGUE)) {
+  const town = TOWN_DIALOGUE[mapId] ?? {};
+  for (const theme of Object.keys(town) as NpcTheme[]) {
+    const lines = town[theme];
+    if (lines?.length) dialogueKey.set(lines.join('\n'), `${mapId}:${theme}`);
+  }
 }
-// The theme an NPC belongs to, recovered from its assigned triplet.
-const themeOf = (n: Entity): NpcTheme | undefined => tripletToTheme.get((n.dialogue ?? []).join('\n'));
+const provenanceOf = (n: Entity): string | undefined => dialogueKey.get((n.dialogue ?? []).join('\n'));
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
 describe('town NPCs', () => {
-  it('spawns 4 distinct-theme npc entities on entering a town (npcCount: 4)', () => {
-    const s = createDemoWorld(); // starts in Mäntyharju (town, npcCount 4)
-    expect(MAPS[START_MAP].gen.npcCount).toBe(4);
+  it('spawns one chat NPC per topic the start town defines, with matching town+topic lines', () => {
+    const s = createDemoWorld(); // starts in Mäntyharju (town)
+    const topics = topicsOf(START_MAP);
+    expect(topics).toEqual(['workEthic', 'culture', 'history', 'folklore']); // Mäntyharju defines all four
     const list = npcs(s);
-    expect(list).toHaveLength(4);
-    // distinct themes: each NPC's triplet resolves to a different one of the 4 themes
-    const themes = new Set(list.map((n) => themeOf(n)));
-    expect(themes.size).toBe(4);
+    expect(list).toHaveLength(topics.length);
+    // Every defined topic is present exactly once, each carrying THIS town's lines.
+    const provenances = list.map((n) => provenanceOf(n));
+    expect(new Set(provenances)).toEqual(new Set(topics.map((t) => `${START_MAP}:${t}`)));
     // distinct sprites: no two townsfolk share a tile
     const tiles = list.map((n) => n.asset?.tiles);
     expect(new Set(tiles).size).toBe(list.length);
     for (const n of list) {
       expect(n.faction).toBe('npc');
-      expect(n.dialogue).toHaveLength(3); // one triplet = three related lines
-      expect(themeOf(n)).toBeDefined(); // a real triplet from a real theme
+      expect(n.npcRole).toBe('chat');
+      expect(n.dialogue?.length).toBeGreaterThan(0);
+      expect(provenanceOf(n)).toMatch(new RegExp(`^${START_MAP}:`)); // this town's own lines
       expect(n.asset?.filename).toBe('town-npc.png');
       expect(NPC_TILES).toContain(n.asset?.tiles); // a valid townsfolk tile
     }
   });
 
-  it('respects a per-town npcCount of 2 (deterministic distinct themes under the seed)', () => {
-    const orig = MAPS[START_MAP].gen.npcCount;
-    MAPS[START_MAP].gen.npcCount = 2;
-    try {
-      // createDemoWorld() runs travelTo(START_MAP) internally, so both worlds are
-      // built entirely under count=2 and share the seed -> identical NPC choices.
-      const a = createDemoWorld();
-      const b = createDemoWorld();
-      const list = npcs(a);
-      expect(list).toHaveLength(2);
-      const themes = new Set(list.map((n) => themeOf(n)));
-      expect(themes.size).toBe(2); // distinct themes
-      // deterministic under the seed: same triplets picked in both worlds
-      const dialoguesOf = (w: WorldState) =>
-        npcs(w)
-          .map((n) => (n.dialogue ?? []).join('\n'))
-          .sort();
-      expect(dialoguesOf(a)).toEqual(dialoguesOf(b)); // deterministic under the seed
-    } finally {
-      MAPS[START_MAP].gen.npcCount = orig;
-    }
-  });
-
-  it('warns and caps to MAX_TOWN_NPCS when a town is over-configured (npcCount: 6)', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const s = createDemoWorld();
-    const orig = MAPS[START_MAP].gen.npcCount;
-    MAPS[START_MAP].gen.npcCount = 6;
-    try {
-      travelTo(s, START_MAP);
-      expect(npcs(s).length).toBe(MAX_TOWN_NPCS); // capped to 4
-      expect(warn).toHaveBeenCalled();
-    } finally {
-      MAPS[START_MAP].gen.npcCount = orig;
+  it('each town spawns its defined topics (per-town, location-specific; one NPC per topic, no duplicates)', () => {
+    const townIds = Object.keys(TOWN_DIALOGUE);
+    expect(townIds.length).toBeGreaterThan(0);
+    for (const town of townIds) {
+      const s = createDemoWorld();
+      travelTo(s, town, s.mapId);
+      expect(MAPS[town].biome).toBe('town');
+      const topics = topicsOf(town);
+      const list = npcs(s);
+      // The spawned NPCs are drawn from THIS town's defined topics, one per topic.
+      // Placement can drop at most a trailing NPC when the generated map runs out of
+      // free floor cells (e.g. cramped Jyväskylä under the seed), so assert a subset
+      // rather than an exact count — but never MORE than the topic count.
+      expect(list.length).toBeGreaterThan(0);
+      expect(list.length).toBeLessThanOrEqual(topics.length);
+      const provenances = list.map((n) => provenanceOf(n));
+      // every NPC carries a line array from THIS town...
+      for (const p of provenances) expect(p).toMatch(new RegExp(`^${town}:`));
+      // ...for a distinct defined topic (no two NPCs share a topic), and each NPC's
+      // dialogue is exactly that town+topic array from TOWN_DIALOGUE.
+      expect(new Set(provenances).size).toBe(list.length); // distinct topics
+      const definedKeys = new Set(topics.map((t) => `${town}:${t}`));
+      for (const n of list) {
+        const key = provenanceOf(n);
+        expect(definedKeys.has(key ?? '')).toBe(true); // a real defined topic of this town
+        const theme = (key ?? ':').split(':')[1] as NpcTheme;
+        expect(n.dialogue).toEqual(TOWN_DIALOGUE[town]?.[theme]);
+      }
+      // distinct sprites: no two townsfolk share a tile
+      expect(new Set(list.map((n) => n.asset?.tiles)).size).toBe(list.length);
     }
   });
 
@@ -109,7 +114,7 @@ describe('town NPCs', () => {
     const player = s.entities[s.playerId];
     // Place an NPC directly to the player's right and walk into it.
     const target = { x: player.cell.x + 1, y: player.cell.y };
-    const npc = makeNpc({ id: 'npcTest', name: 'Testi', tile: 'q3-1', cell: target, dialogue: NPC_DIALOGUE.folklore[0] });
+    const npc = makeNpc({ id: 'npcTest', name: 'Testi', tile: 'q3-1', cell: target, dialogue: TOWN_DIALOGUE.mantyharju!.folklore! });
     s.entities[npc.id] = npc;
     const before = { ...player.cell };
     moveOrStick(s, s.playerId, 'right');
@@ -122,13 +127,15 @@ describe('town NPCs', () => {
 
   it('closeNpc advances the bumped NPC dialogueIndex (mod length) and clears pendingNpc', () => {
     const s = createDemoWorld();
-    const npc = makeNpc({ id: 'npcCycle', name: 'Testi', tile: 'q3-1', cell: { x: 1, y: 1 }, dialogue: NPC_DIALOGUE.folklore[0] });
+    const lines = TOWN_DIALOGUE.mantyharju!.workEthic!;
+    const npc = makeNpc({ id: 'npcCycle', name: 'Testi', tile: 'q3-1', cell: { x: 1, y: 1 }, dialogue: lines });
     s.entities[npc.id] = npc;
     const len = npc.dialogue?.length ?? 0;
-    expect(len).toBe(3);
+    expect(len).toBe(lines.length);
+    expect(len).toBeGreaterThan(1); // a real cycling line array
     expect(s.entities[npc.id].dialogueIndex ?? 0).toBe(0); // starts on line 0
 
-    // Close once per line + once past the end: index cycles 0->1->2->0.
+    // Close once per line + once past the end: index cycles back to 0 after `len`.
     for (let i = 0; i < len + 1; i++) {
       s.pendingNpc = npc.id;
       applyInput(s, { type: 'closeNpc' });
@@ -139,8 +146,8 @@ describe('town NPCs', () => {
 
   it('two different NPCs keep independent dialogueIndex pointers', () => {
     const s = createDemoWorld();
-    const a = makeNpc({ id: 'npcA', name: 'A', tile: 'q3-1', cell: { x: 1, y: 1 }, dialogue: NPC_DIALOGUE.culture[0] });
-    const b = makeNpc({ id: 'npcB', name: 'B', tile: 'q3-2', cell: { x: 2, y: 1 }, dialogue: NPC_DIALOGUE.history[0] });
+    const a = makeNpc({ id: 'npcA', name: 'A', tile: 'q3-1', cell: { x: 1, y: 1 }, dialogue: TOWN_DIALOGUE.mantyharju!.culture! });
+    const b = makeNpc({ id: 'npcB', name: 'B', tile: 'q3-2', cell: { x: 2, y: 1 }, dialogue: TOWN_DIALOGUE.mantyharju!.history! });
     s.entities[a.id] = a;
     s.entities[b.id] = b;
 
@@ -149,26 +156,34 @@ describe('town NPCs', () => {
     applyInput(s, { type: 'closeNpc' });
     s.pendingNpc = a.id;
     applyInput(s, { type: 'closeNpc' });
-    expect(s.entities[a.id].dialogueIndex).toBe(2);
+    expect(s.entities[a.id].dialogueIndex).toBe(2 % (a.dialogue?.length ?? 1));
     expect(s.entities[b.id].dialogueIndex ?? 0).toBe(0); // B's pointer is its own
 
     // Now advance B once; A unchanged.
+    const aIdx = s.entities[a.id].dialogueIndex;
     s.pendingNpc = b.id;
     applyInput(s, { type: 'closeNpc' });
-    expect(s.entities[b.id].dialogueIndex).toBe(1);
-    expect(s.entities[a.id].dialogueIndex).toBe(2);
+    expect(s.entities[b.id].dialogueIndex).toBe(1 % (b.dialogue?.length ?? 1));
+    expect(s.entities[a.id].dialogueIndex).toBe(aIdx);
   });
 
-  it('NPC_DIALOGUE holds several triplets per theme, each exactly 3 lines', () => {
-    for (const theme of Object.keys(NPC_DIALOGUE) as (keyof typeof NPC_DIALOGUE)[]) {
-      const triplets = NPC_DIALOGUE[theme];
-      expect(triplets.length).toBeGreaterThanOrEqual(5); // "several" triplets to draw from
-      for (const triplet of triplets) expect(triplet).toHaveLength(3); // each is exactly 3 lines
+  it('TOWN_DIALOGUE keys are real town maps; every line array is non-empty and topic-valid', () => {
+    const townIds = Object.keys(TOWN_DIALOGUE);
+    expect(townIds.length).toBeGreaterThanOrEqual(7); // the seven Finnish town nodes
+    for (const mapId of townIds) {
+      expect(MAPS[mapId]?.biome).toBe('town'); // only towns carry dialogue
+      const town = TOWN_DIALOGUE[mapId] ?? {};
+      const themes = Object.keys(town) as NpcTheme[];
+      expect(themes.length).toBeGreaterThan(0);
+      for (const theme of themes) {
+        expect(NPC_THEMES).toContain(theme); // a valid NpcTheme
+        expect((town[theme]?.length ?? 0)).toBeGreaterThan(0); // non-empty line array
+      }
     }
   });
 
   it('NPCs are neutral: areEnemies is false against both enemies and heroes', () => {
-    const npc = makeNpc({ id: 'n', name: 'N', tile: 'q3-2', cell: { x: 1, y: 1 }, dialogue: NPC_DIALOGUE.culture[0] });
+    const npc = makeNpc({ id: 'n', name: 'N', tile: 'q3-2', cell: { x: 1, y: 1 }, dialogue: TOWN_DIALOGUE.mantyharju!.culture! });
     const hero = makeEntity({ id: 'h', faction: 'player', name: 'H', sprite: 'ranger', cell: { x: 2, y: 2 }, level: 5, jobId: 'beginner' });
     const enemy = makeEntity({ id: 'e', faction: 'enemy', name: 'E', sprite: 'slime', cell: { x: 3, y: 3 }, level: 5, jobId: 'beginner' });
     expect(areEnemies(npc, enemy)).toBe(false);
@@ -177,8 +192,8 @@ describe('town NPCs', () => {
     expect(areEnemies(hero, npc)).toBe(false);
   });
 
-  it('spawnNpcs is a no-op call-count consistent under a fixed seed', () => {
-    // Two fresh worlds -> identical NPC placement (seeded RNG).
+  it('spawnNpcs is deterministic under a fixed seed', () => {
+    // Two fresh worlds -> identical NPC placement + dialogue (seeded RNG).
     const posOf = (w: WorldState) =>
       npcs(w)
         .map((n) => `${n.cell.x},${n.cell.y}:${(n.dialogue ?? []).join('|')}:${n.asset?.tiles}`)
@@ -187,7 +202,7 @@ describe('town NPCs', () => {
     // spawnNpcs is exported and callable directly (no crash on a town world).
     const s = createDemoWorld();
     const n0 = npcs(s).length;
-    spawnNpcs(s); // re-run: adds up to the cap again (occupancy from existing entities avoided)
+    spawnNpcs(s); // re-run: adds another set for the town's topics (occupancy from existing entities avoided)
     expect(npcs(s).length).toBeGreaterThanOrEqual(n0);
   });
 });

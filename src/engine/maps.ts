@@ -8,8 +8,7 @@ import { DIRECTIONS, isWall, equals, key } from './grid';
 import { randInt, pick } from './rng';
 import { generateMap } from './map-generator';
 import { DEFAULT_SEED } from '../config';
-import { MAX_TOWN_NPCS, NPC_DIALOGUE, NPC_NAMES, NPC_THEMES, NPC_TILES } from '../data-npc';
-import type { NpcTheme } from '../data-npc';
+import { NPC_NAMES, NPC_THEMES, NPC_TILES, TOWN_DIALOGUE } from '../data-npc';
 
 // Stable geometry seed per map id (derived from the fixed base seed) so a map
 // keeps the same layout across visits; only its enemies re-roll.
@@ -94,20 +93,9 @@ export function spawnEnemies(s: WorldState, amount: number): void {
   }
 }
 
-// Pick `count` DISTINCT themes at random via the seeded RNG (a partial
-// Fisher-Yates shuffle of NPC_THEMES). count >= NPC_THEMES.length returns all.
-function pickThemes(s: WorldState, count: number): NpcTheme[] {
-  const pool = [...NPC_THEMES];
-  for (let i = 0; i < count && i < pool.length; i++) {
-    const j = randInt(s, i, pool.length - 1);
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool.slice(0, Math.min(count, pool.length));
-}
-
 // Pick `count` DISTINCT NPC tiles at random via the seeded RNG (a partial
 // Fisher-Yates shuffle of NPC_TILES), so no two townsfolk in a town share a sprite.
-// NPC_TILES has >= MAX_TOWN_NPCS entries, so this always fills the count.
+// NPC_TILES has >= NPC_THEMES.length entries, so this always fills the count.
 function pickDistinctTiles(s: WorldState, count: number): string[] {
   const pool = [...NPC_TILES];
   for (let i = 0; i < count && i < pool.length; i++) {
@@ -117,34 +105,28 @@ function pickDistinctTiles(s: WorldState, count: number): string[] {
   return pool.slice(0, Math.min(count, pool.length));
 }
 
-// Spawn the current town's non-combatant NPCs (one per distinct theme). Called
-// from travelTo only for town-biome maps. The count comes from the map's data
-// (gen.npcCount), clamped to [0, MAX_TOWN_NPCS] (warns + caps if configured higher).
-// Each NPC gets a random tile + name (seeded) at a portal-safe floor cell (reusing
-// the same off-portal placement as spawnEnemies) carrying its theme's dialogue.
+// Spawn the current town's non-combatant NPCs — ONE fixed NPC per topic the town
+// defines in TOWN_DIALOGUE[mapId], in NPC_THEMES order (deterministic). Called from
+// travelTo only for town-biome maps. The town's defined topics ARE its NPCs; each
+// carries that topic's location-specific line array as its dialogue and cycles it
+// one line per interaction. Each NPC gets a random name + distinct tile (seeded) at
+// a portal-safe floor cell (reusing the off-portal placement from spawnEnemies).
 export function spawnNpcs(s: WorldState): void {
-  let count = MAPS[s.mapId]?.gen.npcCount ?? 0;
-  if (count > MAX_TOWN_NPCS) {
-    console.warn(`town ${s.mapId} configured ${count} NPCs; capping to ${MAX_TOWN_NPCS}`);
-    count = MAX_TOWN_NPCS;
-  }
-  count = Math.max(0, Math.min(MAX_TOWN_NPCS, count));
+  const townDialogue = TOWN_DIALOGUE[s.mapId] ?? {};
+  // Topics this town hosts, in NPC_THEMES order, keeping only non-empty line arrays.
+  const themes = NPC_THEMES.filter((theme) => (townDialogue[theme]?.length ?? 0) > 0);
   const occupied = new Set(Object.values(s.entities).map((e) => key(e.cell)));
   const player = s.entities[s.playerId];
   const avoid = player ? player.cell : { x: Math.floor(s.map.width / 2), y: Math.floor(s.map.height / 2) };
-  if (count > 0) {
-    const themes = pickThemes(s, count);
-    const tiles = pickDistinctTiles(s, count); // one distinct sprite per townsperson (no duplicates in a town)
-    themes.forEach((theme, i) => {
-      const cell = randomFreeCell(s, occupied, avoid);
-      if (!cell) return;
-      occupied.add(key(cell));
-      const id = 'npc' + s.seq++;
-      // Each NPC speaks one random triplet (3 related lines) from its theme's pool.
-      const triplet = pick(s, NPC_DIALOGUE[theme]);
-      s.entities[id] = makeNpc({ id, name: pick(s, NPC_NAMES), tile: tiles[i], cell, dialogue: triplet });
-    });
-  }
+  const tiles = pickDistinctTiles(s, themes.length); // one distinct sprite per townsperson (no duplicates in a town)
+  themes.forEach((theme, i) => {
+    const cell = randomFreeCell(s, occupied, avoid);
+    if (!cell) return;
+    occupied.add(key(cell));
+    const id = 'npc' + s.seq++;
+    // The NPC speaks this topic's town-specific lines, one per interaction (looping).
+    s.entities[id] = makeNpc({ id, name: pick(s, NPC_NAMES), tile: tiles[i], cell, dialogue: townDialogue[theme] ?? [] });
+  });
   // Guildmasters are distributed: only the towns in GUILD_MASTERS host one, each
   // offering that town's single 1st-job class. Towns not listed (start, 2nd-job,
   // Lieksa) and field maps get none. Placed on a portal-safe floor cell not shared
