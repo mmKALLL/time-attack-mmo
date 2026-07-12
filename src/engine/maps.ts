@@ -4,7 +4,7 @@ import { ENEMIES, enemyPrimaries, CLASS_BIOME_SKILL } from '../data-enemy';
 import { getSkill } from '../data-skills';
 import { ENEMY_CLASS_COMBAT, enemyStatMult } from '../config-stats';
 import { makeEntity, makeNpc, makeJobNpc } from './entities';
-import { DIRECTIONS, isWall, equals, key } from './grid';
+import { DIRECTIONS, isWall, inBounds, equals, key } from './grid';
 import { randInt, pick } from './rng';
 import { generateMap } from './map-generator';
 import { DEFAULT_SEED } from '../config';
@@ -44,16 +44,81 @@ function nearestFloor(s: WorldState, c: Cell): Cell {
   return c;
 }
 
-function randomFreeCell(s: WorldState, occupied: Set<string>, avoid: Cell): Cell | undefined {
+function randomFreeCell(s: WorldState, occupied: Set<string>, avoid: Cell, accept?: (c: Cell) => boolean): Cell | undefined {
   const { width, height } = s.map;
   for (let tries = 0; tries < 80; tries++) {
     const cell = { x: randInt(s, 1, width - 2), y: randInt(s, 1, height - 2) };
     if (isWall(s.map, cell) || occupied.has(key(cell))) continue;
     if (exitAt(s, cell)) continue; // keep spawns off portal tiles
     if (Math.abs(cell.x - avoid.x) + Math.abs(cell.y - avoid.y) < 4) continue; // buffer from the party
+    if (accept && !accept(cell)) continue; // extra gate (e.g. must not wall off a portal)
     return cell;
   }
   return undefined;
+}
+
+// Obstacle-feature footprint dims, keyed by the '<w>x<h>' size string (cell = top-left).
+const OBSTACLE_DIMS: Record<string, [number, number]> = { '1x1': [1, 1], '1x3': [1, 3], '3x1': [3, 1], '3x3': [3, 3] };
+
+// Every solid tile from obstacle features (their expanded footprints). Obstacle
+// cells are already baked into the tile grid as walls, but we fold them in here
+// too so the walkable model is correct even if that ever changes.
+function obstacleCells(s: WorldState): Set<string> {
+  const cells = new Set<string>();
+  for (const f of s.features) {
+    if (f.kind !== 'obstacle') continue;
+    const [w, h] = OBSTACLE_DIMS[f.size] ?? [1, 1];
+    for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) cells.add(key({ x: f.cell.x + dx, y: f.cell.y + dy }));
+  }
+  return cells;
+}
+
+// A cell the party can stand on / walk through: in bounds, not a wall, not an
+// obstacle-feature footprint cell, and not in `blocked` (entity/NPC cells treated
+// as solid for this check).
+function isWalkable(s: WorldState, c: Cell, obstacles: Set<string>, blocked: Set<string>): boolean {
+  if (!inBounds(s.map, c) || isWall(s.map, c)) return false;
+  const k = key(c);
+  return !obstacles.has(k) && !blocked.has(k);
+}
+
+// True iff EVERY portal stays reachable from the party's arrival cell when every
+// cell in `blocked` is treated as solid. Portal tiles themselves may be walls or
+// map edges, so we require the walkable interior step just inside each portal
+// (the same "one tile in" cell travelTo uses for arrival) to be reached by a
+// 4-connected flood fill over walkable cells from the arrival cell.
+export function portalsReachable(s: WorldState, blocked: Set<string>): boolean {
+  const { width, height } = s.map;
+  const player = s.entities[s.playerId];
+  const start = player ? player.cell : { x: Math.floor(width / 2), y: Math.floor(height / 2) };
+  const obstacles = obstacleCells(s);
+  // Each portal's interior target cell (one step in from the portal tile).
+  const targets = s.exits.map((e) => inward(e.cell, width, height));
+  // The party stands on the arrival cell, so it's a valid fill origin even though
+  // its own cell is among the `blocked` solids — exclude it from the solid set for
+  // the walkability test so we measure reachability FROM where the party is.
+  const solids = new Set(blocked);
+  solids.delete(key(start));
+  // If the arrival cell itself is unwalkable (a wall/obstacle) there is nothing to
+  // fill from; treat as reachable only when there are no portals to reach.
+  if (!isWalkable(s, start, obstacles, solids)) return targets.length === 0;
+
+  const seen = new Set<string>([key(start)]);
+  const stack: Cell[] = [start];
+  while (stack.length) {
+    const c = stack.pop() as Cell;
+    for (const d of Object.values(DIRECTIONS)) {
+      const n = { x: c.x + d.dx, y: c.y + d.dy };
+      const nk = key(n);
+      if (seen.has(nk) || !isWalkable(s, n, obstacles, solids)) continue;
+      seen.add(nk);
+      stack.push(n);
+    }
+  }
+  // A portal is reachable if its interior step is reached — or, defensively, if
+  // that interior cell is unwalkable (blocked by geometry we didn't create), in
+  // which case no NPC placement could have caused it, so we don't fail on it.
+  return targets.every((t) => seen.has(key(t)) || !isWalkable(s, t, obstacles, new Set()));
 }
 
 // Spawn up to `amount` enemies for the current map, never exceeding maxAmount.
@@ -119,10 +184,18 @@ export function spawnNpcs(s: WorldState): void {
   const player = s.entities[s.playerId];
   const avoid = player ? player.cell : { x: Math.floor(s.map.width / 2), y: Math.floor(s.map.height / 2) };
   const tiles = pickDistinctTiles(s, themes.length); // one distinct sprite per townsperson (no duplicates in a town)
+  // Solid occupants that block movement, seeded with every existing entity's cell
+  // (the party). NPCs are solid, so each placed one is added here and treated as an
+  // obstacle for the reachability check of every later NPC — no NPC may wall off a
+  // portal. Obstacle features are folded in by portalsReachable itself.
+  const blocked = new Set(Object.values(s.entities).map((e) => key(e.cell)));
+  // Accept a candidate only if, placed there, all portals stay reachable.
+  const keepsPortalsOpen = (c: Cell) => portalsReachable(s, new Set(blocked).add(key(c)));
   themes.forEach((theme, i) => {
-    const cell = randomFreeCell(s, occupied, avoid);
+    const cell = randomFreeCell(s, occupied, avoid, keepsPortalsOpen);
     if (!cell) return;
     occupied.add(key(cell));
+    blocked.add(key(cell)); // later NPCs must route around this one too
     const id = 'npc' + s.seq++;
     // The NPC speaks this topic's town-specific lines, one per interaction (looping).
     s.entities[id] = makeNpc({ id, name: pick(s, NPC_NAMES), tile: tiles[i], cell, dialogue: townDialogue[theme] ?? [] });
@@ -133,9 +206,10 @@ export function spawnNpcs(s: WorldState): void {
   // with the party, townsfolk, or a portal.
   const guildJob = GUILD_MASTERS[s.mapId];
   if (guildJob) {
-    const jobCell = randomFreeCell(s, occupied, avoid);
+    const jobCell = randomFreeCell(s, occupied, avoid, keepsPortalsOpen); // must not wall off a portal either
     if (jobCell) {
       occupied.add(key(jobCell));
+      blocked.add(key(jobCell));
       const id = 'npc' + s.seq++;
       s.entities[id] = makeJobNpc({ id, cell: jobCell, job: guildJob });
     }
