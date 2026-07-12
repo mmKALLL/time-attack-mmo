@@ -259,8 +259,8 @@ Druid
 
 Rogue
 Assassin
-Shadower
-Ninja
+Shadowblade
+Reaver
 
 ----
 
@@ -331,26 +331,68 @@ Rogue 1st job skills:
 Double Strike - 1x1, 6 mp, 2 hits, 1000ms trigger, dmg: lin(0.6, 0.04)
 Venom Slash - 1x3, 10 mp, 1000ms trigger, poison chance: 75%, uses: 2, cooldown: lin(30, -1), dmg: lin(1, 0.08)
 Hamstring - 3x1 (non-piercing), 16 mp, slow: lin(0.4, 0.02), duration: lin(4, 0.02), dmg: lin(0.8, 0.1)
-Life or Death - the player deals and receives +50% damage for lin(4, 0.04)s, cooldown: (20, -0.04)
+Life and Death - the player deals and receives +50% damage for lin(4, 0.04)s, cooldown: (20, -0.04)
 
 ----
 
 2nd job skills (merging will be planned later):
 
+StatusKind → poison | burn | slow | stun | atkUp | atkDown | defUp | defDown | dodge | blind | statPct | statFlat
+
+Fighter statuses: stun, long atk/def up / down
+
 Knight
+
+
 Paladin
+
+
 Duelist
 
+
+
+Archer statuses: slow, some poison, dodge, short dex up
+
 Hunter
+
+
 Sniper
+
+
 Ranger
 
+
+
+Magician statuses: burn, stun, long dex up, short int up
+
 Arcanist
+Arcane Cataclysm, 44 mp, AoE (2.5s delay) that hits the 2 diagonals in front and the 3 tiles that can be moved straight forward to by chess knights from those diagonal tiles, lin(1.6, 0.1)
+Great Cross, 34 mp, 5 tile cross (splits from 3rd tile) which is straight every 2nd cast and diagonal every other cast, dmg lin(2.2, 0.1), uses 4, cooldown: 20s
+Chronostasis, 24 mp, stun enemies in lin(3, 0.5) adjacent tiles and slow them lin(20, 2)%
+Cat's Grace, 60 mp, gain +lin(10,2)% dex for lin(80,10)s
+
 Wizard
+Fireball, 24 mp, 3 tile range, hits first enemy, then explodes into 3x3. Damage lin(0.8,0.1)
+Firewall, 36 mp, 1x5, map tile effect, burns for lin(0.15, 0.01) every 0.5s, stays active lin(4,0.4)s, uses: 2, cooldown 20s
+Burning Grasp 16 mp, 1x1, burns for lin(0.25,0.05) every 0.5s, cooldown: lin(30, -1)
+Meditation, 60 mp, gain +lin(10,2)% int for 10s, cooldown: lin(30, -1)s
+
 Druid
+Cone of Frost, 32 mp, 1/3/5 tile cone (range 3), slow 30%, , uses: 2, cooldown: 30s
+Eruption, 88 mp, 
+Raven Slash, 24 mp, diagonal 5-tile cross 2 tiles away, lin(1.2,0.1) damage
+Natural Armor, 60 mp, gives the party temporary armor that blocks damage equal to lin(50, 10)% of user's max HP, cooldown lin(120, -3)
+
+
+Rogue statuses: blind, poison, slow, short str/dex up, extra damage/crit vs statuses
 
 Assassin
-Shadower
+
+Improved Critical
+
+Shadowblade
+
+
 Reaver
 
 ----

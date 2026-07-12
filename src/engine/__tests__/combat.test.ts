@@ -208,26 +208,26 @@ describe('MP cost (card #22)', () => {
   it('spends the skill MP cost on cast', () => {
     const p = hero({ x: 3, y: 3 });
     p.facing = 'right';
-    p.activeSkillIndex = p.skills.findIndex((r) => r.skillId === 'stab');
+    p.activeSkillIndex = p.skills.findIndex((r) => r.skillId === 'cleave');
     const e = rat('e1', { x: 4, y: 3 });
     const s = world([p, e]);
     s.groups = { g0: { id: 'g0', memberIds: ['p1', 'e1'] } };
     p.mp = 10;
-    advanceCombat(s, castInterval(p)); // exactly one Stab cast
-    expect(s.entities.p1.mp).toBe(10 - (getSkill('stab').mpCost ?? 0));
+    advanceCombat(s, castInterval(p)); // exactly one Cleave cast
+    expect(s.entities.p1.mp).toBe(10 - (getSkill('cleave').mpCost ?? 0));
   });
   it('gates the cast (no MP spent) and jumps off the unaffordable skill', () => {
     const p = hero({ x: 3, y: 3 });
     p.facing = 'right';
-    const stabIdx = p.skills.findIndex((r) => r.skillId === 'stab');
-    p.activeSkillIndex = stabIdx;
+    const cleaveIdx = p.skills.findIndex((r) => r.skillId === 'cleave');
+    p.activeSkillIndex = cleaveIdx;
     const e = rat('e1', { x: 4, y: 3 });
     const s = world([p, e]);
     s.groups = { g0: { id: 'g0', memberIds: ['p1', 'e1'] } };
-    p.mp = 0; // can't afford Stab
+    p.mp = 0; // can't afford Cleave
     advanceCombat(s, 1500);
     expect(s.entities.p1.mp).toBe(0); // nothing spent
-    expect(s.entities.p1.activeSkillIndex).not.toBe(stabIdx); // auto-selected a usable (free) skill
+    expect(s.entities.p1.activeSkillIndex).not.toBe(cleaveIdx); // auto-selected a usable (free) skill
   });
 });
 
@@ -235,15 +235,15 @@ describe('AoE engagement during combat', () => {
   it('a damaging AoE sweeps its whole footprint, hitting + sticking an un-blocked foe', () => {
     const p = hero({ x: 3, y: 3 });
     p.facing = 'right';
-    p.activeSkillIndex = p.skills.findIndex((r) => r.skillId === 'stab'); // Stab: 2-tile line (AoE)
-    const e1 = rat('e1', { x: 4, y: 3 }); // already engaged
-    const e2 = rat('e2', { x: 5, y: 3 }); // second tile of the line, NOT yet in the block
+    p.activeSkillIndex = p.skills.findIndex((r) => r.skillId === 'cleave'); // Cleave: 3-tile arc (AoE)
+    const e1 = rat('e1', { x: 4, y: 3 }); // arc centre (1,0) — already engaged
+    const e2 = rat('e2', { x: 4, y: 4 }); // arc flank (1,1), NOT yet in the block
     const s = world([p, e1, e2]);
     s.groups = { g0: { id: 'g0', memberIds: ['p1', 'e1'] } };
     const before = e2.hp;
-    advanceCombat(s, 1500); // player auto-casts Stab
+    advanceCombat(s, 1500); // player auto-casts Cleave
     expect(groupOf(s, 'p1')?.memberIds).toContain('e2'); // the sweep engaged the un-blocked foe
     expect(s.entities.e2.hp).toBeLessThanOrEqual(before); // resolved against it (hit or seeded miss)
-    expect(s.hits.some((h) => h.cell.x === 5 && h.cell.y === 3)).toBe(true); // reached e2's tile
+    expect(s.hits.some((h) => h.cell.x === 4 && h.cell.y === 4)).toBe(true); // reached e2's tile
   });
 });

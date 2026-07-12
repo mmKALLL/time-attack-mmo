@@ -14,7 +14,7 @@ export const SPRITE_SRC = 32; // procedural (player) sprites authored at 32x32
 export const ENEMY_TILE_SRC = 256; // enemy spritesheet: one quadrant cell is 256x256
 export const CAMERA_ZOOM_PERCENT = 50; // follow-camera zoom (256px tile * 0.5 = 128px on screen)
 export const PLAYER_SPRITE_SCALE = 1.1; // player sprite render size vs one cell; scales taller+wider from the feet
-export const FACING_ARROW_DISTANCE = 30; // player/ally facing triangle: distance out from the cell centre (UI units)
+export const FACING_ARROW_DISTANCE = 40; // player/ally facing triangle: distance out from the cell centre (UI units)
 export const FLOOR_CHECKER_SIZE = 4; // floor checkerboard alternates every N tiles
 // Per-biome map defaults: footprint, generator params, spawn cadence, and
 // lighting. A data-map field segment can override width/height and room count.
@@ -44,7 +44,7 @@ export const MAP_CONFIG: Record<Biome, MapConfig> = {
     width: 26,
     height: 20,
     gen: { roomCount: 3, roomMin: 5, roomMax: 8, roomShape: 'natural', corridorWidth: 1, torchDensity: 6, obstacleCount: 7, npcCount: 0 },
-    spawns: { maxAmount: 6, spawnInterval: 10, spawnAmount: 1 },
+    spawns: { maxAmount: 7, spawnInterval: 10, spawnAmount: 1 },
     light: { duskColor: 0x05060e, ambientDuskLevel: 20, torchGlowDistance: 7 },
   },
 };

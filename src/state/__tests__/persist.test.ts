@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { WorldState } from '../../types';
 import { createDemoWorld } from '../../engine';
-import { SAVE_VERSION, deleteSlot, exportSlot, getActiveSlot, hasSave, importJson, listSlots, loadSlotRaw, saveSlot, setActiveSlot } from '../persist';
+import { MAX_SLOTS, SAVE_VERSION, deleteSlot, exportSlot, getActiveSlot, hasSave, importJson, listSlots, loadSlotRaw, saveSlot, setActiveSlot } from '../persist';
 
 // A world whose transient fields carry data, so we can assert they're stripped on save.
 function dirtyWorld(): WorldState {
@@ -121,11 +121,9 @@ describe('persist', () => {
   it('listSlots reflects populated vs empty slots (length MAX_SLOTS)', () => {
     saveSlot(0, createDemoWorld());
     const list = listSlots();
-    expect(list).toHaveLength(4);
+    expect(list).toHaveLength(MAX_SLOTS);
     expect(list[0]).not.toBeNull();
-    expect(list[1]).toBeNull();
-    expect(list[2]).toBeNull();
-    expect(list[3]).toBeNull();
+    for (let i = 1; i < MAX_SLOTS; i++) expect(list[i]).toBeNull();
     expect(list[0]?.slot).toBe(0);
   });
 

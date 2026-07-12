@@ -92,7 +92,7 @@ function surround(): Offset[] {
 // The footprint a skill hits at a given level, rotated to the caster's facing.
 // AoE footprints grow with the skill's {tiles} param (design §"shapes scale").
 export function shapeFor(skill: Skill, level: number, facing: Direction = 'right'): Offset[] {
-  const tiles = Math.max(1, Math.round(skill.params.tiles?.(level) ?? DEFAULT_TILES[skill.shapeKind]));
+  const tiles = Math.max(1, Math.floor(skill.params.tiles?.(level) ?? DEFAULT_TILES[skill.shapeKind]));
   const base = baseShape(skill.shapeKind, tiles);
   const offset = skill.offset ?? 0; // push the whole footprint forward `offset` tiles (empty tiles between caster and hitbox), then rotate to facing
   return base.map((o) => rotate({ dx: o.dx + offset, dy: o.dy }, facing));

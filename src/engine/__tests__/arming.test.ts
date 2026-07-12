@@ -26,7 +26,7 @@ function world(entities: Entity[]): WorldState {
   };
 }
 // Beginner kit: slot 0 = Strike (shapeKind 'point', single-target, faced tile),
-// slot 1 = Stab (shapeKind 'line', 2 tiles → AoE/piercing), slot 2 = Recover.
+// slot 1 = Cleave (shapeKind 'arc', 3 tiles → AoE fan one cell ahead), slot 2 = Recover.
 const hero = (cell: { x: number; y: number }) => makeEntity({ id: 'p1', faction: 'player', name: 'Hero', sprite: 'ranger', cell, level: 20, jobId: 'beginner' });
 const rat = (id: string, cell: { x: number; y: number }) => makeEntity({ id, faction: 'enemy', name: 'Rat', sprite: 'slime', cell, level: 20, jobId: 'beginner' });
 const BIG = 100000; // dt comfortably past any class's cast interval → fires exactly once
@@ -61,20 +61,20 @@ describe('arming (out-of-combat ranged fire, card #9)', () => {
     expect(s.entities.e1.hp).toBe(before); // unharmed
   });
 
-  it('(c-aoe) an AoE-shaped skill (line/Stab) targets + engages ALL covered enemies', () => {
+  it('(c-aoe) an AoE-shaped skill (arc/Cleave) targets + engages ALL covered enemies', () => {
     const p = hero({ x: 5, y: 5 });
     p.facing = 'right';
-    const e1 = rat('e1', { x: 6, y: 5 }); // Stab covers (1,0)
-    const e2 = rat('e2', { x: 7, y: 5 }); // ...and (2,0)
+    const e1 = rat('e1', { x: 6, y: 5 }); // Cleave arc covers (1,0)
+    const e2 = rat('e2', { x: 6, y: 6 }); // ...and the flank (1,1)
     const s = world([p, e1, e2]);
-    s.entities.p1.activeSkillIndex = 1; // Stab (line, 2 tiles)
+    s.entities.p1.activeSkillIndex = 1; // Cleave (arc, 3 tiles)
     s.entities.p1.armed = true;
     advanceArming(s, BIG);
     // Both covered foes are RESOLVED against (a hit event lands on each cell — the
     // amount may be a miss=0 depending on the seeded roll) and both are ENGAGED. This
     // is the deterministic "hit all" invariant; per-foe damage is RNG-dependent.
     expect(s.hits.some((h) => h.cell.x === 6 && h.cell.y === 5)).toBe(true);
-    expect(s.hits.some((h) => h.cell.x === 7 && h.cell.y === 5)).toBe(true);
+    expect(s.hits.some((h) => h.cell.x === 6 && h.cell.y === 6)).toBe(true);
     expect(groupOf(s, 'p1')?.memberIds.sort()).toEqual(['e1', 'e2', 'p1']); // both engaged
   });
 

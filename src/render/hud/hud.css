@@ -279,7 +279,7 @@
   background: var(--ember);
 }
 .slot .shape i.self {
-  background: var(--gold-stud);
+  background: var(--character-self-slot);
 }
 .slot .pips {
   display: flex;

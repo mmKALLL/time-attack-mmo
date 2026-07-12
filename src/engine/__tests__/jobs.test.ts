@@ -23,6 +23,6 @@ describe('job DAG unlocking', () => {
 
 describe('kitOf', () => {
   it('grants a base/second class its own grouped skills', () => {
-    expect(kitOf('knight').map((s) => s.id)).toEqual(['aegisBastion', 'provocation', 'earthsmash']);
+    expect(kitOf('knight').map((s) => s.id)).toEqual(['aegisBastion', 'earthsmash']);
   });
 });

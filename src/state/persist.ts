@@ -5,7 +5,7 @@ import type { WorldState } from '../types';
 // in try/catch to stay safe under private mode / quota limits / SSR (no window).
 
 export const SAVE_VERSION = 1;
-export const MAX_SLOTS = 4; // multi-slot scaffolding; slot 0 is the default active slot
+export const MAX_SLOTS = 8; // multi-slot scaffolding; slot 0 is the default active slot
 
 const slotKey = (slot: number): string => `tam:save:${slot}`;
 const ACTIVE_KEY = 'tam:active-slot';

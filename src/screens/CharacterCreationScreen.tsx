@@ -71,7 +71,7 @@ export function CharacterCreationScreen() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `tam-save-slot${slot}.json`;
+      a.download = `suomela-save-slot${slot}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -132,9 +132,7 @@ export function CharacterCreationScreen() {
                     Slot {slot + 1}
                     {active && <span style={{ marginLeft: 10, fontSize: 10, color: 'var(--gold)', letterSpacing: 1 }}>ACTIVE</span>}
                   </div>
-                  <div style={{ color: 'var(--ink-dim)', fontSize: 14, marginTop: 4 }}>
-                    {meta ? `${meta.name} · LV ${meta.level} · ${jobName(meta.jobId)}` : 'Empty'}
-                  </div>
+                  <div style={{ color: 'var(--ink-dim)', fontSize: 14, marginTop: 4 }}>{meta ? `${meta.name} · LV ${meta.level} · ${jobName(meta.jobId)}` : 'Empty'}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   {!meta && (

@@ -294,7 +294,27 @@ export function SkillAllocationScreen() {
 
   // power headline + NEXT LV deltas from the skill's param functions
   const paramLabel = (k: string, s: Skill) =>
-    k === 'dmg' ? 'Max damage' : k === 'heal' ? 'Healing' : k === 'pct' ? (s.kind === 'dot' ? 'Burn' : 'Effect') : k === 'dur' ? 'Duration' : k === 'tiles' ? 'Tiles' : k === 'hits' ? 'Hits' : k === 'cooldown' ? 'Cooldown' : k === 'crit' ? 'Crit rate' : k === 'critDmg' ? 'Crit damage' : k;
+    k === 'dmg'
+      ? 'Max damage'
+      : k === 'heal'
+        ? 'Healing'
+        : k === 'pct'
+          ? s.kind === 'dot'
+            ? 'Burn'
+            : 'Effect'
+          : k === 'dur'
+            ? 'Duration'
+            : k === 'tiles'
+              ? 'Tiles'
+              : k === 'hits'
+                ? 'Hits'
+                : k === 'cooldown'
+                  ? 'Cooldown'
+                  : k === 'crit'
+                    ? 'Crit rate'
+                    : k === 'critDmg'
+                      ? 'Crit damage'
+                      : k;
   const paramVal = (k: string, s: Skill, lv: number) => {
     const fn = s.params[k as keyof typeof s.params];
     if (!fn) return '';
@@ -389,7 +409,7 @@ export function SkillAllocationScreen() {
               <div style={{ fontSize: 10, color: '#e0906a', marginTop: 5, letterSpacing: 0.5 }}>SKILL</div>
             </div>
           </div>
-          <div style={{ flex: 1, fontSize: 12, color: '#8f8674', fontStyle: 'italic', lineHeight: 1.4 }}>{pending > 0 ? `Unsaved: ${pending} point${pending > 1 ? 's' : ''} allocated.` : 'Spend your points here. No cashbacks.'}</div>
+          <div style={{ flex: 1, fontSize: 12, color: '#8f8674', fontStyle: 'italic', lineHeight: 1.4 }}>{pending > 0 ? `Unsaved: ${pending} point${pending > 1 ? 's' : ''} allocated.` : ''}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div
               className={`sa-btn${pending > 0 ? '' : ' dis'}`}
@@ -539,7 +559,16 @@ export function SkillAllocationScreen() {
                           key={rt.skillId + i}
                           className="sa-skillrow"
                           onClick={() => setSelected(i)}
-                          style={{ display: 'flex', alignItems: 'flex-start', gap: 12, border: `1px solid ${sel ? ecol : '#262b34'}`, borderRadius: 7, padding: '10px 12px', background: sel ? 'rgba(240,135,58,.12)' : '#12151c', opacity: unlearned ? 0.62 : 1 }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 12,
+                            border: `1px solid ${sel ? ecol : '#262b34'}`,
+                            borderRadius: 7,
+                            padding: '10px 12px',
+                            background: sel ? 'rgba(240,135,58,.12)' : '#12151c',
+                            opacity: unlearned ? 0.62 : 1,
+                          }}
                         >
                           <div style={{ width: 48, height: 48, borderRadius: 6, background: '#0d1016', border: `1px solid ${ecol}66`, flex: 'none' }}>
                             <SkillIcon skill={sk} size={48} />

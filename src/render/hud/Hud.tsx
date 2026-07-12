@@ -225,7 +225,7 @@ function Hotbar() {
             {cooling && <span className="cd">{Math.ceil(rt.cooldownLeftMs / 1000)}</span>}
             <ShapeGrid shape={shapeFor(skill, rt.level)} />
             <span className="lbl">{skill.name}</span>
-            {rt.usesLeft >= 0 && skill.uses ? (
+            {rt.usesLeft >= 0 && skill.uses && skill.uses > 1 ? (
               <div className="pips">
                 {Array.from({ length: skill.uses }).map((_, k) => (
                   <i key={k} className={k < rt.usesLeft ? 'on' : ''} />
@@ -306,10 +306,7 @@ function XpGainFloats() {
     setFloats((f) => [...f, ...batch]);
     const ids = new Set(batch.map((b) => b.id));
     const maxStagger = (xpGains.length - 1) * XP_FLOAT_STAGGER_MS;
-    const timer = window.setTimeout(
-      () => setFloats((f) => f.filter((x) => !ids.has(x.id))),
-      XP_FLOAT_LIFETIME_MS + maxStagger,
-    );
+    const timer = window.setTimeout(() => setFloats((f) => f.filter((x) => !ids.has(x.id))), XP_FLOAT_LIFETIME_MS + maxStagger);
     return () => window.clearTimeout(timer);
   }, [tickCount]); // fire once per tick; xpGains is snapshotted for this tickCount
 

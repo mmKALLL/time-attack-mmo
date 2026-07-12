@@ -19,7 +19,7 @@ export const PRIMARY_BASE = 5; // each primary at level 1
 export const PRIMARY_POINTS_PER_LEVEL = 3; // design-doc: +3 attribute points / level
 export const ARCHETYPE_WEIGHTS: Record<Archetype, Primaries> = {
   str: { str: 40, dex: 15, int: 15, vit: 30 },
-  dex: { str: 20, dex: 40, int: 15, vit: 25 },
+  dex: { str: 25, dex: 30, int: 15, vit: 25 },
   int: { str: 15, dex: 15, int: 50, vit: 20 },
   balanced: { str: 25, dex: 25, int: 25, vit: 25 },
 };
@@ -66,12 +66,8 @@ export function statusResistPercent(e: Entity): number {
   return Math.max(0, Math.min(95, raw));
 }
 
-// Early enemies (level <= maxLevel) take a flat stat penalty so a fresh, under-
-// leveled player isn't overwhelmed. Applied to enemy derived stats only.
-export const ENEMY_STAT_PENALTY = { maxLevel: 9, factor: 0.7 };
-
 export function enemyStatMult(level: number): number {
-  return level <= ENEMY_STAT_PENALTY.maxLevel ? ENEMY_STAT_PENALTY.factor : 1;
+  return level <= 4 ? 0.5 : level <= 9 ? 0.7 : 1 + (level - 10) / 10;
 }
 
 // ---------- Derived stats (design-doc formulas) ----------
@@ -90,7 +86,7 @@ export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beg
   const power = (phys * physical + (1 - phys) * magical) * 2;
   const accuracy = p.dex * 2;
   return {
-    maxHp: p.vit * 20 + level * 10 - 10,
+    maxHp: p.vit * (20 + level) + 50,
     maxMp: p.int * 8 + level * 2 - 2,
     minDmg: Math.round(power * minDamageRatio),
     maxDmg: Math.round(power),

@@ -60,20 +60,19 @@ export const SKILLS: Record<string, Skill[]> = {
   // --- Tier 0 ---
   beginner: [
     sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'physical', shapeKind: 'point', params: { dmg: lin(1.0, 0.1) } }),
-    sk({ id: 'stab', name: 'Stab', description: 'Stab two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'physical', shapeKind: 'line', params: { tiles: () => 2, dmg: lin(0.6, 0.08) }, mpCost: 4 }),
+    sk({ id: 'cleave', name: 'Cleave', description: 'Slash three foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'physical', shapeKind: 'arc', params: { tiles: () => 3, dmg: lin(0.6, 0.08) }, mpCost: 4 }),
     sk({ id: 'recover', name: 'Recover', description: 'Restore {healPercentage} of max HP (cooldown: {cooldown}).', kind: 'heal', target: 'self', element: 'physical', shapeKind: 'self', params: { healPercentage: flat(0.5) }, uses: 1, cooldown: lin(150, -15), mpCost: 20 }),
   ],
 
   // --- Fighter ---
   fighter: [
-    sk({ id: 'powerStrike', name: 'Power Strike', description: 'Strike one foe for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'earth', shapeKind: 'point', params: { dmg: lin(1.5, 0.25) }, uses: 3, cooldown: 15 }),
-    sk({ id: 'cleave', name: 'Cleave', description: 'Sweep {tiles} tiles in front for {dmg} damage.', kind: 'attack', target: 'adjacent-arc', element: 'earth', shapeKind: 'arc', params: { dmg: lin(0.8, 0.12), tiles: flat(3) }, mpCost: 6 }),
-    sk({ id: 'spinSlash', name: 'Spin Slash', description: 'Whirl, hitting {tiles} surrounding tiles for {dmg} damage.', kind: 'attack', target: 'area', element: 'earth', shapeKind: 'surround', params: { dmg: lin(1.1, 0.15), tiles: flat(8) }, mpCost: 14 }),
-    sk({ id: 'bracingGuard', name: 'Bracing Guard', description: 'Brace, cutting damage taken {pct}% for 10s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'earth', shapeKind: 'self', params: { pct: lin(40, 4) }, cooldown: lin(20, -1), status: { name: 'defUp' } }),
+    sk({ id: 'powerStrike', name: 'Power Strike', description: 'Strike one foe for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'earth', shapeKind: 'point', params: { dmg: lin(1.5, 0.2) }, uses: 3, cooldown: 15 }),
+    sk({ id: 'stab', name: 'Piercing Stab', description: 'Stab {tiles} tiles in front for {dmg} damage.', kind: 'attack', target: 'adjacent-arc', element: 'earth', shapeKind: 'line', params: { dmg: lin(1.2, 0.12), tiles: flat(2) }, mpCost: 8 }),
+    sk({ id: 'spinSlash', name: 'Spin Slash', description: 'Whirl, hitting {tiles} surrounding tiles for {dmg} damage.', kind: 'attack', target: 'area', element: 'earth', shapeKind: 'surround', params: { dmg: lin(0.9, 0.15), tiles: lin(4,0.4) }, mpCost: 14 }),
+    sk({ id: 'bracingGuard', name: 'Bracing Guard', description: 'Brace, cutting damage taken {pct}% for 10s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'earth', shapeKind: 'self', params: { pct: lin(40, 4) }, cooldown: lin(30, -1), status: { name: 'defUp' } }),
   ],
   knight: [
     sk({ id: 'aegisBastion', name: 'Aegis Bastion', description: 'Shield the block, cutting damage taken {pct}% for 10s.', kind: 'buff', target: 'block', element: 'light', shapeKind: 'party', params: { pct: lin(40, 5) }, cooldownMs: 8000, status: { name: 'defUp' } }),
-    sk({ id: 'provocation', name: 'Provocation', description: 'Force {targets} foes to target you for {dur}s.', kind: 'debuff', target: 'area', element: 'light', shapeKind: 'area', params: { targets: lin(2, 1), dur: lin(3, 1) }, cooldownMs: 5000 }),
     sk({ id: 'earthsmash', name: 'Earthsmash', description: 'Smash {tiles} tiles for {dmg}, stunning for 2s.', kind: 'attack', target: 'adjacent-arc', element: 'light', shapeKind: 'arc', params: { tiles: lin(3, 0.5), dmg: lin(1.1, 0.2) }, cooldownMs: 4000, status: { name: 'stun' } }),
   ],
   paladin: [
