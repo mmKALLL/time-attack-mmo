@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { tick } from '../world';
 import { createDemoWorld } from '../demo';
 import { MAPS, START_MAP } from '../../data-map';
+import { getSkill } from '../../data-skills';
 
 describe('world reducer', () => {
   it('does not mutate the input state (immutability boundary)', () => {
@@ -51,6 +52,22 @@ describe('world reducer', () => {
   it('starts with only the start map discovered', () => {
     const s = createDemoWorld();
     expect(s.discovered).toEqual([START_MAP]);
+  });
+  it('respawn refreshes hp/mp and every skill (cooldowns cleared, uses topped up)', () => {
+    const s0 = createDemoWorld();
+    const p0 = s0.entities[s0.playerId];
+    // Damage the player and put every skill into a "spent" runtime state.
+    p0.hp = 1;
+    p0.mp = 0;
+    p0.skills = p0.skills.map((rt) => ({ ...rt, cooldownLeftMs: 5000, usesLeft: rt.usesLeft > 0 ? 0 : rt.usesLeft }));
+    const s1 = tick(s0, [{ type: 'respawn' }], 50);
+    const p1 = s1.entities[s1.playerId];
+    expect(p1.hp).toBe(p1.stats.maxHp);
+    expect(p1.mp).toBe(p1.stats.maxMp);
+    for (const rt of p1.skills) {
+      expect(rt.cooldownLeftMs).toBe(0);
+      expect(rt.usesLeft).toBe(getSkill(rt.skillId).uses ?? -1); // full uses (or -1 = unlimited)
+    }
   });
   it('demo world starts with a lone player (no allies) in the safe town', () => {
     const s = createDemoWorld();

@@ -5,6 +5,7 @@ import { exitAt, travelTo, advanceRespawns } from './maps';
 import { advanceRoaming } from './roaming';
 import { spendAttribute, levelUpSkill, advanceJob } from './progression';
 import { learnedIndexes } from './skills';
+import { getSkill } from '../data-skills';
 import { START_MAP } from '../data-map';
 import { step } from './grid';
 
@@ -17,6 +18,8 @@ function respawnAtStart(s: WorldState): void {
     p.hp = p.stats.maxHp;
     p.mp = p.stats.maxMp;
     p.castTimerMs = 0;
+    // death refreshes every skill: cooldowns cleared, uses topped up
+    p.skills = p.skills.map((rt) => ({ ...rt, cooldownLeftMs: 0, usesLeft: getSkill(rt.skillId).uses ?? -1 }));
   }
 }
 
