@@ -147,6 +147,7 @@ type LevelUpFx = {
   rays: Graphics; // rotating starburst spokes, redrawn each frame
   glints: LevelUpGlint[]; // rising twinkling particles
   banner: Text; // popped "LEVEL UP!" words
+  label: string; // banner text ('LEVEL UP!' or 'CLASS UP')
 };
 
 // Draws the Emberdeep combat world imperatively from engine state. No React here.
@@ -175,6 +176,7 @@ export class WorldRenderer {
   private bgTilesReady = false; // floor + obstacle sheets loaded when the current bg was built
   private propCells = new Set<string>(); // cells carrying an obstacle prop (wall ring + features)
   private prevLevel = new Map<string, number>();
+  private prevJobId = new Map<string, string>();
   private lastFloatTick = -1; // tickCount whose hit events were already floated
   private lastFlip = new Map<string, boolean>(); // horizontal flip persists across up/down moves
   private tweens = new Map<string, MoveTween>(); // per-entity glide from old to new cell (draw-only)
@@ -690,11 +692,13 @@ export class WorldRenderer {
       const { px, py } = at(e);
       this.drawEntity(world, e, frame, bob, px, py);
       this.spawnLevelUpIfLeveled(e, px, py, elapsedMs);
+      this.spawnClassUpIfAdvanced(e, px, py, elapsedMs);
     }
     this.spawnHitFloats(world, elapsedMs); // damage/crit/heal/miss numbers from the tick
     this.buildLights(world, elapsedMs); // dusk veil + torch glows over the scene
     // reap tracking maps for entities that no longer exist
     for (const id of [...this.prevLevel.keys()]) if (!world.entities[id]) this.prevLevel.delete(id);
+    for (const id of [...this.prevJobId.keys()]) if (!world.entities[id]) this.prevJobId.delete(id);
     for (const id of [...this.tweens.keys()]) if (!world.entities[id]) this.tweens.delete(id);
     for (const id of [...this.badgeSprites.keys()]) {
       if (world.entities[id]) continue;
@@ -717,11 +721,21 @@ export class WorldRenderer {
     this.prevLevel.set(e.id, e.level);
   }
 
+  // Detect a job advancement (jobId change, level unchanged) and fire the same
+  // burst as a level-up but with a 'CLASS UP' banner, on the frame it happens.
+  private spawnClassUpIfAdvanced(e: Entity, px: number, py: number, elapsedMs: number) {
+    const prev = this.prevJobId.get(e.id);
+    if (prev !== undefined && e.jobId !== prev) {
+      this.spawnLevelUp(e.id, px + CELL_PX / 2, py + CELL_PX * 0.55, elapsedMs, 'CLASS UP'); // torso anchor
+    }
+    this.prevJobId.set(e.id, e.jobId);
+  }
+
   // Build one level-up burst's display objects up front (no per-frame allocation):
   // flash, golden pillar, ring/ray Graphics we redraw in place each frame, a fixed
   // fan of sparkle glints, and the popped banner. All ride a per-burst `root`
   // container positioned at the anchor, so animating is local to that origin.
-  private spawnLevelUp(entityId: string, cx: number, cy: number, elapsedMs: number) {
+  private spawnLevelUp(entityId: string, cx: number, cy: number, elapsedMs: number, label = 'LEVEL UP!') {
     const root = new Container();
     root.position.set(cx, cy);
     root.blendMode = 'add'; // whole burst reads as light; the banner opts back to normal below
@@ -762,7 +776,7 @@ export class WorldRenderer {
     // Banner: keep the words, but celebratory — gold fill, dark stroke, its own
     // normal blend (additive text on a bright pillar would wash out) and a pop.
     const banner = new Text({
-      text: 'LEVEL UP!',
+      text: label,
       style: {
         fontFamily: '"Press Start 2P", monospace',
         fontSize: 24 * UI,
@@ -776,7 +790,7 @@ export class WorldRenderer {
 
     root.addChild(pillar, rings, rays, flash, banner); // flash + banner read on top
     this.levelUpFx.addChild(root);
-    this.levelUps.push({ born: elapsedMs, entityId, cx, cy, root, flash, pillar, rings, rays, glints, banner });
+    this.levelUps.push({ born: elapsedMs, entityId, cx, cy, root, flash, pillar, rings, rays, glints, banner, label });
   }
 
   // Advance every active burst as a pure function of its age (0..1 over durationMs),
