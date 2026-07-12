@@ -90,8 +90,17 @@ function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
   ctx.closePath();
 }
 
-const GLYPH = '#f4f6f8'; // near-white glyph ink
-const GLYPH_SHADOW = 'rgba(0,0,0,0.55)';
+const GLYPH = '#f4f6f8'; // near-white glyph ink (also the ×N count + overflow dots)
+const GLYPH_DARK = '#14171b'; // dark glyph ink for LIGHT badge fills (yellow/steel/ice-blue/grey…)
+// Perceptual luminance (0..1) of a #rrggbb colour.
+function lum(hex: string): number {
+  const c = hexRgb(hex);
+  return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
+}
+// Glyph ink that contrasts with the badge fill: dark on light fills, near-white on dark ones.
+function glyphInk(base: string): string {
+  return lum(base) > 0.55 ? GLYPH_DARK : GLYPH;
+}
 
 // Draws ONE badge filling a size×size box: rounded-square fill (subtle top-lighter
 // gradient), a thin category ring, the procedural glyph, and a ×N stack count.
@@ -108,8 +117,8 @@ export function drawStatusBadge(ctx: CanvasRenderingContext2D, group: StatusBadg
   // Background: rounded square with a subtle top-lighter vertical gradient.
   roundRectPath(ctx, x, y, w, h, r);
   const grad = ctx.createLinearGradient(0, y, 0, y + h);
-  grad.addColorStop(0, mix(base, 255, 0.28)); // lighter top
-  grad.addColorStop(1, mix(base, 0, 0.14)); // slightly darker bottom
+  grad.addColorStop(0, mix(base, 255, 0.14)); // slightly lighter top
+  grad.addColorStop(1, mix(base, 0, 0.2)); // darker bottom for depth
   ctx.fillStyle = grad;
   ctx.fill();
 
@@ -119,14 +128,16 @@ export function drawStatusBadge(ctx: CanvasRenderingContext2D, group: StatusBadg
   ctx.strokeStyle = group.harmful ? 'rgba(120,20,20,0.85)' : 'rgba(230,197,131,0.85)';
   ctx.stroke();
 
-  // Glyph, centered, near-white with a faint dark shadow for readability.
+  // Glyph, centered. Ink contrasts with the fill (dark ink on light badges, near-
+  // white on dark ones), wrapped in an opposite-tone halo so it reads on ANY colour.
+  const ink = glyphInk(base);
   ctx.save();
   ctx.translate(size / 2, size / 2);
-  ctx.shadowColor = GLYPH_SHADOW;
-  ctx.shadowBlur = size * 0.06;
-  ctx.shadowOffsetY = size * 0.03;
-  ctx.fillStyle = GLYPH;
-  ctx.strokeStyle = GLYPH;
+  ctx.shadowColor = ink === GLYPH_DARK ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)';
+  ctx.shadowBlur = size * 0.12;
+  ctx.shadowOffsetY = 0;
+  ctx.fillStyle = ink;
+  ctx.strokeStyle = ink;
   drawGlyph(ctx, group, size);
   ctx.restore();
 
