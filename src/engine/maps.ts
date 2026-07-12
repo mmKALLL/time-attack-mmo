@@ -266,7 +266,7 @@ export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId, arrivalDi
     occupied.add(key(cell));
   });
   s.entities = Object.fromEntries(heroes.map((e) => [e.id, e]));
-  if (def.biome === 'town') for (const h of heroes) h.mp = h.stats.maxMp; // MP fully heals on town entry (walk-in, fast-travel, or respawn); not otherwise
+  if (def.biome === 'town') for (const h of heroes) { h.hp = h.stats.maxHp; h.mp = h.stats.maxMp; } // HP + MP fully heal on town entry (walk-in, fast-travel, or respawn); not otherwise
 
   spawnEnemies(s, def.spawns[0]?.maxAmount ?? 0);
   if (def.biome === 'town') spawnNpcs(s); // townsfolk NPCs (data-driven count)
