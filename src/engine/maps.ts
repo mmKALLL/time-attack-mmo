@@ -8,7 +8,7 @@ import { DIRECTIONS, isWall, inBounds, equals, key } from './grid';
 import { randInt, pick } from './rng';
 import { generateMap } from './map-generator';
 import { DEFAULT_SEED } from '../config';
-import { NPC_NAMES, NPC_THEMES, NPC_TILES, TOWN_DIALOGUE } from '../data-npc';
+import { NPC_NAMES, NPC_THEMES, NPC_TILES_MALE, NPC_TILES_FEMALE, genderOfName, TOWN_DIALOGUE } from '../data-npc';
 
 // Stable geometry seed per map id (derived from the fixed base seed) so a map
 // keeps the same layout across visits; only its enemies re-roll.
@@ -158,24 +158,13 @@ export function spawnEnemies(s: WorldState, amount: number): void {
   }
 }
 
-// Pick `count` DISTINCT NPC tiles at random via the seeded RNG (a partial
-// Fisher-Yates shuffle of NPC_TILES), so no two townsfolk in a town share a sprite.
-// NPC_TILES has >= NPC_THEMES.length entries, so this always fills the count.
-function pickDistinctTiles(s: WorldState, count: number): string[] {
-  const pool = [...NPC_TILES];
-  for (let i = 0; i < count && i < pool.length; i++) {
-    const j = randInt(s, i, pool.length - 1);
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool.slice(0, Math.min(count, pool.length));
-}
-
 // Spawn the current town's non-combatant NPCs — ONE fixed NPC per topic the town
 // defines in TOWN_DIALOGUE[mapId], in NPC_THEMES order (deterministic). Called from
 // travelTo only for town-biome maps. The town's defined topics ARE its NPCs; each
 // carries that topic's location-specific line array as its dialogue and cycles it
-// one line per interaction. Each NPC gets a random name + distinct tile (seeded) at
-// a portal-safe floor cell (reusing the off-portal placement from spawnEnemies).
+// one line per interaction. Each NPC gets a random name (seeded) and a tile picked
+// from its name's gender pool — best-effort distinct within the town — at a
+// portal-safe floor cell (reusing the off-portal placement from spawnEnemies).
 export function spawnNpcs(s: WorldState): void {
   const townDialogue = TOWN_DIALOGUE[s.mapId] ?? {};
   // Topics this town hosts, in NPC_THEMES order, keeping only non-empty line arrays.
@@ -183,7 +172,7 @@ export function spawnNpcs(s: WorldState): void {
   const occupied = new Set(Object.values(s.entities).map((e) => key(e.cell)));
   const player = s.entities[s.playerId];
   const avoid = player ? player.cell : { x: Math.floor(s.map.width / 2), y: Math.floor(s.map.height / 2) };
-  const tiles = pickDistinctTiles(s, themes.length); // one distinct sprite per townsperson (no duplicates in a town)
+  const usedTiles = new Set<string>(); // tiles already taken, so townsfolk stay distinct when the pool allows
   // Solid occupants that block movement, seeded with every existing entity's cell
   // (the party). NPCs are solid, so each placed one is added here and treated as an
   // obstacle for the reachability check of every later NPC — no NPC may wall off a
@@ -191,14 +180,21 @@ export function spawnNpcs(s: WorldState): void {
   const blocked = new Set(Object.values(s.entities).map((e) => key(e.cell)));
   // Accept a candidate only if, placed there, all portals stay reachable.
   const keepsPortalsOpen = (c: Cell) => portalsReachable(s, new Set(blocked).add(key(c)));
-  themes.forEach((theme, i) => {
+  themes.forEach((theme) => {
     const cell = randomFreeCell(s, occupied, avoid, keepsPortalsOpen);
     if (!cell) return;
     occupied.add(key(cell));
     blocked.add(key(cell)); // later NPCs must route around this one too
     const id = 'npc' + s.seq++;
+    // Name first, then a tile from the matching gender pool — prefer an unused tile
+    // for distinctness, but reuse if the (small) gender pool is exhausted.
+    const name = pick(s, NPC_NAMES);
+    const pool = genderOfName(name) === 'female' ? NPC_TILES_FEMALE : NPC_TILES_MALE;
+    const avail = pool.filter((t) => !usedTiles.has(t));
+    const tile = pick(s, avail.length ? avail : pool);
+    usedTiles.add(tile);
     // The NPC speaks this topic's town-specific lines, one per interaction (looping).
-    s.entities[id] = makeNpc({ id, name: pick(s, NPC_NAMES), tile: tiles[i], cell, dialogue: townDialogue[theme] ?? [] });
+    s.entities[id] = makeNpc({ id, name, tile, cell, dialogue: townDialogue[theme] ?? [] });
   });
   // Guildmasters are distributed: only the towns in GUILD_MASTERS host one, each
   // offering that town's single 1st-job class. Towns not listed (start, 2nd-job,

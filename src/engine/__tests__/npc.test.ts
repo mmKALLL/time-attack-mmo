@@ -6,7 +6,7 @@ import { moveOrStick, areEnemies } from '../combat';
 import { makeEntity, makeNpc } from '../entities';
 import { applyInput } from '../world';
 import { MAPS, START_MAP } from '../../data-map';
-import { NPC_THEMES, NPC_TILES, TOWN_DIALOGUE } from '../../data-npc';
+import { NPC_THEMES, NPC_TILES, NPC_TILES_MALE, NPC_TILES_FEMALE, genderOfName, TOWN_DIALOGUE } from '../../data-npc';
 import type { NpcTheme } from '../../data-npc';
 
 // Townsfolk = chat NPCs only (excludes the per-town job-advancement NPC, which
@@ -86,6 +86,20 @@ describe('town NPCs', () => {
       }
       // distinct sprites: no two townsfolk share a tile
       expect(new Set(list.map((n) => n.asset?.tiles)).size).toBe(list.length);
+    }
+  });
+
+  it("each townsperson's tile matches its name's gender pool", () => {
+    const townIds = Object.keys(TOWN_DIALOGUE);
+    for (const town of townIds) {
+      const s = createDemoWorld();
+      travelTo(s, town, s.mapId);
+      const list = npcs(s);
+      expect(list.length).toBeGreaterThan(0);
+      for (const n of list) {
+        const pool = genderOfName(n.name) === 'female' ? NPC_TILES_FEMALE : NPC_TILES_MALE;
+        expect(pool).toContain(n.asset?.tiles); // gender-matched sprite
+      }
     }
   });
 

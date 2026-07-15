@@ -13,7 +13,10 @@ export const NPC_THEMES: NpcTheme[] = ['workEthic', 'culture', 'history', 'folkl
 
 export const MAX_TOWN_NPCS = 4; // hard cap on townsfolk per town (one per theme)
 export const NPC_ASSET_FILE = 'town-npc.png'; // shared townsfolk spritesheet
-export const NPC_TILES = ['q3-1', 'q3-2', 'q3-3', 'q3-4', 'q3-5', 'q3-6', 'q3-7', 'q3-8', 'q4-4', 'q4-8']; // generic NPC single-tile portraits
+// Townsfolk tiles split by gender presentation (an NPC's tile matches its name's gender).
+export const NPC_TILES_FEMALE = ['q3-2', 'q2-1']; // weaver + maid — the usable female-presenting townsfolk
+export const NPC_TILES_MALE = ['q3-1', 'q3-3', 'q3-4', 'q3-5', 'q3-6', 'q3-7', 'q3-8', 'q4-4', 'q4-8'];
+export const NPC_TILES = [...NPC_TILES_MALE, ...NPC_TILES_FEMALE]; // combined pool (backward-compat)
 
 // Job-advancement NPC (the "Guildmaster"): one per town, a 2x2 sprite from
 // quadrant 4. Talking to it opens the advancement panel (later UI pass).
@@ -21,8 +24,14 @@ export const JOB_NPC_TILES = ['q4-9', 'q4-10', 'q4-13', 'q4-14']; // 2x2 sprite 
 export const JOB_NPC_NAME = 'Kiltamestari'; // Finnish: "the guild's master" (Guildmaster)
 export const JOB_NPC_GREETING = "Show me your skill, and I'll show you a new path.";
 
-// Finnish townsfolk name pool (seeded pick per NPC).
-export const NPC_NAMES: string[] = ['Aatos', 'Onni', 'Helmi', 'Väinö', 'Sisko', 'Urho', 'Kerttu', 'Toivo', 'Elias', 'Saima', 'Reijo', 'Impi', 'Eino', 'Aili', 'Veikko', 'Hilja'];
+// Finnish townsfolk name pools by gender (seeded pick per NPC); the NPC's tile is
+// then chosen from the matching gender's tile pool.
+export const NPC_NAMES_MALE = ['Aatos', 'Onni', 'Väinö', 'Urho', 'Toivo', 'Elias', 'Reijo', 'Eino', 'Veikko'];
+export const NPC_NAMES_FEMALE = ['Helmi', 'Sisko', 'Kerttu', 'Saima', 'Impi', 'Aili', 'Hilja'];
+export const NPC_NAMES = [...NPC_NAMES_MALE, ...NPC_NAMES_FEMALE];
+export function genderOfName(name: string): 'male' | 'female' {
+  return NPC_NAMES_FEMALE.includes(name) ? 'female' : 'male';
+}
 
 // Per-town, location-specific dialogue, keyed by MapId then NpcTheme. Each town
 // defines a line array per topic it hosts; spawnNpcs (engine/maps.ts) places ONE
