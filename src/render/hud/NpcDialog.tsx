@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../state/store';
+import type { Direction } from '../../types';
+
+const KEY_TO_DIR: Record<string, Direction> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
 
 // Dismissible dialog box for a bumped town NPC (WorldState.pendingNpc). Townsfolk
 // speak ONE line per interaction: we feed this box just the NPC's current line
@@ -44,8 +47,28 @@ export function NpcDialog() {
         advance();
         return;
       }
-      // Block movement + skill hotkeys from reaching the game while chatting.
-      if (e.key.startsWith('Arrow') || (e.key >= '1' && e.key <= '9')) {
+      // Escape closes/declines the chat.
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        dispatch({ type: 'closeNpc' });
+        return;
+      }
+      // An Arrow key that ISN'T pushing INTO the NPC declines/closes; pushing toward
+      // the NPC only swallows (keeps chatting). Digit hotkeys just get swallowed.
+      if (e.key.startsWith('Arrow')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const w = useGame.getState().world;
+        const player = w.entities[w.playerId];
+        const dx = npc.cell.x - player.cell.x;
+        const dy = npc.cell.y - player.cell.y;
+        const towardDir: Direction = dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up';
+        if (KEY_TO_DIR[e.key] !== towardDir) dispatch({ type: 'closeNpc' });
+        return;
+      }
+      // Block skill hotkeys from reaching the game while chatting.
+      if (e.key >= '1' && e.key <= '9') {
         e.preventDefault();
         e.stopPropagation();
       }
