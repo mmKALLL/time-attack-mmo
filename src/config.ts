@@ -92,16 +92,19 @@ export const MOVE_LERP_MS = 90;
 
 // ---------- Enemy combat AI (engine/combat.ts) ----------
 // Static attack range per class, in Chebyshev tiles (max(|dx|,|dy|); diagonals
-// count). Fighters/rogues/leaders are melee (2); archers/mages are ranged (4).
+// count). Fighters are melee (1); beginner/rogues/leaders are melee (2);
+// archers/mages are ranged (4).
 // An enemy attacks its nearest hero only when that hero is within this range.
 export const ENEMY_ATTACK_RANGE: Record<CombatClass, number> = {
   beginner: 2,
-  fighter: 2,
+  fighter: 1,
   archer: 4,
   magician: 4,
   rogue: 2,
   leader: 2,
 };
+// Enemy crits deal 140% (players use CRIT_MULT = 1.8x).
+export const ENEMY_CRIT_MULT = 1.4;
 // While out of range, an enemy accumulates this many ms before taking one greedy
 // 4-way step toward its target (then resets). Intentionally slow/dumb approach.
 export const ENEMY_APPROACH_MS = 2000;
@@ -126,6 +129,8 @@ export function xpToNext(level: number): number {
 export function xpReward(enemyLevel: number): number {
   return Math.round(42 * Math.pow(1.132883, enemyLevel - 1)); // Double every 6 levels
 }
+export const DEATH_XP_PENALTY = 0.2; // fraction of the current level's XP lost on death
+export const DEATH_PENALTY_MIN_LEVEL = 10; // no death XP penalty at or below this level (penalty applies above it)
 
 // ---------- Combat world palette (Direction A "Emberdeep") ----------
 export const COLORS = {

@@ -6,7 +6,7 @@ import { areEnemies, isAlive } from './entities';
 import { skillTargets, canCast, afterCast, tickCooldowns, magnitude, targetsAllies } from './skills';
 import { shapeFor } from './shapes';
 import { ATTR_POINTS_PER_LEVEL, CLASS_COMBAT, CRIT_MULT, SKILL_POINTS_PER_LEVEL, deriveStats, hitChance, rawDamage, effectiveStats, totalSlowPercent, totalAtkPercent, totalDefTakenPercent, totalDodgePercent, totalBlindPercent, totalCritPercent, totalCritDamagePercent, harmfulCritMultiplier, harmfulStackCount, hasActiveStun } from '../config-stats';
-import { xpReward, xpToNext, COMBAT_TICK_MS, ENEMY_ATTACK_RANGE, ENEMY_APPROACH_MS, KNOCKBACK_STEP_MS } from '../config';
+import { xpReward, xpToNext, COMBAT_TICK_MS, ENEMY_ATTACK_RANGE, ENEMY_APPROACH_MS, ENEMY_CRIT_MULT, KNOCKBACK_STEP_MS } from '../config';
 import { nextRand, chance } from './rng';
 import { applyStatus } from './status';
 
@@ -387,7 +387,7 @@ function makeTelegraph(caster: Entity, target: Entity, skill: Skill, level: numb
   const tiles = anchorOnCell(offsets, target.cell);
   const src = damageSource(caster, mag);
   const dur = skill.telegraphMs ?? 0; // per-skill wind-up (AoE skills must define telegraphMs)
-  return { tiles, remainingMs: dur, totalMs: dur, from: { ...caster.cell }, hitsEnemies: false, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, critDmg: src.critDmg, mag: src.mult };
+  return { tiles, remainingMs: dur, totalMs: dur, from: { ...caster.cell }, hitsEnemies: false, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, critDmg: src.critDmg, critMult: src.critMult, mag: src.mult };
 }
 
 // Build a player-planted telegraph: the AoE IS the skill's own footprint projected
@@ -397,7 +397,7 @@ function makePlayerTelegraph(caster: Entity, skill: Skill, level: number, mag: n
   const tiles = shapeFor(skill, level, caster.facing).map((o) => ({ x: caster.cell.x + o.dx, y: caster.cell.y + o.dy }));
   const src = damageSource(caster, mag);
   const dur = skill.telegraphMs ?? 0;
-  return { tiles, remainingMs: dur, totalMs: dur, from: { ...caster.cell }, hitsEnemies: true, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, critDmg: src.critDmg, mag: src.mult };
+  return { tiles, remainingMs: dur, totalMs: dur, from: { ...caster.cell }, hitsEnemies: true, accuracy: src.accuracy, minDmg: src.minDmg, maxDmg: src.maxDmg, power: src.power, crit: src.crit, critDmg: src.critDmg, critMult: src.critMult, mag: src.mult };
 }
 
 // A skill that PLANTS a dodgeable telegraph on cast instead of hitting instantly:
@@ -432,7 +432,7 @@ export function advanceTelegraphs(s: WorldState, dt: number): void {
       continue;
     }
     const marked = new Set(t.tiles.map(key));
-    const src: DamageSource = { accuracy: t.accuracy, minDmg: t.minDmg, maxDmg: t.maxDmg, power: t.power, crit: t.crit, critDmg: t.critDmg, mult: t.mag };
+    const src: DamageSource = { accuracy: t.accuracy, minDmg: t.minDmg, maxDmg: t.maxDmg, power: t.power, crit: t.crit, critDmg: t.critDmg, critMult: t.critMult, mult: t.mag };
     for (const e of Object.values(s.entities)) {
       // Enemy telegraph (hitsEnemies:false) → hits non-enemies; player telegraph
       // (hitsEnemies:true) → hits enemies. Alive + on a marked tile in either case.
@@ -498,13 +498,13 @@ function advanceApproach(s: WorldState, enemy: Entity, dt: number): void {
 // hit can resolve identically even after the caster is gone (telegraphed AoE).
 // `mult` already folds in the attacker's atkUp/atkDown; `blindPercent` is the
 // attacker's blind (an extra whiff roll). Both are baked at snapshot time.
-type DamageSource = { accuracy: number; minDmg: number; maxDmg: number; power: number; crit: number; critDmg: number; mult: number; blindPercent?: number };
+type DamageSource = { accuracy: number; minDmg: number; maxDmg: number; power: number; crit: number; critDmg: number; critMult?: number; mult: number; blindPercent?: number };
 function damageSource(caster: Entity, mult: number): DamageSource {
   const { accuracy, minDmg, maxDmg, crit } = effectiveStats(caster); // stat buffs feed the roll
   const power = CLASS_COMBAT[caster.combatClass]?.power ?? 1; // slow classes (mages) hit harder
   const atkMult = 1 + totalAtkPercent(caster) / 100; // atkUp/atkDown scale outgoing damage
   // critUp adds flat % crit chance; critDmgUp adds a crit-damage bonus % (applied in rollDamage).
-  return { accuracy, minDmg, maxDmg, power, crit: crit + totalCritPercent(caster), critDmg: totalCritDamagePercent(caster), mult: mult * atkMult, blindPercent: totalBlindPercent(caster) };
+  return { accuracy, minDmg, maxDmg, power, crit: crit + totalCritPercent(caster), critDmg: totalCritDamagePercent(caster), critMult: caster.faction === 'enemy' ? ENEMY_CRIT_MULT : CRIT_MULT, mult: mult * atkMult, blindPercent: totalBlindPercent(caster) };
 }
 
 // An avoidance roll from a percent chance, clamped below 95% so nothing is ever
@@ -529,7 +529,7 @@ function rollDamage(s: WorldState, src: DamageSource, target: Entity): { amount:
   let amount = Math.max(1, Math.round(rawDamage(rolled, src.mult * src.power, tStats.def) * defMult));
   const critChance = (src.crit / 100) * harmfulCritMultiplier(harmfulStackCount(target));
   const crit = nextRand(s) < critChance;
-  if (crit) amount = Math.round(amount * (CRIT_MULT + src.critDmg / 100)); // critDmgUp raises crit damage above the base CRIT_MULT
+  if (crit) amount = Math.round(amount * ((src.critMult ?? CRIT_MULT) + src.critDmg / 100)); // critDmgUp raises crit damage above the base crit multiplier
   return { amount, crit, miss: false };
 }
 

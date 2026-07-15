@@ -261,6 +261,7 @@ export type Telegraph = {
   power: number; // CLASS_COMBAT[class].power
   crit: number; // crit chance % (already folds in the caster's critUp bonus, via damageSource)
   critDmg: number; // crit-damage bonus % from the caster's critDmgUp (added to CRIT_MULT on a crit)
+  critMult?: number; // base crit multiplier for this attacker (enemies 1.4, else CRIT_MULT 1.8)
   mag: number; // skill damage multiplier = magnitude(skill, level)
 };
 
