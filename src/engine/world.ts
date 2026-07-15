@@ -8,6 +8,7 @@ import { learnedIndexes } from './skills';
 import { getSkill } from '../data-skills';
 import { START_MAP } from '../data-map';
 import { step } from './grid';
+import { xpToNext, DEATH_XP_PENALTY, DEATH_PENALTY_MIN_LEVEL } from '../config';
 
 // Respawn the player at the starting town (Mäntyharju) at full health — triggered
 // by the "You Died" screen's Respawn button.
@@ -20,6 +21,7 @@ function respawnAtStart(s: WorldState): void {
     p.castTimerMs = 0;
     // death refreshes every skill: cooldowns cleared, uses topped up
     p.skills = p.skills.map((rt) => ({ ...rt, cooldownLeftMs: 0, usesLeft: getSkill(rt.skillId).uses ?? -1 }));
+    if (p.level > DEATH_PENALTY_MIN_LEVEL) p.xp = Math.max(0, p.xp - Math.round(DEATH_XP_PENALTY * xpToNext(p.level))); // death XP penalty above level 10
   }
 }
 
@@ -45,14 +47,13 @@ export function applyInput(s: WorldState, input: Input): void {
   const player = s.entities[s.playerId];
   if (!player || player.hp <= 0) return; // dead players take no actions until respawn
   if (input.type === 'move') {
-    // Stepping onto a portal tile (while not stuck in combat) warps to the linked map.
-    if (!groupOf(s, player.id)) {
-      const exit = exitAt(s, step(player.cell, input.dir));
-      if (exit) {
-        player.facing = input.dir; // face the way we walked into the portal
-        travelTo(s, exit.toMap, s.mapId, input.dir); // ...and arrive continuing that way
-        return;
-      }
+    // Stepping onto a portal tile warps to the linked map — allowed even mid-combat
+    // (travelTo wipes s.groups + drops enemies, so it cleanly flees the fight).
+    const exit = exitAt(s, step(player.cell, input.dir));
+    if (exit) {
+      player.facing = input.dir; // face the way we walked into the portal
+      travelTo(s, exit.toMap, s.mapId, input.dir); // ...and arrive continuing that way (flees combat)
+      return;
     }
     moveOrStick(s, s.playerId, input.dir);
   } else if (input.type === 'selectSkill') {
