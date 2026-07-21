@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '../state/store';
 import { MAX_SLOTS } from '../state/persist';
-import { JOBS } from '../data';
+import { JOBS, randomCharacterName } from '../data';
 
 // Save-slot management screen (multi-slot scaffolding; slot 0 is populated by
 // default, the rest are empty until the player exports/imports or starts fresh).
@@ -42,6 +42,8 @@ export function CharacterCreationScreen() {
 
   const [importSlot, setImportSlot] = useState<number | null>(null);
   const [importText, setImportText] = useState('');
+  const [createSlot, setCreateSlot] = useState<number | null>(null);
+  const [createName, setCreateName] = useState('');
 
   const slots = listSlots();
   const activeSlot = getActiveSlot();
@@ -51,10 +53,21 @@ export function CharacterCreationScreen() {
     setScene('dungeon');
   };
 
-  // Create a fresh character in an empty slot (makes it active) and drop straight in.
+  // Open the inline name prompt for an empty slot (pre-filled with a random default).
   const onCreate = (slot: number) => {
-    newGame(slot);
+    setCreateSlot(slot);
+    setCreateName(randomCharacterName());
+  };
+
+  // Confirm: create a fresh named character in the slot (makes it active) and drop straight in.
+  const onCreateConfirm = (slot: number) => {
+    newGame(slot, createName.trim());
     setScene('dungeon');
+  };
+
+  const cancelCreate = () => {
+    setCreateSlot(null);
+    setCreateName('');
   };
 
   const onExport = async (slot: number) => {
@@ -191,6 +204,35 @@ export function CharacterCreationScreen() {
                         setImportText('');
                       }}
                     >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+              {createSlot === slot && (
+                <div style={{ marginTop: 12 }}>
+                  <input
+                    value={createName}
+                    onChange={(e) => setCreateName(e.target.value)}
+                    maxLength={20}
+                    placeholder="Character name…"
+                    style={{
+                      width: '100%',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 14,
+                      color: 'var(--ink)',
+                      background: '#0c0f15',
+                      border: '1px solid var(--panel-edge)',
+                      borderRadius: 5,
+                      padding: 8,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button style={panelBtn} onClick={() => onCreateConfirm(slot)} disabled={!createName.trim()}>
+                      Create Character
+                    </button>
+                    <button style={{ ...panelBtn, color: 'var(--ink-dim)' }} onClick={cancelCreate}>
                       Cancel
                     </button>
                   </div>

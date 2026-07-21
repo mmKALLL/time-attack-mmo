@@ -3,6 +3,7 @@ import { tick } from '../world';
 import { createDemoWorld } from '../demo';
 import { MAPS, START_MAP } from '../../data-map';
 import { getSkill } from '../../data-skills';
+import { CHARACTER_NAMES } from '../../data';
 import { xpToNext } from '../../config';
 
 describe('world reducer', () => {
@@ -108,6 +109,12 @@ describe('world reducer', () => {
     const s1 = tick(s0, [{ type: 'move', dir }], 50);
     expect(s1.mapId).toBe(ex.toMap); // traveled despite being grouped
     expect(Object.keys(s1.groups)).toHaveLength(0); // combat dropped (travelTo wipes groups)
+  });
+  it('createDemoWorld(name) names the player; no arg falls back to a random default name', () => {
+    const named = createDemoWorld('Tessa');
+    expect(named.entities[named.playerId].name).toBe('Tessa');
+    const dflt = createDemoWorld();
+    expect(CHARACTER_NAMES).toContain(dflt.entities[dflt.playerId].name);
   });
   it('demo world starts with a lone player (no allies) in the safe town', () => {
     const s = createDemoWorld();

@@ -7,12 +7,12 @@ import { travelTo } from './maps';
 
 const EMPTY_MAP: TileMap = { width: 1, height: 1, tiles: ['floor'] };
 
-export function createDemoWorld(): WorldState {
+export function createDemoWorld(name?: string): WorldState {
   const heroes = PARTY_SPAWN.map((p) =>
     makeEntity({
       id: p.id,
       faction: p.faction,
-      name: p.name,
+      name: name?.trim() || p.name,
       sprite: p.sprite,
       cell: { ...p.cell },
       level: p.level,

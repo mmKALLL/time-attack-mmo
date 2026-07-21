@@ -27,7 +27,7 @@ type GameStore = {
   advance: (dt: number) => void;
   reset: () => void;
   // Persistence actions
-  newGame: (slot?: number) => void; // default = active slot; a given slot becomes active + is saved into
+  newGame: (slot?: number, name?: string) => void; // default = active slot; a given slot becomes active + is saved into. name = chosen character name (else a random default)
   loadGame: (slot: number) => void;
   deleteSave: (slot: number) => void;
   exportSave: (slot: number) => string | null;
@@ -101,11 +101,11 @@ export const useGame = create<GameStore>((set) => ({
     autosaveClockMs = 0;
     set({ scene: 'dungeon', world, inputQueue: [], highlights: {} });
   },
-  newGame: (slot) => {
+  newGame: (slot, name) => {
     // Target a specific slot when given (making it active), else the current active slot.
     if (slot !== undefined) setActiveSlot(slot);
     const target = slot ?? getActiveSlot();
-    const world = createDemoWorld();
+    const world = createDemoWorld(name);
     saveSlot(target, world);
     autosaveClockMs = 0;
     set({ world, inputQueue: [], highlights: {} });
