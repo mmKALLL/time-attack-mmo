@@ -548,12 +548,13 @@ export function SkillAllocationScreen() {
                       const committed = rt.level;
                       const canInc = skillPool > 0 && effSkillLv(i) < cap;
                       const previewing = hover.type === 'skill' && hover.key === i && canInc;
-                      const lvl = effSkillLv(i) + (previewing ? 1 : 0);
+                      // Level-0 = owned but UNLEARNED (see below): an unlearned skill shows its
+                      // level-1 effect flat, with no level-up preview arrows.
+                      const unlearned = effSkillLv(i) === 0;
+                      const showPreview = previewing && !unlearned;
+                      const lvl = effSkillLv(i) + (showPreview ? 1 : 0);
                       const sel = selected === i;
                       const ecol = elemOf(sk);
-                      // Level-0 = owned but UNLEARNED (granted by a job advancement, not yet
-                      // castable): dim the row until the first point "learns" it (0 -> 1).
-                      const unlearned = effSkillLv(i) === 0;
                       return (
                         <div
                           key={rt.skillId + i}
@@ -589,17 +590,17 @@ export function SkillAllocationScreen() {
                               </span>
                             </div>
                             <div style={{ fontSize: 13.5, lineHeight: '19px', color: '#cdc3aa', marginTop: 4 }}>
-                              <SkillDesc skill={sk} curLv={effSkillLv(i)} previewing={previewing} atk={power} ecol={ecol} />
+                              <SkillDesc skill={sk} curLv={unlearned ? 1 : effSkillLv(i)} previewing={showPreview} atk={power} ecol={ecol} />
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
                               {Array.from({ length: cap }).map((_, k) => {
                                 const filled = k < lvl;
-                                const accentPip = (k >= committed && k < effSkillLv(i)) || (previewing && k === effSkillLv(i));
+                                const accentPip = (k >= committed && k < effSkillLv(i)) || (showPreview && k === effSkillLv(i));
                                 return <span key={k} style={{ width: 18, height: 9, borderRadius: 2, background: filled ? ecol : '#242b36', border: `1px solid ${accentPip ? '#e6c583' : filled ? ecol : '#1a1e26'}` }} />;
                               })}
                               <span style={{ fontSize: 11, color: '#8f8674', marginLeft: 6 }}>
-                                {unlearned && !previewing ? <span style={{ color: '#8fa8cc' }}>Unlearned</span> : <>Lv {effSkillLv(i)}</>}
-                                {previewing ? <span style={{ color: '#ffd27a' }}> → {effSkillLv(i) + 1}</span> : unlearned ? null : <span>/{cap}</span>}
+                                {unlearned && !showPreview ? <span style={{ color: '#8fa8cc' }}>Unlearned</span> : <>Lv {effSkillLv(i)}</>}
+                                {showPreview ? <span style={{ color: '#ffd27a' }}> → {effSkillLv(i) + 1}</span> : unlearned ? null : <span>/{cap}</span>}
                               </span>
                             </div>
                           </div>
