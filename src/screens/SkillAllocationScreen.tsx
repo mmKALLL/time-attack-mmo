@@ -269,9 +269,11 @@ export function SkillAllocationScreen() {
   const selRt = p.skills[selected] ?? p.skills[0];
   const selSkill = selRt ? getSkill(selRt.skillId) : undefined;
   const selCap = selRt ? skillCap(selRt.skillId) : 10;
-  const selHoverPreview = hover.type === 'skill' && hover.key === selected && skillPool > 0 && effSkillLv(selected) < selCap;
-  const selLv = selRt ? effSkillLv(selected) + (selHoverPreview ? 1 : 0) : 1; // bumped on hover: drives the attack-area shape preview
-  const curLv = selRt ? effSkillLv(selected) : 1; // committed/effective level; powVal + deltas compare curLv -> curLv+1
+  // An unlearned (level-0) selected skill previews its LEVEL-1 effect with no improvement arrows (matches the skill list rows).
+  const selUnlearned = !!selRt && effSkillLv(selected) === 0;
+  const selHoverPreview = hover.type === 'skill' && hover.key === selected && skillPool > 0 && effSkillLv(selected) < selCap && !selUnlearned;
+  const selLv = selRt ? (selUnlearned ? 1 : effSkillLv(selected) + (selHoverPreview ? 1 : 0)) : 1; // bumped on hover: drives the attack-area shape preview
+  const curLv = selRt ? (selUnlearned ? 1 : effSkillLv(selected)) : 1; // committed/effective level (level-1 for unlearned); powVal + deltas compare curLv -> curLv+1
   const power = de.maxDmg;
   const elem = selSkill ? elemOf(selSkill) : '#e6c583';
 
@@ -637,7 +639,7 @@ export function SkillAllocationScreen() {
                 <div>
                   <div style={{ fontFamily: 'Cinzel, serif', fontSize: 21, color: '#f2e8d2' }}>{selSkill.name}</div>
                   <div style={{ fontSize: 12.5, color: elem }}>
-                    {selSkill.shapeKind} · Lv {effSkillLv(selected)}/{selCap}
+                    {selSkill.shapeKind} · {selUnlearned ? 'Unlearned' : `Lv ${effSkillLv(selected)}/${selCap}`}
                   </div>
                 </div>
               </div>
@@ -701,7 +703,7 @@ export function SkillAllocationScreen() {
                 <div style={{ textAlign: 'right', fontSize: 11.5, color: '#7a7360', lineHeight: 1.5, maxWidth: 160 }}>{note}</div>
               </div>
 
-              {hasNext ? (
+              {selUnlearned ? null : hasNext ? (
                 <div style={{ marginTop: 16, background: 'linear-gradient(90deg,rgba(111,143,106,.10),transparent)', border: '1px solid #2f3d33', borderRadius: 6, padding: '11px 13px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                   <div style={{ fontSize: 11, letterSpacing: 1, color: '#7fb07a', fontFamily: 'Cinzel', paddingTop: 3, whiteSpace: 'nowrap' }}>NEXT LV ▸</div>
                   <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '9px 24px' }}>
