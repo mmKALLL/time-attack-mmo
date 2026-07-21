@@ -68,9 +68,25 @@ export function generateMap(def: MapDef, seed: number): GeneratedMap {
   const entry = center(rooms[0]);
 
   // --- portals (one per connection, carved back to the nearest room) ---
+  // No two portals may ever share a tile: if edgeCell's pick is already taken,
+  // slide along the same edge to the first free cell (an edge holds far more cells
+  // than a map has exits). Deterministic, so seeded maps stay stable.
   const exits: MapExit[] = [];
+  const usedExit = new Set<string>();
+  const exitKey = (c: Cell) => `${c.x},${c.y}`;
+  const xFixedEdge = (d: Compass) => d === 'e' || d === 'w' || d === 'ne' || d === 'nw' || d === 'se' || d === 'sw';
+  const freeExitCell = (base: Cell, dir: Compass): Cell => {
+    if (!usedExit.has(exitKey(base))) return base;
+    if (xFixedEdge(dir)) {
+      for (let y = 2; y <= H - 3; y++) if (!usedExit.has(exitKey({ x: base.x, y }))) return { x: base.x, y };
+    } else {
+      for (let x = 2; x <= W - 3; x++) if (!usedExit.has(exitKey({ x, y: base.y }))) return { x, y: base.y };
+    }
+    return base; // unreachable in practice: an edge always outnumbers a map's exits
+  };
   for (const conn of def.connections) {
-    const cell = edgeCell(conn.dir, W, H, g);
+    const cell = freeExitCell(edgeCell(conn.dir, W, H, g), conn.dir);
+    usedExit.add(exitKey(cell));
     carveCorridor(center(nearestRoom(rooms, cell)), cell, def.gen.corridorWidth, false);
     set(cell.x, cell.y, 'floor');
     exits.push({ cell, toMap: conn.toMap });

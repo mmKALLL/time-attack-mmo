@@ -19,6 +19,32 @@ describe('map generator', () => {
       expect(g.tiles.tiles[ex.cell.y * g.tiles.width + ex.cell.x]).toBe('floor');
     }
   });
+  it('never places two portals on the same cell (every map, many seeds)', () => {
+    for (const [id, d] of Object.entries(MAPS)) {
+      for (const seed of [1, 2, 3, 7, 42, 99, 12345, 55555]) {
+        const g = generateMap(d, seed);
+        const seen = new Set<string>();
+        for (const ex of g.exits) {
+          const k = `${ex.cell.x},${ex.cell.y}`;
+          expect(seen.has(k), `duplicate portal ${k} in ${id} seed ${seed}`).toBe(false);
+          seen.add(k);
+        }
+      }
+    }
+  });
+  it('slides colliding same-direction portals apart (never on top of each other)', () => {
+    // Two connections in the SAME fixed corner would land on one tile without the guard.
+    const def2: typeof def = { ...def, connections: [
+      { dir: 'ne', toMap: def.connections[0].toMap },
+      { dir: 'ne', toMap: def.connections[0].toMap },
+    ] };
+    for (const seed of [1, 7, 42, 123, 999]) {
+      const g = generateMap(def2, seed);
+      expect(g.exits).toHaveLength(2);
+      expect(g.exits[0].cell).not.toEqual(g.exits[1].cell);
+      for (const ex of g.exits) expect(g.tiles.tiles[ex.cell.y * g.tiles.width + ex.cell.x]).toBe('floor');
+    }
+  });
   it('keeps the entry and all portals reachable across many seeds', () => {
     for (const seed of [1, 2, 3, 99, 12345, 55555]) {
       const g = generateMap(def, seed);
