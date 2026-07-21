@@ -214,7 +214,9 @@ function Hotbar() {
         const rt = player.skills[skillIdx];
         const skill = getSkill(rt.skillId);
         const active = skillIdx === player.activeSkillIndex;
-        const cooling = rt.cooldownLeftMs > 0;
+        // The reload radial only shows once the clip is empty (usesLeft 0), or for
+        // chargeless skills; a partial clip recovers silently in the background.
+        const cooling = rt.cooldownLeftMs > 0 && (rt.usesLeft < 0 || rt.usesLeft === 0);
         const totalCd = skill.params.cooldown ? Math.round(skill.params.cooldown(rt.level) * 1000) : skill.cooldownMs;
         const elapsedDeg = cooling && totalCd > 0 ? (1 - rt.cooldownLeftMs / totalCd) * 360 : 360; // dark arc shrinks (un-dims) as it cools
         return (
