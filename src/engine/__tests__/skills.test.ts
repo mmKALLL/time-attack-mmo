@@ -62,12 +62,59 @@ describe('uses and cooldown bookkeeping', () => {
     expect(canCast(rt)).toBe(true);
     expect(afterCast(rt, getSkill('strike'))).toEqual(rt);
   });
-  it('depleting the last use starts the cooldown and refills uses', () => {
-    let rt = { skillId: 'finishingBlow', level: 1, usesLeft: 1, cooldownLeftMs: 0 };
-    rt = afterCast(rt, getSkill('finishingBlow'));
-    expect(rt.cooldownLeftMs).toBe(getSkill('finishingBlow').cooldownMs);
-    expect(rt.usesLeft).toBe(getSkill('finishingBlow').uses);
+  it('depleting a single-use clip starts the cooldown and holds at 0 uses until it refreshes', () => {
+    const skill = getSkill('finishingBlow'); // uses: 1, cooldown: 7s
+    const cd = skill.cooldownMs;
+    let rt = { skillId: 'finishingBlow', level: 1, usesLeft: skill.uses!, cooldownLeftMs: 0 };
+    rt = afterCast(rt, skill);
+    expect(rt.usesLeft).toBe(0); // spent — NOT refilled immediately
+    expect(rt.cooldownLeftMs).toBe(cd); // cooldown running
     expect(canCast(rt)).toBe(false);
+    // Finishing the cooldown reloads the clip back to max.
+    const e = makeEntity({ id: 'm', faction: 'player', name: 'm', sprite: 'ranger', cell: { x: 0, y: 0 }, level: 10, jobId: 'beginner' });
+    e.skills = [rt];
+    const ticked = tickCooldowns(e, cd);
+    expect(ticked[0].cooldownLeftMs).toBe(0);
+    expect(ticked[0].usesLeft).toBe(skill.uses); // clip reloaded to max
+    expect(canCast(ticked[0])).toBe(true);
+  });
+  it('a multi-use clip starts the cooldown once and stays castable while charges remain', () => {
+    const skill = getSkill('powerStrike'); // uses: 3, cooldown: 15s
+    const max = skill.uses!;
+    const cd = skill.cooldownMs;
+    let rt = { skillId: 'powerStrike', level: 1, usesLeft: max, cooldownLeftMs: 0 };
+    // Cast 1: full clip -> cooldown starts, one charge spent.
+    rt = afterCast(rt, skill);
+    expect(rt.usesLeft).toBe(max - 1);
+    expect(rt.cooldownLeftMs).toBe(cd);
+    expect(canCast(rt)).toBe(true); // still castable mid-cooldown
+    // Casts 2..max: ride the running timer, charges keep dropping, cooldown unchanged.
+    for (let n = max - 1; n > 0; n--) {
+      expect(canCast(rt)).toBe(true);
+      rt = afterCast(rt, skill);
+      expect(rt.usesLeft).toBe(n - 1);
+      expect(rt.cooldownLeftMs).toBe(cd); // cooldown NOT restarted by later casts
+    }
+    expect(rt.usesLeft).toBe(0);
+    expect(canCast(rt)).toBe(false); // clip empty
+    // Elapse the cooldown -> full clip back.
+    const e = makeEntity({ id: 'm', faction: 'player', name: 'm', sprite: 'ranger', cell: { x: 0, y: 0 }, level: 10, jobId: 'beginner' });
+    e.skills = [rt];
+    const ticked = tickCooldowns(e, cd);
+    expect(ticked[0].usesLeft).toBe(max);
+    expect(canCast(ticked[0])).toBe(true);
+  });
+  it('finishing the cooldown refreshes a partially-spent clip back to max', () => {
+    const skill = getSkill('powerStrike'); // uses: 3
+    const max = skill.uses!;
+    let rt = { skillId: 'powerStrike', level: 1, usesLeft: max, cooldownLeftMs: 0 };
+    rt = afterCast(rt, skill); // one cast -> usesLeft max-1, cooldown running
+    expect(rt.usesLeft).toBe(max - 1);
+    const e = makeEntity({ id: 'm', faction: 'player', name: 'm', sprite: 'ranger', cell: { x: 0, y: 0 }, level: 10, jobId: 'beginner' });
+    e.skills = [rt];
+    const ticked = tickCooldowns(e, skill.cooldownMs);
+    expect(ticked[0].usesLeft).toBe(max); // partial clip refilled to max, not just +1
+    expect(ticked[0].cooldownLeftMs).toBe(0);
   });
   it('a per-level cooldown param (e.g. Recover) shortens the cooldown as the skill levels up', () => {
     const recover = getSkill('recover');

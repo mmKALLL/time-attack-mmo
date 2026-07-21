@@ -180,10 +180,13 @@ describe('telegraphed AoE (slice 2)', () => {
     expect(s2.entities.p1.hp).toBe(hpBefore); // dodged: move applied before the AoE resolved
   });
 
-  it('falls back to a basic Strike when the primary skill is on cooldown', () => {
+  it('falls back to a basic Strike when the primary skill is exhausted (clip spent, on cooldown)', () => {
     const s = world([hero('p1', { x: 5, y: 5 }), foe('e1', { x: 6, y: 5 }, 'enemyRuin', 'leader')]); // AoE primary, melee-range at dist 1
     stick(s, 'p1', 'e1');
-    s.entities.e1.skills[0].cooldownLeftMs = 30000; // primary (Ruin) on cooldown
+    // Empty the clip AND run the cooldown: a finite-use skill is only unavailable once
+    // its charges are gone (it stays castable mid-cooldown while charges remain).
+    s.entities.e1.skills[0].usesLeft = 0;
+    s.entities.e1.skills[0].cooldownLeftMs = 30000; // primary (Ruin) reloading
     const hp = s.entities.p1.hp;
     advanceCombat(s, CAST_MS); // primary unavailable → single-target Strike, not an AoE
     expect(s.telegraphs).toHaveLength(0); // fallback plants no telegraph

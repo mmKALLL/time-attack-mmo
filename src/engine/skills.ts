@@ -47,29 +47,42 @@ export function learnedIndexes(e: Entity): number[] {
   return out;
 }
 
+// Finite-use skills are castable while charges remain (even mid-cooldown);
+// unlimited-use skills are gated purely on the cooldown.
 export function canCast(rt: SkillRuntime): boolean {
-  return isLearned(rt) && rt.cooldownLeftMs <= 0 && rt.usesLeft !== 0;
+  return isLearned(rt) && (rt.usesLeft > 0 || (rt.usesLeft < 0 && rt.cooldownLeftMs <= 0));
 }
 
-// After a cast: unlimited skills (usesLeft < 0) are unchanged; limited skills
-// decrement, and depleting the last use starts the cooldown and refills uses.
+// After a cast: the cooldown starts on the FIRST use of a full clip and runs
+// concurrently while you spend the remaining charges; finishing it refreshes all
+// uses (see tickCooldowns). Depleting a clip mid-cooldown leaves usesLeft at 0.
 export function afterCast(rt: SkillRuntime, skill: Skill): SkillRuntime {
   const cooldownLeftMs = skill.params.cooldown ? Math.round(skill.params.cooldown(rt.level) * 1000) : skill.cooldownMs;
   if (rt.usesLeft < 0) {
     // Unlimited-use skills still enter cooldown when they define one (active-cooldown skills).
     return cooldownLeftMs > 0 ? { ...rt, cooldownLeftMs } : rt;
   }
+  const wasFullClip = rt.usesLeft === (skill.uses ?? -1);
   const usesLeft = rt.usesLeft - 1;
-  if (usesLeft <= 0) {
-    return { ...rt, usesLeft: skill.uses ?? -1, cooldownLeftMs };
+  if (cooldownLeftMs <= 0) {
+    // No cooldown: finite uses refill instantly on depletion (legacy behavior; no real skill hits this).
+    return usesLeft <= 0 ? { ...rt, usesLeft: skill.uses ?? -1 } : { ...rt, usesLeft };
   }
-  return { ...rt, usesLeft };
+  // With a cooldown: start it on the FIRST cast of a full clip; later casts ride the running timer.
+  // Depleting mid-cooldown leaves usesLeft at 0 until tickCooldowns refreshes it when the cooldown ends.
+  return wasFullClip ? { ...rt, usesLeft, cooldownLeftMs } : { ...rt, usesLeft };
 }
 
-// Cooldowns always tick down, regardless of which slot is selected.
+// Cooldowns always tick down, regardless of which slot is selected. When a
+// cooldown reaches 0, a finite-use skill's charges refresh back to max.
 export function tickCooldowns(e: Entity, dt: number): SkillRuntime[] {
   return e.skills.map((rt) => {
     if (rt.cooldownLeftMs <= 0) return rt;
-    return { ...rt, cooldownLeftMs: Math.max(0, rt.cooldownLeftMs - dt) };
+    const cooldownLeftMs = Math.max(0, rt.cooldownLeftMs - dt);
+    if (cooldownLeftMs === 0) {
+      const max = getSkill(rt.skillId).uses ?? -1;
+      if (max > 0 && rt.usesLeft < max) return { ...rt, cooldownLeftMs, usesLeft: max }; // clip reloaded
+    }
+    return { ...rt, cooldownLeftMs };
   });
 }
