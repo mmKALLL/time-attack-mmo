@@ -191,14 +191,23 @@ function orientCombatants(s: WorldState): void {
   }
 }
 
+// A hero's attack speed rises +5% (additive) for every enemy locked in its combat group.
+const ATTACK_SPEED_PER_ENEMY = 0.05;
+
 // The per-entity cast/wind-up interval (ms): the class base speed × the entity's
 // attack-speed stat scale COMBAT_TICK_MS. Shared by the in-combat auto-cast
 // (advanceCombat) and the out-of-combat ranged wind-up (advanceArming) so both
-// clocks fill at the same rate.
-export function castInterval(e: Entity): number {
+// clocks fill at the same rate. Pass `s` to fold in a hero's per-enemy attack-speed
+// bonus (omitted by isolated/unit-test callers, which use the base cadence).
+export function castInterval(e: Entity, s?: WorldState): number {
   const rt = e.skills[e.activeSkillIndex];
   const trigger = rt ? (getSkill(rt.skillId).triggerMs ?? COMBAT_TICK_MS) : COMBAT_TICK_MS; // per-skill trigger (default 1.5s)
-  const base = trigger / ((CLASS_COMBAT[e.combatClass]?.speed ?? 1) * (effectiveStats(e).attackSpeed / 100));
+  let speedScale = (CLASS_COMBAT[e.combatClass]?.speed ?? 1) * (effectiveStats(e).attackSpeed / 100);
+  if (s && (e.faction === 'player' || e.faction === 'ally')) {
+    const g = groupOf(s, e.id);
+    if (g) speedScale *= 1 + ATTACK_SPEED_PER_ENEMY * membersOf(s, g).filter((m) => m.faction === 'enemy' && isAlive(m)).length;
+  }
+  const base = trigger / speedScale;
   return base * (1 + totalSlowPercent(e) / 100); // slow lengthens the interval
 }
 
@@ -217,7 +226,7 @@ export function advanceCombat(s: WorldState, dt: number): void {
       // Enemies approach on their own 2s clock (once per tick), independent of
       // the cast timer, so a slow attacker still creeps forward each frame.
       if (m.faction === 'enemy') advanceApproach(s, m, dt);
-      const interval = castInterval(m);
+      const interval = castInterval(m, s);
       m.castTimerMs += dt;
       let guard = 0;
       while (m.castTimerMs >= interval && guard++ < 8) {
@@ -262,7 +271,7 @@ export function advanceArming(s: WorldState, dt: number): void {
   const rt = player.skills[player.activeSkillIndex];
   if (!rt || !canCast(rt)) return; // on cooldown: hold the wind-up until it's ready
   const skill = getSkill(rt.skillId);
-  const interval = castInterval(player);
+  const interval = castInterval(player, s);
   player.castTimerMs += dt;
   if (player.castTimerMs < interval) return; // still winding up
   player.castTimerMs -= interval;

@@ -929,7 +929,7 @@ export class WorldRenderer {
     // Status badges ride the HP bar, so only for engaged enemies; hide otherwise.
     if (e.faction === 'enemy' && inFight && e.statuses.length) this.drawStatusBadges(e, px, py);
     else this.hideStatusBadges(e.id);
-    if (inFight || e.armed) this.drawSquareTimer(e, px, py); // armed = out-of-combat wind-up
+    if (inFight || e.armed) this.drawSquareTimer(world, e, px, py); // armed = out-of-combat wind-up
   }
 
   private hideStatusBadges(id: string) {
@@ -1045,8 +1045,8 @@ export class WorldRenderer {
     for (let i = shown.length; i < pool.length; i++) pool[i].visible = false;
   }
 
-  private drawSquareTimer(e: Entity, px: number, py: number) {
-    const interval = castInterval(e);
+  private drawSquareTimer(world: WorldState, e: Entity, px: number, py: number) {
+    const interval = castInterval(e, world);
     const frac = Math.min(1, e.castTimerMs / interval); // 0 -> just cast, 1 -> about to cast
     const size = 12 * UI;
     const pad = 4 * UI;
@@ -1100,7 +1100,7 @@ export class WorldRenderer {
     const isTerrain = skill.kind === 'heal';
     const fill = isBuff ? 0x4a8fe0 : isTerrain ? 0x54c56a : COLORS.attackCurrentFill;
     const stroke = isBuff ? 0x86b6f2 : isTerrain ? 0x8fe0a0 : COLORS.attackCurrentBorder;
-    const interval = castInterval(player);
+    const interval = castInterval(player, world);
     // Both the in-combat cast timer and the armed wind-up accumulate in castTimerMs.
     const frac = group || player.armed ? Math.min(1, player.castTimerMs / interval) : 0;
     const pulse = 0.14 + 0.18 * frac + 0.05 * Math.sin(elapsedMs / 120);

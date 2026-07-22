@@ -184,6 +184,17 @@ describe('per-skill cast trigger + switch (card #28)', () => {
     p.activeSkillIndex = 1;
     expect(castInterval(p)).toBeGreaterThan(fast); // longer trigger -> longer interval
   });
+  it('a hero attacks +5% faster (additive) per enemy in its combat group', () => {
+    const p = hero({ x: 3, y: 3 });
+    const base = castInterval(p); // no world -> base cadence, no group bonus
+    const s = world([p, rat('e1', { x: 4, y: 3 }), rat('e2', { x: 3, y: 4 })]);
+    s.groups = { g0: { id: 'g0', memberIds: ['p1', 'e1', 'e2'] } };
+    expect(castInterval(s.entities.p1, s)).toBeCloseTo(base / 1.1, 6); // 2 enemies -> attack speed x1.10
+    s.groups.g0.memberIds = ['p1', 'e1'];
+    expect(castInterval(s.entities.p1, s)).toBeCloseTo(base / 1.05, 6); // 1 enemy -> x1.05
+    s.groups = {};
+    expect(castInterval(s.entities.p1, s)).toBeCloseTo(base, 6); // out of combat -> base cadence
+  });
   it('caps carried charge to the new (shorter) trigger on switch — extra time lost', () => {
     const p = hero({ x: 5, y: 5 });
     twoTriggerSkills(p, true); // slot0 = long, slot1 = short

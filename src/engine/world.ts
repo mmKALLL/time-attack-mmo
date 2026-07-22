@@ -69,11 +69,11 @@ export function applyInput(s: WorldState, input: Input): void {
     // new skill's trigger, so charging a long skill then switching to a short one fires it
     // now (extra charge lost), while short->long keeps the progress you'd already built.
     if (groupOf(s, player.id)) {
-      player.castTimerMs = Math.min(player.castTimerMs, castInterval(player));
+      player.castTimerMs = Math.min(player.castTimerMs, castInterval(player, s));
       return;
     }
     if (!player.armed) player.castTimerMs = 0;
-    else player.castTimerMs = Math.min(player.castTimerMs, castInterval(player));
+    else player.castTimerMs = Math.min(player.castTimerMs, castInterval(player, s));
     player.armed = true;
   }
 }
