@@ -79,10 +79,10 @@ describe('uses and cooldown bookkeeping', () => {
     expect(canCast(ticked[0])).toBe(true);
   });
   it('a multi-use clip starts the cooldown once and stays castable while charges remain', () => {
-    const skill = getSkill('powerStrike'); // uses: 3, cooldown: 15s
+    const skill = getSkill('crossBlast'); // uses: 4, cooldown: 30s
     const max = skill.uses!;
     const cd = skill.cooldownMs;
-    let rt = { skillId: 'powerStrike', level: 1, usesLeft: max, cooldownLeftMs: 0 };
+    let rt = { skillId: 'crossBlast', level: 1, usesLeft: max, cooldownLeftMs: 0 };
     // Cast 1: full clip -> cooldown starts, one charge spent.
     rt = afterCast(rt, skill);
     expect(rt.usesLeft).toBe(max - 1);
@@ -105,9 +105,9 @@ describe('uses and cooldown bookkeeping', () => {
     expect(canCast(ticked[0])).toBe(true);
   });
   it('finishing the cooldown refreshes a partially-spent clip back to max', () => {
-    const skill = getSkill('powerStrike'); // uses: 3
+    const skill = getSkill('crossBlast'); // uses: 4
     const max = skill.uses!;
-    let rt = { skillId: 'powerStrike', level: 1, usesLeft: max, cooldownLeftMs: 0 };
+    let rt = { skillId: 'crossBlast', level: 1, usesLeft: max, cooldownLeftMs: 0 };
     rt = afterCast(rt, skill); // one cast -> usesLeft max-1, cooldown running
     expect(rt.usesLeft).toBe(max - 1);
     const e = makeEntity({ id: 'm', faction: 'player', name: 'm', sprite: 'ranger', cell: { x: 0, y: 0 }, level: 10, jobId: 'beginner' });

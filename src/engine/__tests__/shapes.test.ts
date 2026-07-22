@@ -17,7 +17,7 @@ describe('shapeFor', () => {
     expect(cells.every((c) => c.dy === 0 && c.dx > 0)).toBe(true);
   });
   it('melee resolves to the single faced tile', () => {
-    expect(shapeFor(getSkill('strike'), 1)).toEqual([{ dx: 1, dy: 0 }]);
+    expect(shapeFor(getSkill('powerStrike'), 1)).toEqual([{ dx: 1, dy: 0 }]); // point → the single faced tile
   });
   it('surround covers exactly the 8 ring tiles around the caster', () => {
     const cells = shapeFor(getSkill('spinSlash'), 1);
@@ -108,7 +108,7 @@ describe('facing rotation', () => {
     expect(shapeFor(getSkill('emberLance'), 3, 'left').every((c) => c.dy === 0 && c.dx < 0)).toBe(true);
   });
   it('melee rotates to the faced tile', () => {
-    expect(shapeFor(getSkill('strike'), 1, 'right')).toEqual([{ dx: 1, dy: 0 }]);
-    expect(shapeFor(getSkill('strike'), 1, 'down')).toEqual([{ dx: 0, dy: 1 }]);
+    expect(shapeFor(getSkill('powerStrike'), 1, 'right')).toEqual([{ dx: 1, dy: 0 }]);
+    expect(shapeFor(getSkill('powerStrike'), 1, 'down')).toEqual([{ dx: 0, dy: 1 }]);
   });
 });

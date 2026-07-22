@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useGame } from '../store';
 import { makeEntity } from '../../engine';
 import { demoMap } from '../../data-map';
-import { xpToNext } from '../../config';
+import { xpToNext, COMBAT_TICK_MS } from '../../config';
 import { MAX_SLOTS, getActiveSlot } from '../persist';
 import type { Entity, WorldState } from '../../types';
 
@@ -66,7 +66,9 @@ describe('game store', () => {
     rat.hp = 1; // dies to the first hit, granting the XP that crosses the threshold
     useGame.setState({ world: world([hero, rat]), highlights: {} });
     useGame.getState().enqueue({ type: 'move', dir: 'right' }); // sticks the rat into a combat group
-    useGame.getState().advance(1500); // kill fires -> XP -> level-up -> highlight
+    // COMBAT_TICK_MS (2000) safely exceeds the hero's group-boosted cast interval
+    // (base 2000 / 1.05 for one enemy), so exactly one cast fires and lands the kill.
+    useGame.getState().advance(COMBAT_TICK_MS); // kill fires -> XP -> level-up -> highlight
     expect(useGame.getState().world.entities.p1.level).toBeGreaterThan(20); // leveled up (xp tuning may grant >1)
     expect(useGame.getState().highlights.skills).toBe(true);
   });

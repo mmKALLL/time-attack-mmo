@@ -145,7 +145,7 @@ const EDGES: Edge[] = [
       { biome: 'deepForest', lo: 16, hi: 21, rooms: 3 },
     ],
   },
-  { a: 'varkaus', b: 'kuopio', dir: 'n', seg: [{ biome: 'lake', lo: 9, hi: 12, rooms: 2 }] },
+  { a: 'varkaus', b: 'kuopio', dir: 'n', seg: [{ biome: 'lake', lo: 8, hi: 10, rooms: 2 }] },
   {
     a: 'varkaus',
     b: 'jyvaskyla',
@@ -155,7 +155,7 @@ const EDGES: Edge[] = [
       { biome: 'forest', lo: 10, hi: 14, rooms: 2 },
     ],
   }, // plains
-  { a: 'kuopio', b: 'jyvaskyla', dir: 'ne', seg: [{ biome: 'forest', lo: 12, hi: 16, rooms: 2 }] },
+  { a: 'kuopio', b: 'jyvaskyla', dir: 'ne', seg: [{ biome: 'forest', lo: 10, hi: 14, rooms: 2 }] },
   {
     a: 'kuopio',
     b: 'kajaani',

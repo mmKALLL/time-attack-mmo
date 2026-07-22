@@ -305,10 +305,31 @@ Rogue: relatively _short_ delays and cooldowns to make them technical; also some
 
 ----
 
+Damage multiplier guidelines (assuming max skill level):
+
+0th job - single 1.4, multi 1.0, many 0.6
+1st job - single 2.6, multi 1.6, many 1.1
+2nd job - single 3.8, multi 2.2, many 1.6
+3rd job - single 5.4, multi 3.2, many 2.1
+4th job - single 8.0, multi 4.2, many 2.6
+
+Cooldown and tricky skills: 1.5-1.8x or statuses
+
+Elements by 2nd job class:
+
+Warrior - earth / light / physical
+Archer - air / physical / arcane
+Magician - arcane / fire / earth
+Rogue - physical / dark / ice
+
+'physical' | 'light' | 'dark' | 'arcane' | 'fire' | 'ice' | 'air' | 'earth'
+
+----
+
 Fighter 1st job skills:
 
 Power Strike - 1x1, uses: 3, cooldown: 15s, dmg: lin(1.5, 0.25)
-Cleave - 6 mp, 1x3 in front, dmg: lin(0.8, 0.12)
+Power Stab - 6 mp, 2x1, dmg: lin(0.8, 0.12)
 Spin Slash - 14 mp, 8 adjacent tiles, dmg: lin(1.1, 0.15)
 Bracing Guard - block physical damage components for 5s, cooldown: lin(20, -1)
 
@@ -337,62 +358,79 @@ Life and Death - the player deals and receives +50% damage for lin(4, 0.04)s, co
 
 2nd job skills (merging will be planned later):
 
-StatusKind → poison | burn | slow | stun | atkUp | atkDown | defUp | defDown | dodge | blind | statPct | statFlat
+StatusKind → poison | bleed | burn | slow | stun | atkUp | atkDown | defUp | defDown | dodge | blind | statPct | statFlat
 
-Fighter statuses: stun, long atk/def up / down
+Fighter statuses: stun, long+short atk/def up / down
 
-Knight
-
-
-Paladin
+Knight - aggro, defense, atk/def buffs
 
 
-Duelist
+Paladin - mob statuses (stun + blind), hybrid range (lightning), protection buffs
+
+
+Duelist - melee 1v1, single target statuses, some ranged options
 
 
 
-Archer statuses: slow, some poison, dodge, short dex up
+Archer statuses: slow, some poison, some bleed, some blind, dodge, short dex up
 
-Hunter
+Hunter - easy aoe damage, lower than mages but covers different areas more easily
+Piercing Shot, 16 mp, 4 tile line, lin(1.4, 0.1) damage
+Arrow Rain, 24 mp, 2x3 offset 1, lin(1,0.08) damage
+Spinning Shot, 18 mp, 3 tiles in all 8 cardinal directions, each direction is separate non-piercing attack, lin(0.8, 0.08) damage 
+Forest's Blessing - 24 mp, gain lin(5,1)% dex for 10s, cooldown 30s
 
 
-Sniper
+Sniper - ranged 1v1, very long ranges
 
 
-Ranger
+Ranger - statuses and buffs, hybrid range
 
 
 
 Magician statuses: burn, stun, long dex up, short int up
 
-Arcanist
+Arcanist - tricky but powerful attacks and statuses; benefits from dex
 Arcane Cataclysm, 44 mp, AoE (2.5s delay) that hits the 2 diagonals in front and the 3 tiles that can be moved straight forward to by chess knights from those diagonal tiles, lin(1.6, 0.1)
-Great Cross, 34 mp, 5 tile cross (splits from 3rd tile) which is straight every 2nd cast and diagonal every other cast, dmg lin(2.2, 0.1), uses 4, cooldown: 20s
-Chronostasis, 24 mp, stun enemies in lin(3, 0.5) adjacent tiles and slow them lin(20, 2)%
+Great Cross, 34 mp, 5 tile cross (splits from 3rd tile) which is straight every 2nd cast and diagonal every other cast, dmg lin(2.2, 0.1), uses: 4, cooldown: 30s
+Chronostasis, 24 mp, deal lin(1.4, 0.08) damage and stun enemies in lin(3, 0.5) adjacent tiles, uses: lin(2,0.2), cooldown: 30s
 Cat's Grace, 60 mp, gain +lin(10,2)% dex for lin(80,10)s
 
-Wizard
-Fireball, 24 mp, 3 tile range, hits first enemy, then explodes into 3x3. Damage lin(0.8,0.1)
-Firewall, 36 mp, 1x5, map tile effect, burns for lin(0.15, 0.01) every 0.5s, stays active lin(4,0.4)s, uses: 2, cooldown 20s
-Burning Grasp 16 mp, 1x1, burns for lin(0.25,0.05) every 0.5s, cooldown: lin(30, -1)
-Meditation, 60 mp, gain +lin(10,2)% int for 10s, cooldown: lin(30, -1)s
+Wizard - easy aoe damage and burn statuses
+Fireball, 24 mp, 3 tile range, hits first enemy, then explodes into 3x3. Damage lin(0.8,0.05), burns for lin(0.02, 0.003) every 0.5s
+Firewall, 36 mp, 1x5, map tile effect, burns for lin(0.15, 0.01) every 0.5s, stays active lin(4,0.4)s, uses: 2, cooldown 30s
+Burning Grasp 16 mp, 1x1, burns for lin(0.25,0.05) every 0.5s, cooldown: 30s
+Mana Burn, 60 mp, gain +lin(10,2)% int for 10s, cooldown: 30s
 
-Druid
-Cone of Frost, 32 mp, 1/3/5 tile cone (range 3), slow 30%, , uses: 2, cooldown: 30s
-Eruption, 88 mp, 
+Druid - crowd control and damage blocking; benefits from vit
+Cone of Cold, 32 mp, 1/3/5 tile cone (range 3), slow 30%, lin(0.8,0.1) dmg, uses: lin(2,0.2), cooldown: 30s
+Eruption, 88 mp, 5x5 aoe (6s) around caster, lin(0.8, 0.08) damage
 Raven Slash, 24 mp, diagonal 5-tile cross 2 tiles away, lin(1.2,0.1) damage
-Natural Armor, 60 mp, gives the party temporary armor that blocks damage equal to lin(50, 10)% of user's max HP, cooldown lin(120, -3)
+Natural Armor, 60 mp, gives the party temporary armor that blocks damage equal to lin(50, 10)% of user's max HP, cooldown lin(120, -6)
 
 
-Rogue statuses: blind, poison, slow, short str/dex up, extra damage/crit vs statuses
+Rogue statuses: blind, poison, slow, bleed, short str/dex up, extra damage/crit vs statuses
 
-Assassin
+Assassin - some crowd control, more likely criticals vs statuses
 
-Improved Critical
+Poison Shot - 16 mp, 4 tile line (non-piercing), lin(0.6,0.02) damage, poison for lin(0.2,0.02) max hp / sec
+Smoke Bomb - 22 mp, 2x3 in front, causes lin(0.1,0.03) blind
+Gash Slash - 12 mp, 1x3, stack of bleed for lin(1.2,0.1) total damage
+Coup de Grace, 40 mp, extra lin(5,1)% critical chance for each type of status effect on enemies
 
-Shadowblade
+Shadowblade - easy class with improved stab/cleave, blind, temp. physical immunity; higher MP costs
 
+Shadow Stab - 20 mp, 2 tile line, 2 hits, lin(0.8,0.04) damage
+Shadow Cleave - 28 mp, 3 tile arc, 2 hits, lin(0.6,0.04) damage
+Vision Slash - stab+cleave range, lin(2.2,0.12), causes lin(0.2,0.04) blindness, cooldown 30s
+Shadeform - 40 mp, lin(0.5,0.05) physical and lin(0.2,0.02) elemental damage resistance for 10s, cooldown 30s
 
-Reaver
+Reaver - bleed stacking, dex buffs, fog, technical 1v1 specialist
+
+Hack - 10 mp, 1x1, 2 hits, each deals lin(0.5, 0.03) damage and inflicts a stack of bleed for lin(0.4, 0.04) total damage
+Eliminate - 18 mp, 1x1, removes all bleed stacks from enemy, deals 1 hit for each stack with lin(0.5,0.06) damage
+Blizzard Blade - 24 mp, 4-adj spin, deals lin(0.8,0.08) dmg and inflicts a stack of bleed for lin(0.6,0.06) total damage
+Forest Fangs - 36 mp, lin(0.1,0.03)% dex for 10s for each bleed stack on enemies in combat, cooldown 30s
+
 
 ----

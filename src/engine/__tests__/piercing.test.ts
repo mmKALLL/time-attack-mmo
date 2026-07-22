@@ -38,11 +38,12 @@ const selectSkill = (p: Entity, skillId: string) => {
 // The tick pushed a hit event onto this cell (hit/crit/miss all count).
 const struck = (s: WorldState, c: { x: number; y: number }) => s.hits.some((h) => h.cell.x === c.x && h.cell.y === c.y);
 const isSlowed = (e: Entity) => e.statuses.some((st) => st.kind === 'slow');
+const isPoisoned = (e: Entity) => e.statuses.some((st) => st.kind === 'poison');
 
 describe('non-piercing line/arc targeting (pierce:false)', () => {
-  it('flags Magic Claw and Hamstring as non-piercing', () => {
+  it('flags Magic Claw and Arrow Blow as non-piercing', () => {
     expect(getSkill('magicClaw').pierce).toBe(false);
-    expect(getSkill('hamstring').pierce).toBe(false);
+    expect(getSkill('piercingShot').pierce).toBe(false); // "Arrow Blow" — single-target line
   });
 
   describe('in-combat castSkill path (advanceCombat)', () => {
@@ -133,9 +134,13 @@ describe('non-piercing line/arc targeting (pierce:false)', () => {
     });
   });
 
-  describe('regression: piercing (default) AoE still hits every foe', () => {
-    it('a default arc (venomSlash, no pierce flag) hits BOTH foes on its footprint', () => {
+  describe('regression: piercing (default) AoE still reaches every foe', () => {
+    it('a default arc (venomSlash, no pierce flag) poisons + engages BOTH foes on its footprint', () => {
+      // venomSlash is poison-only (no dmg param), so it lands no damage/hit events; the
+      // piercing sweep instead applies its poison status to — and engages — every foe it covers.
       expect(getSkill('venomSlash').pierce).toBeUndefined(); // still piercing by default
+      expect(getSkill('venomSlash').shapeKind).toBe('arc'); // still an arc footprint
+      expect(getSkill('venomSlash').params.dmg).toBeUndefined(); // poison-only: no direct damage
       const p = rogueHero({ x: 3, y: 3 });
       p.facing = 'right';
       p.mp = 999;
@@ -147,8 +152,8 @@ describe('non-piercing line/arc targeting (pierce:false)', () => {
 
       advanceCombat(s, castInterval(p)); // exactly one Venom Slash cast
 
-      expect(struck(s, { x: 4, y: 3 })).toBe(true); // both arc foes struck
-      expect(struck(s, { x: 4, y: 4 })).toBe(true);
+      expect(isPoisoned(s.entities.e_a)).toBe(true); // both arc foes poisoned by the piercing sweep
+      expect(isPoisoned(s.entities.e_b)).toBe(true);
       expect(groupOf(s, 'p1')?.memberIds).toContain('e_a');
       expect(groupOf(s, 'p1')?.memberIds).toContain('e_b'); // piercing sweep engaged both
     });

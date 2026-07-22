@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { advanceCombat, moveOrStick, stick, nearestHero } from '../combat';
+import { advanceCombat, moveOrStick, stick, nearestHero, castInterval } from '../combat';
 import { makeEntity } from '../entities';
+import { getSkill } from '../../data-skills';
 import { demoMap } from '../../data-map';
 import { ENEMY_APPROACH_MS, COMBAT_TICK_MS } from '../../config';
 import type { Cell, CombatClass, Entity, WorldState } from '../../types';
@@ -29,9 +30,12 @@ function world(entities: Entity[], walls: Cell[] = []): WorldState {
 }
 const hero = (id: string, cell: Cell) => makeEntity({ id, faction: 'player', name: 'Hero', sprite: 'ranger', cell, level: 20, jobId: 'beginner' });
 // High dex → high accuracy so an in-range enemy reliably lands its hit; high vit
-// so it survives the hero's return fire during a test.
+// so it survives the hero's return fire during a test. Real enemies carry an
+// enemyClass skill (see data-enemy CLASS_SKILL); use enemyStrike so the foe does a
+// single-target instant hit (the beginner kit's slot-0 Stab is now a telegraphed
+// line/AoE and would plant a telegraph instead of dealing damage).
 const foe = (id: string, cell: Cell, combatClass: CombatClass = 'fighter') =>
-  makeEntity({ id, faction: 'enemy', name: 'Foe', sprite: 'slime', cell, level: 20, jobId: 'beginner', combatClass, primaries: { str: 20, dex: 80, int: 20, vit: 80 } });
+  makeEntity({ id, faction: 'enemy', name: 'Foe', sprite: 'slime', cell, level: 20, jobId: 'beginner', combatClass, primaries: { str: 20, dex: 80, int: 20, vit: 80 }, skills: [getSkill('enemyStrike')] });
 
 describe('enemy combat AI (slice 1: targeting + approach)', () => {
   it('an out-of-range enemy creeps one tile toward its target every ENEMY_APPROACH_MS', () => {
@@ -65,16 +69,16 @@ describe('enemy combat AI (slice 1: targeting + approach)', () => {
     const sMage = world([hero('p1', { x: 5, y: 5 }), foe('e1', { x: 9, y: 5 }, 'magician')]);
     stick(sMage, 'p1', 'e1');
     const mageMax = sMage.entities.p1.stats.maxHp;
-    advanceCombat(sMage, 2000); // mages cast slower (speed 0.8 → 1875ms); in range so it holds position
+    advanceCombat(sMage, castInterval(sMage.entities.e1)); // mage's own cast interval (slower: speed 0.8); in range so it holds position
     expect(sMage.entities.p1.hp).toBeLessThan(mageMax);
     expect(sMage.entities.e1.cell).toEqual({ x: 9, y: 5 }); // in range → no creep
 
-    // Melee (fighter) range 2 → out of range at dist 4, so no damage (and no creep
+    // Melee (fighter) range 1 → out of range at dist 4, so no damage (and no creep
     // yet, since one cast interval < ENEMY_APPROACH_MS).
     const sFig = world([hero('p1', { x: 5, y: 5 }), foe('e1', { x: 9, y: 5 }, 'fighter')]);
     stick(sFig, 'p1', 'e1');
     const figMax = sFig.entities.p1.stats.maxHp;
-    advanceCombat(sFig, COMBAT_TICK_MS);
+    advanceCombat(sFig, castInterval(sFig.entities.e1)); // one cast interval < ENEMY_APPROACH_MS → no creep yet
     expect(sFig.entities.p1.hp).toBe(figMax);
     expect(sFig.entities.e1.cell).toEqual({ x: 9, y: 5 });
   });

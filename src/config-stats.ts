@@ -87,7 +87,7 @@ export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beg
   const accuracy = p.dex * 2;
   return {
     maxHp: p.vit * (20 + level) + 50,
-    maxMp: p.int * 8 + level * 2 - 2,
+    maxMp: p.int * (8 + level / 4),
     minDmg: Math.round(power * minDamageRatio),
     maxDmg: Math.round(power),
     def: p.str * 2,
@@ -133,11 +133,11 @@ export function rawDamage(rolled: number, mult: number, def: number): number {
 // whether it counts as harmful (drives the attacker crit bonus), and how many
 // copies from the SAME source stack (bleed 5, everything else 1).
 export const STATUS: Record<StatusKind, { durationMs: number; tickMs?: number; harmful: boolean; maxStacksPerSource: number }> = {
-  poison: { durationMs: 10000, tickMs: 1000, harmful: true, maxStacksPerSource: 1 },
-  bleed: { durationMs: 10000, tickMs: 1000, harmful: true, maxStacksPerSource: 5 },
-  burn: { durationMs: 5000, tickMs: 500, harmful: true, maxStacksPerSource: 1 },
-  slow: { durationMs: 5000, harmful: true, maxStacksPerSource: 1 },
-  stun: { durationMs: 2000, harmful: true, maxStacksPerSource: 1 },
+  poison: { durationMs: 10000, tickMs: 2000, harmful: true, maxStacksPerSource: 1 },
+  bleed: { durationMs: 10000, tickMs: 2000, harmful: true, maxStacksPerSource: 5 },
+  burn: { durationMs: 5000, tickMs: 1000, harmful: true, maxStacksPerSource: 1 },
+  slow: { durationMs: 10000, harmful: true, maxStacksPerSource: 1 },
+  stun: { durationMs: 3000, harmful: true, maxStacksPerSource: 1 },
   atkUp: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
   atkDown: { durationMs: 10000, harmful: true, maxStacksPerSource: 1 },
   defUp: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
@@ -149,7 +149,7 @@ export const STATUS: Record<StatusKind, { durationMs: number; tickMs?: number; h
   statPercent: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
   statFlat: { durationMs: 10000, harmful: false, maxStacksPerSource: 1 },
 };
-export const STUN_IMMUNITY_MS = 5000; // post-stun immunity window (blocks re-stun)
+export const STUN_IMMUNITY_MS = 3000; // post-stun immunity window (blocks re-stun)
 export const HARMFUL_CRIT_STEP = 1.1; // attacker crit ×1.1 per harmful status STACK on the target
 
 // Poison deals a % of the target's max HP per 1s tick.

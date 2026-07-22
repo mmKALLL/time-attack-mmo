@@ -78,17 +78,17 @@ describe('arming (out-of-combat ranged fire, card #9)', () => {
     expect(groupOf(s, 'p1')?.memberIds.sort()).toEqual(['e1', 'e2', 'p1']); // both engaged
   });
 
-  it('(c-single) a single-target skill (point/Strike) hits only the nearest covered enemy', () => {
-    // A wide line-shaped footprint over two foes, but Strike is a point (single-target):
-    // only the nearest is struck. Use Stab's geometry with Strike's shape by lining foes up.
+  it('(c-single) a single-target skill (point/Power Strike) hits only the nearest covered enemy', () => {
+    // Power Strike is a point (single-target): only the faced foe is struck.
     const p = hero({ x: 5, y: 5 });
     p.facing = 'right';
-    // Strike's point shape is just the faced tile (1,0). Put an enemy there and another
+    // Power Strike's point shape is just the faced tile (1,0). Put an enemy there and another
     // beyond it; only the faced one is covered anyway — assert the beyond one is untouched.
+    p.skills = [{ skillId: 'powerStrike', level: 1, usesLeft: -1, cooldownLeftMs: 0 }];
     const near = rat('near', { x: 6, y: 5 });
     const far = rat('far', { x: 7, y: 5 });
     const s = world([p, near, far]);
-    s.entities.p1.activeSkillIndex = 0; // Strike (point)
+    s.entities.p1.activeSkillIndex = 0; // Power Strike (point)
     s.entities.p1.armed = true;
     const bNear = s.entities.near.hp;
     const bFar = s.entities.far.hp;
@@ -105,10 +105,11 @@ describe('arming (out-of-combat ranged fire, card #9)', () => {
     // Chebyshev distance, so the classifier picks the first) and engage only that one.
     const p = hero({ x: 5, y: 5 });
     p.facing = 'right';
+    p.skills = [{ skillId: 'powerStrike', level: 1, usesLeft: -1, cooldownLeftMs: 0 }];
     const a = rat('a', { x: 6, y: 5 }); // both on the faced tile (1,0)
     const b = rat('b', { x: 6, y: 5 });
     const s = world([p, a, b]);
-    s.entities.p1.activeSkillIndex = 0; // Strike (point → single-target)
+    s.entities.p1.activeSkillIndex = 0; // Power Strike (point → single-target)
     s.entities.p1.armed = true;
     advanceArming(s, BIG);
     // Exactly ONE foe is resolved against (one hit event on the shared cell — a

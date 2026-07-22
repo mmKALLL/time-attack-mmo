@@ -59,17 +59,18 @@ function sk(s: {
 export const SKILLS: Record<string, Skill[]> = {
   // --- Tier 0 ---
   beginner: [
-    sk({ id: 'strike', name: 'Strike', description: 'Strike one adjacent foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'physical', shapeKind: 'point', params: { dmg: lin(1.0, 0.1) } }),
-    sk({ id: 'cleave', name: 'Cleave', description: 'Slash three foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'physical', shapeKind: 'arc', params: { tiles: () => 3, dmg: lin(0.6, 0.08) }, mpCost: 4 }),
-    sk({ id: 'recover', name: 'Recover', description: 'Restore {healPercentage} of max HP (cooldown: {cooldown}).', kind: 'heal', target: 'self', element: 'physical', shapeKind: 'self', params: { healPercentage: flat(0.5) }, uses: 1, cooldown: lin(150, -15), mpCost: 20 }),
+    sk({ id: 'strike', name: 'Stab', description: 'Strike two foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'physical', shapeKind: 'line', params: { tiles: flat(2), dmg: lin(0.8, 0.1) } }),
+    sk({ id: 'cleave', name: 'Cleave', description: 'Slash three foes in a line for {dmg} damage.', kind: 'attack', target: 'melee', element: 'physical', shapeKind: 'arc', params: { tiles: flat(3), dmg: lin(0.6, 0.1) }, mpCost: 4 }),
+    sk({ id: 'recover', name: 'Recover', description: 'Restore {healPercentage} of max HP (cooldown: {cooldown}).', kind: 'heal', target: 'self', element: 'physical', shapeKind: 'self', params: { healPercentage: flat(0.5) }, uses: 1, cooldown: lin(120, -15), mpCost: 20 }),
+    // TODO: Battle disengage, MP restoration?
   ],
 
   // --- Fighter ---
   fighter: [
-    sk({ id: 'powerStrike', name: 'Power Strike', description: 'Strike one foe for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'earth', shapeKind: 'point', params: { dmg: lin(1.5, 0.2) }, uses: 3, cooldown: 15 }),
-    sk({ id: 'stab', name: 'Piercing Stab', description: 'Stab {tiles} tiles in front for {dmg} damage.', kind: 'attack', target: 'adjacent-arc', element: 'earth', shapeKind: 'line', params: { dmg: lin(1.2, 0.12), tiles: flat(2) }, mpCost: 8 }),
-    sk({ id: 'spinSlash', name: 'Spin Slash', description: 'Whirl, hitting {tiles} surrounding tiles for {dmg} damage.', kind: 'attack', target: 'area', element: 'earth', shapeKind: 'surround', params: { dmg: lin(0.9, 0.15), tiles: lin(4,0.4) }, mpCost: 14 }),
-    sk({ id: 'bracingGuard', name: 'Bracing Guard', description: 'Brace, cutting damage taken {pct}% for 10s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'earth', shapeKind: 'self', params: { pct: lin(40, 4) }, cooldown: lin(30, -1), status: { name: 'defUp' } }),
+    sk({ id: 'powerStrike', name: 'Power Strike', description: 'Strike one foe for {dmg} damage.', kind: 'attack', target: 'melee', element: 'physical', shapeKind: 'point', params: { dmg: lin(1.3, 0.15) }, mpCost: 6 }),
+    sk({ id: 'stab', name: 'Power Stab', description: 'Stab {tiles} tiles in front for {dmg} damage (uses: {uses}, cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'physical', shapeKind: 'line', params: { dmg: lin(1.2, 0.12), tiles: flat(2), uses: lin(2, 0.2), cooldown: flat(30) }}),
+    sk({ id: 'spinSlash', name: 'Spin Slash', description: 'Whirl, hitting {tiles} surrounding tiles for {dmg} damage.', kind: 'attack', target: 'area', element: 'earth', shapeKind: 'surround', params: { dmg: lin(0.9, 0.05), tiles: lin(4,0.4) }, mpCost: 14 }),
+    sk({ id: 'bracingGuard', name: 'Bracing Guard', description: 'Reduce incoming damage taken by {pct}% for 10s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'earth', shapeKind: 'self', params: { pct: lin(40, 4) }, cooldown: flat(30), status: { name: 'defUp' } }),
   ],
   knight: [
     sk({ id: 'aegisBastion', name: 'Aegis Bastion', description: 'Shield the block, cutting damage taken {pct}% for 10s.', kind: 'buff', target: 'block', element: 'light', shapeKind: 'party', params: { pct: lin(40, 5) }, cooldownMs: 8000, status: { name: 'defUp' } }),
@@ -88,10 +89,10 @@ export const SKILLS: Record<string, Skill[]> = {
 
   // --- Archer ---
   archer: [
-    sk({ id: 'piercingShot', name: 'Piercing Shot', description: 'Pierce {tiles} tiles in a line for {dmg} damage.', kind: 'attack', target: 'line', element: 'air', shapeKind: 'line', params: { dmg: lin(0.8, 0.15), tiles: flat(5) }, mpCost: 10 }),
-    sk({ id: 'scatterShot', name: 'Scatter Shot', description: 'Scatter arrows over {tiles} tiles for {dmg} damage.', kind: 'attack', target: 'arc', element: 'air', shapeKind: 'arc', params: { dmg: lin(1.2, 0.2), tiles: flat(3) }, mpCost: 16, offset: 1 }), // 2 tiles out (one empty tile in front)
-    sk({ id: 'powerKnockback', name: 'Power Knockback', description: 'Blast one foe for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'ranged', element: 'air', shapeKind: 'point', params: { dmg: lin(1.4, 0.2) }, uses: 2, cooldown: lin(30, -1), knockback: 3 }), // pushes the foe back 3 tiles
-    sk({ id: 'improvedCritical', name: 'Improved Critical', description: '+{crit}% crit and +{critDmg}% crit damage for 90s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'air', shapeKind: 'self', params: { crit: lin(5, 2), critDmg: lin(10, 4) }, cooldown: flat(85), status: [{ name: 'critUp', param: 'crit' }, { name: 'critDmgUp', param: 'critDmg' }] }),
+    sk({ id: 'piercingShot', name: 'Arrow Blow', description: 'Strike closest enemy within {tiles} tiles for {dmg} damage.', kind: 'attack', target: 'line', element: 'air', shapeKind: 'line', params: { dmg: lin(1.1, 0.12), tiles: flat(4) }, mpCost: 6, pierce: false }),
+    sk({ id: 'scatterShot', name: 'Scatter Shot', description: 'Scatter arrows over {tiles} tiles for {dmg} damage.', kind: 'attack', target: 'arc', element: 'physical', shapeKind: 'arc', params: { dmg: lin(1.0, 0.08), tiles: flat(3) }, mpCost: 16, offset: 1 }), // 2 tiles out (one empty tile in front)
+    sk({ id: 'powerKnockback', name: 'Power Knockback', description: 'Knock back one foe 3 tiles, dealing {dmg} damage (uses: {uses}, cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'physical', shapeKind: 'point', params: { dmg: lin(1.4, 0.12), uses: lin(2,0.2) }, cooldown: flat(30), knockback: 3 }), // pushes the foe back 3 tiles
+    sk({ id: 'improvedCritical', name: 'Improved Critical', description: '+{crit}% crit and +{critDmg}% crit damage for {dur}s.', kind: 'buff', target: 'self', element: 'air', shapeKind: 'self', params: { crit: lin(5, 2), critDmg: lin(10, 4), dur: lin(100, 20) }, mpCost: 45, status: [{ name: 'critUp', param: 'crit' }, { name: 'critDmgUp', param: 'critDmg' }] }),
   ],
   hunter: [
     sk({ id: 'arrowRain', name: 'Arrow Rain', description: 'Rain arrows in a 2x3 shape for {dmg} damage.', kind: 'attack', target: 'line', element: 'air', shapeKind: 'area', params: { dmg: lin(0.8, 0.15), tiles: flat(6) }, triggerMs: 1250 }),
@@ -109,10 +110,10 @@ export const SKILLS: Record<string, Skill[]> = {
 
   // --- Magician ---
   magician: [
-    sk({ id: 'magicClaw', name: 'Magic Claw', description: 'Claw {tiles} tiles {hits} times for {dmg} damage each.', kind: 'attack', target: 'adjacent-arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(0.6, 0.08), tiles: flat(3), hits: flat(2) }, mpCost: 12, pierce: false }), // TODO: multi-hit
-    sk({ id: 'crossBlast', name: 'Cross Blast', description: 'Blast the diagonal tiles for {dmg} damage (cooldown: {cooldown}).', kind: 'attack', target: 'area (cross)', element: 'arcane', shapeKind: 'diagonalCross', params: { dmg: lin(1.0, 0.15) }, mpCost: 16, uses: 4, cooldown: lin(20, -1) }),
-    sk({ id: 'arcaneArc', name: 'Arcane Arc', description: 'Detonate {tiles} tiles for {dmg} damage after a delay.', kind: 'attack', target: 'arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(1.6, 0.2), tiles: flat(5) }, mpCost: 22, telegraphMs: 5000, offset: 2 }), // 3 tiles out (two empty tiles in front)
-    sk({ id: 'shockingGrasp', name: 'Shocking Grasp', description: 'Shock one foe for {dmg}, slowing it {pct}% for 5s (cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'arcane', shapeKind: 'point', params: { dmg: lin(1.4, 0.2), pct: lin(25, 5) }, mpCost: 8, cooldown: lin(30, -1), status: { name: 'slow' } }),
+    sk({ id: 'magicClaw', name: 'Magic Claw', description: 'Strike closest enemy within {tiles} tiles for {hits} hits with {dmg} damage each.', kind: 'attack', target: 'line', element: 'arcane', shapeKind: 'line', params: { dmg: lin(0.6, 0.06), tiles: flat(3), hits: flat(2) }, mpCost: 12, pierce: false }), // TODO: multi-hit
+    sk({ id: 'crossBlast', name: 'Cross Blast', description: 'Blast the diagonal tiles for {dmg} damage (uses: {uses}, cooldown: {cooldown}).', kind: 'attack', target: 'area (cross)', element: 'arcane', shapeKind: 'diagonalCross', params: { dmg: lin(1.4, 0.8) }, mpCost: 16, uses: 4, cooldown: flat(30) }),
+    sk({ id: 'arcaneArc', name: 'Arcane Arc', description: 'Detonate {tiles} tiles for {dmg} damage after a delay.', kind: 'attack', target: 'arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(1.1, 0.05), tiles: lin(5, 0.2) }, mpCost: 22, telegraphMs: 4000, offset: 2 }), // 3 tiles out (two empty tiles in front)
+    sk({ id: 'shockingGrasp', name: 'Shocking Grasp', description: 'Shock one foe for {dmg}, slowing it {pct}% (uses: {uses}, cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'arcane', shapeKind: 'point', params: { dmg: lin(1.3, 0.15), pct: lin(25, 5), uses: flat(2) }, mpCost: 8, cooldown: flat(30), status: { name: 'slow' } }),
   ],
   arcanist: [
     sk({ id: 'arcaneCataclysm', name: 'Arcane Cataclysm', description: 'Detonate {tiles} tiles for {dmg} after {delay}s.', kind: 'attack', target: 'area', element: 'arcane', shapeKind: 'area', params: { tiles: lin(3, 1), dmg: lin(1.2, 0.25), delay: lin(1, 0.1) }, cooldownMs: 5000 }),
@@ -133,9 +134,9 @@ export const SKILLS: Record<string, Skill[]> = {
   // --- Rogue ---
   rogue: [
     sk({ id: 'doubleStrike', name: 'Double Strike', description: 'Stab one foe {hits} times for {dmg} damage each.', kind: 'attack', target: 'melee', element: 'dark', shapeKind: 'point', params: { dmg: lin(0.6, 0.04), hits: flat(2) }, mpCost: 6, trigger: 1 }), // TODO: multi-hit
-    sk({ id: 'venomSlash', name: 'Venom Slash', description: 'Slash {tiles} tiles for {dmg} damage, poisoning foes for {pct}% max HP/s over 10s (cooldown: {cooldown}).', kind: 'attack', target: 'adjacent-arc', element: 'dark', shapeKind: 'arc', params: { dmg: lin(1.0, 0.08), tiles: flat(3), pct: flat(2) }, mpCost: 10, trigger: 1, uses: 2, cooldown: lin(30, -1), status: { name: 'poison' } }),
-    sk({ id: 'hamstring', name: 'Hamstring', description: 'Cut {tiles} tiles for {dmg}, slowing foes {pct}% for 5s.', kind: 'attack', target: 'adjacent-arc', element: 'dark', shapeKind: 'arc', params: { dmg: lin(0.8, 0.1), tiles: flat(3), pct: lin(40, 2) }, mpCost: 16, pierce: false, status: { name: 'slow' } }),
-    sk({ id: 'lifeOrDeath', name: 'Life and Death', description: 'Deal and take +{pct}% damage for 10s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'dark', shapeKind: 'self', params: { pct: flat(50) }, cooldown: lin(20, -0.5), status: [{ name: 'atkUp' }, { name: 'defDown' }] }),
+    sk({ id: 'venomSlash', name: 'Venom Slash', description: 'Slash {tiles} tiles, poisoning foes for {pct}% max HP every 2s over 10s (cooldown: {cooldown}).', kind: 'attack', target: 'adjacent-arc', element: 'dark', shapeKind: 'arc', params: { tiles: flat(3), pct: lin(4,0.4) }, uses: 2, cooldown: flat(30), status: { name: 'poison' } }),
+    sk({ id: 'hamstring', name: 'Hamstring', description: 'Cut {tiles} tiles for {dmg}, slowing foes {pct}%.', kind: 'attack', target: 'adjacent-arc', element: 'dark', shapeKind: 'line', params: { dmg: lin(0.6, 0.06), tiles: flat(3), pct: lin(20, 3) }, mpCost: 16, status: { name: 'slow' } }),
+    sk({ id: 'lifeOrDeath', name: 'Life and Death', description: 'Deal and take +{pct}% damage for 10s (cooldown: {cooldown}).', kind: 'buff', target: 'self', element: 'dark', shapeKind: 'self', params: { pct: lin(50, 5) }, cooldown: flat(30), status: [{ name: 'atkUp' }, { name: 'defDown' }] }),
   ],
   assassin: [
     sk({ id: 'venom', name: 'Venom', description: 'Poison a foe for {pct}% max HP/s over 10s.', kind: 'dot', target: 'melee', element: 'dark', shapeKind: 'melee', params: { pct: lin(2, 0.5) }, status: { name: 'poison' } }),

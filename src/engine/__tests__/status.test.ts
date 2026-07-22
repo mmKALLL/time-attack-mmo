@@ -67,7 +67,7 @@ function runStatuses(s: WorldState, totalMs: number, step = 250): void {
 }
 
 describe('DoT: poison', () => {
-  it('drains HP roughly once per second while active, then expires by ~10s', () => {
+  it('drains HP roughly once per 2s while active, then expires by ~10s', () => {
     const s = world([]);
     const target = rat('t', { x: 5, y: 5 });
     s.entities.t = target;
@@ -75,14 +75,14 @@ describe('DoT: poison', () => {
     expect(target.statuses.some((st) => st.kind === 'poison')).toBe(true);
 
     const start = target.hp;
-    runStatuses(s, 1100); // just past one 1s tick
+    runStatuses(s, 2100); // just past one 2s tick
     const afterOne = start - target.hp;
     expect(afterOne).toBeGreaterThan(0);
 
     runStatuses(s, 3000); // ~3 more ticks
     expect(start - target.hp).toBeGreaterThan(afterOne); // more damage accrued
 
-    runStatuses(s, 7000); // total ~11.1s > 10s duration
+    runStatuses(s, 7000); // total ~12.1s > 10s duration
     expect(target.statuses.some((st) => st.kind === 'poison')).toBe(false); // gone
   });
 
@@ -100,13 +100,13 @@ describe('DoT: poison', () => {
     apply(s, smallHp, 'poison', 5);
     const bBefore = bigHp.hp;
     const sBefore = smallHp.hp;
-    runStatuses(s, 1100); // one tick each
+    runStatuses(s, 2100); // one 2s poison tick each
     expect(bBefore - bigHp.hp).toBeGreaterThan(sBefore - smallHp.hp);
   });
 });
 
 describe('DoT: burn', () => {
-  it('ticks ~every 0.5s and expires by ~5s; damage is the baked absolute potency (maxHp-independent)', () => {
+  it('ticks ~every 1s and expires by ~5s; damage is the baked absolute potency (maxHp-independent)', () => {
     const bigHp = makeEntity({ id: 'big', faction: 'enemy', name: 'Big', sprite: 'slime', cell: { x: 5, y: 5 }, level: 20, jobId: 'beginner', primaries: { str: 10, dex: 10, int: 10, vit: 400 } });
     const smallHp = makeEntity({ id: 'small', faction: 'enemy', name: 'Small', sprite: 'slime', cell: { x: 6, y: 5 }, level: 20, jobId: 'beginner', primaries: { str: 10, dex: 10, int: 10, vit: 20 } });
     const s = world([bigHp, smallHp]);
@@ -120,12 +120,12 @@ describe('DoT: burn', () => {
 
     const bBefore = bigHp.hp;
     const sBefore = smallHp.hp;
-    runStatuses(s, 600); // one 0.5s tick
+    runStatuses(s, 1100); // one 1s tick
     expect(bBefore - bigHp.hp).toBe(burnPotency);
     expect(sBefore - smallHp.hp).toBe(burnPotency); // identical absolute damage on both
 
-    // Burn ticks twice as often as poison (0.5s vs 1s): >=8 ticks over ~4.5s more.
-    runStatuses(s, 4500); // total ~5.1s > 5s duration
+    // Burn ticks twice as often as poison (1s vs 2s).
+    runStatuses(s, 4500); // total ~5.6s > 5s duration
     expect(bigHp.statuses.some((st) => st.kind === 'burn')).toBe(false); // expired by ~5s
   });
 });
@@ -147,7 +147,7 @@ describe('DoT: bleed stacking', () => {
 
     const b1 = t1.hp;
     const b5 = t5.hp;
-    runStatuses(s, 1100); // one 1s bleed tick on each
+    runStatuses(s, 2100); // one 2s bleed tick on each
     const dmg1 = b1 - t1.hp;
     const dmg5 = b5 - t5.hp;
     expect(dmg1).toBeGreaterThan(0);
@@ -316,7 +316,11 @@ describe('dodge / blind avoidance rolls (fixed seed)', () => {
   // overwhelming so the base hit check never misses — isolating the dodge/blind
   // avoidance rolls (which read the status potency).
   function missesOver(setup: (s: WorldState, attacker: Entity, target: Entity) => void, casts = 12): number {
-    const p = makeEntity({ id: 'p1', faction: 'player', name: 'Hero', sprite: 'ranger', cell: { x: 5, y: 5 }, level: 20, jobId: 'beginner', primaries: { str: 20, dex: 400, int: 20, vit: 200 } });
+    // Low VIT → low statusResist, so a blind status applied to THIS attacker lands
+    // near full strength (high VIT would clamp status resist to 95%, shrinking a
+    // 100% blind to ~5% and making the whiff signal seed-fragile). Accuracy (from
+    // DEX) is unchanged, so the base hit check still never misses.
+    const p = makeEntity({ id: 'p1', faction: 'player', name: 'Hero', sprite: 'ranger', cell: { x: 5, y: 5 }, level: 20, jobId: 'beginner', primaries: { str: 20, dex: 400, int: 20, vit: 5 } });
     p.facing = 'right';
     p.activeSkillIndex = p.skills.findIndex((r) => r.skillId === 'strike');
     const e = makeEntity({ id: 'e1', faction: 'enemy', name: 'Rat', sprite: 'slime', cell: { x: 6, y: 5 }, level: 20, jobId: 'beginner', primaries: { str: 20, dex: 1, int: 20, vit: 400 } });

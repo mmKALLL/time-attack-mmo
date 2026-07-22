@@ -54,38 +54,44 @@ describe('movement & sticking', () => {
 });
 
 describe('combat tick resolution', () => {
-  it('does not fire until the 1.5s timer elapses, then deals damage', () => {
+  it('does not fire until the cast interval elapses, then deals damage', () => {
     const s = world([hero({ x: 3, y: 3 }), rat('e1', { x: 4, y: 3 })]);
     moveOrStick(s, 'p1', 'right');
+    const interval = castInterval(s.entities.p1, s); // hero's group-boosted cast interval
     const before = s.entities.e1.hp;
-    advanceCombat(s, 1000);
+    advanceCombat(s, interval - 500); // short of one interval → no cast yet
     expect(s.entities.e1.hp).toBe(before);
-    advanceCombat(s, 600); // crosses 1500ms total
+    advanceCombat(s, 500); // crosses the interval total
     expect(s.entities.e1.hp).toBeLessThan(before);
   });
   it('attackSpeed (from DEX) shortens the trigger interval: a high-DEX enemy fires before a base-DEX one', () => {
-    // Beginner speed 1.0. Base dex 5 → attackSpeed 100 → interval 1500ms.
-    // dex 105 → attackSpeed 160 → interval 937.5ms. Advancing 1000ms: the fast
-    // one has fired (dealt damage), the base one has not.
+    // Beginner speed 1.0. Base dex 5 → attackSpeed 100 → interval COMBAT_TICK_MS.
+    // High dex → higher attackSpeed → a strictly shorter interval. Enemies get no
+    // group speed bonus, so castInterval(enemy) (no world) is the true cadence.
     const fast = makeEntity({ id: 'fast', faction: 'enemy', name: 'Fast', sprite: 'slime', cell: { x: 4, y: 3 }, level: 20, jobId: 'beginner', primaries: { str: 20, dex: 105, int: 20, vit: 200 } });
+    const slow = makeEntity({ id: 'slow', faction: 'enemy', name: 'Slow', sprite: 'slime', cell: { x: 4, y: 3 }, level: 20, jobId: 'beginner', primaries: { str: 20, dex: 5, int: 20, vit: 200 } });
+    const fastInterval = castInterval(fast);
+    const slowInterval = castInterval(slow);
+    expect(fastInterval).toBeLessThan(slowInterval); // high DEX → shorter interval
+    // Advance by the fast enemy's own interval: it fires, the slow one (longer) does not.
+    const dt = fastInterval;
+    expect(dt).toBeLessThan(slowInterval);
+
     const sFast = world([hero({ x: 3, y: 3 }), fast]);
     moveOrStick(sFast, 'p1', 'right');
-    const hpFastBefore = sFast.entities.p1.hp;
-    advanceCombat(sFast, 1000); // 1000 ≥ 937.5 → the fast enemy has fired
-    expect(sFast.entities.p1.hp).toBeLessThan(hpFastBefore);
+    advanceCombat(sFast, dt); // dt ≥ fast interval → the fast enemy has fired (timer drains)
+    expect(sFast.entities.fast.castTimerMs).toBeLessThan(dt); // it cast (drained its timer), regardless of hit/miss
 
-    const slow = makeEntity({ id: 'slow', faction: 'enemy', name: 'Slow', sprite: 'slime', cell: { x: 4, y: 3 }, level: 20, jobId: 'beginner', primaries: { str: 20, dex: 5, int: 20, vit: 200 } });
     const sSlow = world([hero({ x: 3, y: 3 }), slow]);
     moveOrStick(sSlow, 'p1', 'right');
-    const hpSlowBefore = sSlow.entities.p1.hp;
-    advanceCombat(sSlow, 1000); // 1000 < 1500 → the base-dex enemy has NOT fired yet
-    expect(sSlow.entities.p1.hp).toBe(hpSlowBefore);
+    advanceCombat(sSlow, dt); // dt < slow interval → the base-dex enemy has NOT fired yet
+    expect(sSlow.entities.slow.castTimerMs).toBe(dt); // timer still accumulating, no cast
   });
   it('removes a dead enemy and dissolves a one-sided group', () => {
     const s = world([hero({ x: 3, y: 3 }), rat('e1', { x: 4, y: 3 })]);
     s.entities.e1.hp = 1;
     moveOrStick(s, 'p1', 'right');
-    advanceCombat(s, 1500);
+    advanceCombat(s, castInterval(s.entities.p1, s)); // one hero cast (group-boosted) kills e1
     expect(s.entities.e1).toBeUndefined();
     expect(groupOf(s, 'p1')).toBeUndefined();
   });
@@ -96,7 +102,7 @@ describe('xp & level-ups', () => {
     const s = world([hero({ x: 3, y: 3 }), rat('e1', { x: 4, y: 3 })]);
     s.entities.e1.hp = 1;
     moveOrStick(s, 'p1', 'right');
-    advanceCombat(s, 1500);
+    advanceCombat(s, castInterval(s.entities.p1, s)); // one hero cast (group-boosted) kills e1
     expect(s.entities.p1.xp).toBeGreaterThan(0);
   });
   it('levels up a hero when XP crosses the threshold, regrowing stats but NOT refilling MP', () => {
@@ -108,7 +114,7 @@ describe('xp & level-ups', () => {
     p.mp = 0; // spent MP — leveling must NOT refill it (card #7: only towns do)
     s.entities.e1.hp = 1;
     moveOrStick(s, 'p1', 'right');
-    advanceCombat(s, 1500); // kill grants XP -> crosses the threshold
+    advanceCombat(s, castInterval(p, s)); // one hero cast (group-boosted) kills e1 -> XP crosses the threshold
     expect(p.level).toBeGreaterThan(beforeLevel); // leveled up (xp tuning may grant >1)
     expect(p.stats.maxHp).toBeGreaterThan(beforeMaxHp);
     expect(p.hp).toBe(p.stats.maxHp); // HP still fully heals on level up
@@ -154,7 +160,7 @@ describe('Recover skill (card #8)', () => {
     const rec = p.skills.findIndex((r) => r.skillId === 'recover');
     p.activeSkillIndex = rec;
     p.hp = 1;
-    advanceCombat(s, 1500); // hero auto-casts its active skill (Recover)
+    advanceCombat(s, castInterval(p, s)); // hero auto-casts its active skill (Recover)
     expect(p.hp).toBeGreaterThan(Math.round(p.stats.maxHp * 0.15)); // heals a meaningful chunk (tuning-agnostic)
     expect(p.skills[rec].cooldownLeftMs).toBeGreaterThan(0); // cooldown started
   });
@@ -236,7 +242,7 @@ describe('MP cost (card #22)', () => {
     const s = world([p, e]);
     s.groups = { g0: { id: 'g0', memberIds: ['p1', 'e1'] } };
     p.mp = 0; // can't afford Cleave
-    advanceCombat(s, 1500);
+    advanceCombat(s, castInterval(p, s)); // one cast attempt (group-boosted interval)
     expect(s.entities.p1.mp).toBe(0); // nothing spent
     expect(s.entities.p1.activeSkillIndex).not.toBe(cleaveIdx); // auto-selected a usable (free) skill
   });
@@ -252,7 +258,7 @@ describe('AoE engagement during combat', () => {
     const s = world([p, e1, e2]);
     s.groups = { g0: { id: 'g0', memberIds: ['p1', 'e1'] } };
     const before = e2.hp;
-    advanceCombat(s, 1500); // player auto-casts Cleave
+    advanceCombat(s, castInterval(p, s)); // player auto-casts Cleave (group-boosted interval)
     expect(groupOf(s, 'p1')?.memberIds).toContain('e2'); // the sweep engaged the un-blocked foe
     expect(s.entities.e2.hp).toBeLessThanOrEqual(before); // resolved against it (hit or seeded miss)
     expect(s.hits.some((h) => h.cell.x === 4 && h.cell.y === 4)).toBe(true); // reached e2's tile
