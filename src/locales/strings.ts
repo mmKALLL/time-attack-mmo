@@ -149,4 +149,19 @@ export const STRINGS: Record<string, Entry> = {
   'skill.hamstring.desc': { en: '16 MP: Cut {tiles} tiles for {dmg}, slowing foes {pct}%.', ja: 'MP16: {tiles}マスを斬り{dmg}ダメージを与え、敵を{pct}%スロウにする。' },
   'skill.lifeOrDeath.name': { en: 'Life and Death', ja: 'ライフアンドデス' },
   'skill.lifeOrDeath.desc': { en: 'Deal and take +{pct}% damage for 10s (cooldown: {cooldown}).', ja: '10秒間、与えるダメージと受けるダメージが+{pct}%になる（クールダウン: {cooldown}）。' },
+
+  // --- Main menu (SUOMELA, HELSINKI, Studio Esagames, version = proper nouns, left untranslated) ---
+  'ui.mainMenu.eyebrow': { en: 'THE NORTHERN REALM', ja: '北方の領域' },
+  'ui.mainMenu.tagline': { en: 'A land of endless forests, frozen fells, and old magic that stirs beneath the snow.', ja: '果てなき森と凍てつく丘、そして雪の下に息づく古の魔法の地。' },
+  'ui.mainMenu.enterRealm': { en: 'Enter the Realm', ja: '領域へ入る' },
+  'ui.mainMenu.continue': { en: 'Continue', ja: '続きから' },
+  'ui.mainMenu.newCharacter': { en: 'New Character', ja: '新規キャラクター' },
+  'ui.mainMenu.settings': { en: 'Settings', ja: '設定' },
+  'ui.mainMenu.credits': { en: 'Credits', ja: 'クレジット' },
+  'ui.mainMenu.quit': { en: 'Quit', ja: '終了' },
+  'ui.mainMenu.full': { en: 'FULL', ja: '満員' },
+  'ui.mainMenu.lastPlayed': { en: 'LAST PLAYED', ja: '前回のプレイ' },
+  'ui.mainMenu.realmStatus': { en: 'Realm status', ja: '領域の状況' },
+  'ui.mainMenu.onlineStatus': { en: '◆ Online · 2,418 adventurers', ja: '◆ オンライン · 2,418人の冒険者' },
+  'ui.mainMenu.serversOnline': { en: 'SERVERS ONLINE', ja: 'サーバー稼働中' },
 };

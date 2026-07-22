@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../state/store';
 import { JOBS } from '../data';
+import { jobName, translate, useLocale } from '../locales/i18n';
 import { PLAYER_TILE_SRC, keyedSheet, playerTile } from '../render/player-art';
 import './mainmenu.css';
 
@@ -124,6 +125,9 @@ function HeroPortrait({ jobId }: { jobId: string }) {
 export function MainMenuScreen() {
   const scale = useFitScale();
   const setScene = useGame((s) => s.setScene);
+  const setLocale = useGame((s) => s.setLocale);
+  const locale = useLocale();
+  const t = (key: string) => translate(key, locale);
   const world = useGame((s) => s.world);
   const newGame = useGame((s) => s.newGame);
   const loadGame = useGame((s) => s.loadGame);
@@ -401,17 +405,17 @@ export function MainMenuScreen() {
   const player = world.entities[world.playerId];
   const job = player ? JOBS[player.jobId] : undefined;
   const heroName = player?.name ?? 'Aino Tuulikki';
-  const heroSub = `${job?.name ?? 'Fire Wizard'} · Lv ${player?.level ?? 24}`;
+  const heroSub = `${job ? jobName(job, locale) : 'Fire Wizard'} · Lv ${player?.level ?? 24}`;
 
   // The seven menu items; click routing chosen by the user (boot-to-mainMenu).
-  const items: { label: string; size: number; dim?: boolean; tag?: string; onClick: () => void }[] = [
-    { label: 'Enter the Realm', size: 30, onClick: onEnterRealm },
-    { label: 'Continue', size: 23, dim: !saveExists, tag: saveExists ? `LV${player?.level ?? 1}` : undefined, onClick: onContinue },
-    { label: 'New Character', size: 22, dim: slotsFull, tag: slotsFull ? 'FULL' : undefined, onClick: onNewCharacter },
-    // { label: 'World Map', size: 22, onClick: () => setScene('worldMap') },
-    { label: 'Settings', size: 22, onClick: () => setScene('hotkeys') }, // closest existing config screen
-    { label: 'Credits', size: 18, dim: true, onClick: () => {} }, // stub: no credits screen yet
-    { label: 'Quit', size: 18, dim: true, onClick: () => {} }, // stub: no shell to quit to on web
+  const items: { id: string; size: number; dim?: boolean; tag?: string; onClick: () => void }[] = [
+    { id: 'enterRealm', size: 30, onClick: onEnterRealm },
+    { id: 'continue', size: 23, dim: !saveExists, tag: saveExists ? `LV${player?.level ?? 1}` : undefined, onClick: onContinue },
+    { id: 'newCharacter', size: 22, dim: slotsFull, tag: slotsFull ? t('ui.mainMenu.full') : undefined, onClick: onNewCharacter },
+    // { id: 'worldMap', size: 22, onClick: () => setScene('worldMap') },
+    { id: 'settings', size: 22, onClick: () => setScene('hotkeys') }, // closest existing config screen
+    { id: 'credits', size: 18, dim: true, onClick: () => {} }, // stub: no credits screen yet
+    { id: 'quit', size: 18, dim: true, onClick: () => {} }, // stub: no shell to quit to on web
   ];
 
   return (
@@ -423,26 +427,45 @@ export function MainMenuScreen() {
         <div className="mm-vignette radial" />
         <div className="mm-vignette linear" />
 
+        {/* LANGUAGE TOGGLE */}
+        <div style={{ position: 'absolute', top: 18, right: 24, display: 'flex', gap: 6, zIndex: 6 }}>
+          {(['en', 'ja'] as const).map((lc) => (
+            <button
+              key={lc}
+              onClick={() => setLocale(lc)}
+              style={{
+                fontFamily: 'var(--font-header)',
+                fontSize: 14,
+                padding: '5px 12px',
+                cursor: 'pointer',
+                borderRadius: 4,
+                border: '1px solid #4a4030',
+                background: locale === lc ? 'linear-gradient(#3a3020, #241c12)' : 'rgba(15,13,10,0.7)',
+                color: locale === lc ? '#ffce6b' : '#8a8270',
+                letterSpacing: 1,
+              }}
+            >
+              {lc === 'en' ? 'EN' : '日本語'}
+            </button>
+          ))}
+        </div>
+
         {/* TITLE */}
         <div className="mm-title">
-          <div className="mm-eyebrow">THE NORTHERN REALM</div>
+          <div className="mm-eyebrow">{t('ui.mainMenu.eyebrow')}</div>
           <div className="mm-titlewrap">
             <div className="mm-suomela">SUOMELA</div>
             <div className="mm-mmo">MMO</div>
           </div>
-          <div className="mm-tagline">
-            A land of endless forests, frozen fells,
-            <br />
-            and old magic that stirs beneath the snow.
-          </div>
+          <div className="mm-tagline">{t('ui.mainMenu.tagline')}</div>
         </div>
 
         {/* MENU */}
         <div className="mm-menu">
           {items.map((m) => (
-            <div key={m.label} className={`mmbtn${m.dim ? ' dim' : ''}`} onClick={m.onClick} style={{ fontSize: m.size }}>
+            <div key={m.id} className={`mmbtn${m.dim ? ' dim' : ''}`} onClick={m.onClick} style={{ fontSize: m.size }}>
               <span className="mmb-ic">◆</span>
-              <span>{m.label}</span>
+              <span>{t(`ui.mainMenu.${m.id}`)}</span>
               {m.tag && <span className="mmb-tag">{m.tag}</span>}
               <span className="mmb-line" />
             </div>
@@ -452,7 +475,7 @@ export function MainMenuScreen() {
         {/* LAST-PLAYED PANEL */}
         <div className="mm-panel">
           <div className="mm-panel-gold" />
-          <div className="mm-panel-label">LAST PLAYED</div>
+          <div className="mm-panel-label">{t('ui.mainMenu.lastPlayed')}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 12 }}>
             <div className="mm-portrait">
               <HeroPortrait jobId={player?.jobId ?? 'beginner'} />
@@ -468,8 +491,8 @@ export function MainMenuScreen() {
           </div>
           <div className="mm-divider" />
           <div className="mm-status">
-            <span>Realm status</span>
-            <span style={{ color: '#8fe0a0' }}>◆ Online · 2,418 adventurers</span>
+            <span>{t('ui.mainMenu.realmStatus')}</span>
+            <span style={{ color: '#8fe0a0' }}>{t('ui.mainMenu.onlineStatus')}</span>
           </div>
         </div>
 
@@ -478,7 +501,7 @@ export function MainMenuScreen() {
         <div className="mm-build">v0.4.1 · BUILD 2026.07.09</div>
         <div className="mm-servers">
           <span className="mm-servers-dot" />
-          SERVERS ONLINE
+          {t('ui.mainMenu.serversOnline')}
         </div>
       </div>
     </div>
