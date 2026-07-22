@@ -26,22 +26,28 @@ export function useT(): (key: string) => string {
 // Untranslated skills (e.g. under-design 2nd-job skills with no entry) render their
 // live English source, so nothing shows a raw key.
 
-export function skillName(skill: Skill, locale: Locale): string {
-  const key = `skill.${skill.id}.name`;
-  return STRINGS[key] ? translate(key, locale) : skill.name;
+// Data-derived string (skill/job/town/enemy names, NPC lines, …): English is ALWAYS the
+// live source — the DATA FILE is the single English source of truth. Other locales use
+// the STRINGS translation, falling back to the source when missing. So STRINGS[key].en is
+// only a synced cross-check REFERENCE (guarded by the drift test), never rendered.
+// (Contrast translate()/useT() for pure-UI strings, where STRINGS[key].en IS the source.)
+export function tData(key: string, source: string, locale: Locale): string {
+  if (locale === 'en') return source;
+  return STRINGS[key]?.[locale] || source;
 }
 
-// Localized class/job name, with English-source fallback (untranslated 2nd-job classes
-// render their live JOBS[id].name).
+export function skillName(skill: Skill, locale: Locale): string {
+  return tData(`skill.${skill.id}.name`, skill.name, locale);
+}
+
+// Localized class/job name (untranslated 2nd-job classes render their live JOBS[id].name).
 export function jobName(job: JobNode, locale: Locale): string {
-  const key = `job.${job.id}.name`;
-  return STRINGS[key] ? translate(key, locale) : job.name;
+  return tData(`job.${job.id}.name`, job.name, locale);
 }
 
 // The localized description TEMPLATE (still holding {param} placeholders).
 function skillTemplate(skill: Skill, locale: Locale): string {
-  const key = `skill.${skill.id}.desc`;
-  return STRINGS[key] ? translate(key, locale) : skill.description;
+  return tData(`skill.${skill.id}.desc`, skill.description, locale);
 }
 
 // Localized description with its {param} values substituted at `level` (atk scales dmg/heal).
