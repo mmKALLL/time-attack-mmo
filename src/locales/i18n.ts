@@ -1,4 +1,4 @@
-import type { Locale, Skill } from '../types';
+import type { JobNode, Locale, Skill } from '../types';
 import { useGame } from '../state/store';
 import { STRINGS } from './strings';
 import { describeSkill, describeSkillParts, type DescPart } from '../data-skills';
@@ -29,6 +29,13 @@ export function useT(): (key: string) => string {
 export function skillName(skill: Skill, locale: Locale): string {
   const key = `skill.${skill.id}.name`;
   return STRINGS[key] ? translate(key, locale) : skill.name;
+}
+
+// Localized class/job name, with English-source fallback (untranslated 2nd-job classes
+// render their live JOBS[id].name).
+export function jobName(job: JobNode, locale: Locale): string {
+  const key = `job.${job.id}.name`;
+  return STRINGS[key] ? translate(key, locale) : job.name;
 }
 
 // The localized description TEMPLATE (still holding {param} placeholders).

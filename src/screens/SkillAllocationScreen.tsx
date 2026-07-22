@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import type { Entity, Primaries, PrimaryKey, Skill } from '../types';
+import type { Entity, Locale, Primaries, PrimaryKey, Skill } from '../types';
 import { useGame } from '../state/store';
 import { JOBS } from '../data';
-import { SKILLS, describeSkillParts, getSkill } from '../data-skills';
+import { SKILLS, getSkill } from '../data-skills';
+import { jobName, skillDescriptionParts, skillName, translate, useLocale } from '../locales/i18n';
 import { CLASS_COMBAT, deriveStats } from '../config-stats';
 import { xpToNext } from '../config';
 import { shapeFor } from '../engine/shapes';
@@ -40,17 +41,18 @@ function iconKind(s: Skill): string {
   return 'single';
 }
 
-// The job's advancement lineage, e.g. ["Beginner", "Magician", "Fire Wizard"].
+// The job's advancement lineage as job IDs, e.g. ["beginner", "magician", "fireWizard"].
+// The caller localizes each via jobName() (falling back to the raw id if unknown).
 function lineage(jobId: string): string[] {
-  const names: string[] = [];
+  const ids: string[] = [];
   const seen = new Set<string>();
   let cur: string | undefined = jobId;
   while (cur && !seen.has(cur)) {
     seen.add(cur);
-    names.unshift(JOBS[cur]?.name ?? cur);
+    ids.unshift(cur);
     cur = JOBS[cur]?.requires?.[0];
   }
-  return names;
+  return ids;
 }
 
 function jobOfSkill(skillId: string): string {
@@ -116,9 +118,9 @@ function SkillIcon({ skill, size }: { skill: Skill; size: number }) {
 }
 
 // Skill description with highlighted pixel-font numbers; on preview, changed numbers show cur → next.
-function SkillDesc({ skill, curLv, previewing, atk, ecol }: { skill: Skill; curLv: number; previewing: boolean; atk: number; ecol: string }) {
-  const base = describeSkillParts(skill, curLv, atk);
-  const next = previewing ? describeSkillParts(skill, curLv + 1, atk) : null;
+function SkillDesc({ skill, curLv, previewing, atk, ecol, locale }: { skill: Skill; curLv: number; previewing: boolean; atk: number; ecol: string; locale: Locale }) {
+  const base = skillDescriptionParts(skill, curLv, atk, locale);
+  const next = previewing ? skillDescriptionParts(skill, curLv + 1, atk, locale) : null;
   const numStyle: CSSProperties = { fontFamily: "'Press Start 2P', monospace", fontSize: 10, position: 'relative', top: 2, lineHeight: 1, display: 'inline-block' };
   return (
     <span>
@@ -173,6 +175,8 @@ export function SkillAllocationScreen() {
   const world = useGame((s) => s.world);
   const setScene = useGame((s) => s.setScene);
   const dispatch = useGame((s) => s.dispatch);
+  const locale = useLocale();
+  const t = (key: string) => translate(key, locale);
   const p: Entity | undefined = world.entities[world.playerId];
 
   const [pendStat, setPendStat] = useState<Record<PrimaryKey, number>>({ str: 0, dex: 0, int: 0, vit: 0 });
@@ -249,17 +253,17 @@ export function SkillAllocationScreen() {
     const changed = !!statHover && f(cur) !== f(next); // highlight only when the DISPLAYED (rounded) value changes
     return { cur, next, changed, f };
   };
-  const DERIVED: { label: string; get: (s: typeof de) => number; dec?: boolean; pct?: boolean }[] = [
-    { label: 'Min damage', get: (s) => s.minDmg },
-    { label: 'Max damage', get: (s) => s.maxDmg },
-    { label: 'Max HP', get: (s) => s.maxHp },
-    { label: 'Max MP', get: (s) => s.maxMp },
-    { label: 'Defense', get: (s) => s.def },
-    { label: 'Crit rate', get: (s) => s.crit, dec: true },
-    { label: 'Accuracy', get: (s) => s.accuracy },
-    { label: 'Dodge', get: (s) => s.dodge, dec: true },
-    { label: 'Status Resist', get: (s) => s.statusResist, pct: true },
-    { label: 'Attack Speed', get: (s) => s.attackSpeed, pct: true },
+  const DERIVED: { key: string; get: (s: typeof de) => number; dec?: boolean; pct?: boolean }[] = [
+    { key: 'minDmg', get: (s) => s.minDmg },
+    { key: 'maxDmg', get: (s) => s.maxDmg },
+    { key: 'maxHp', get: (s) => s.maxHp },
+    { key: 'maxMp', get: (s) => s.maxMp },
+    { key: 'def', get: (s) => s.def },
+    { key: 'crit', get: (s) => s.crit, dec: true },
+    { key: 'accuracy', get: (s) => s.accuracy },
+    { key: 'dodge', get: (s) => s.dodge, dec: true },
+    { key: 'statusResist', get: (s) => s.statusResist, pct: true },
+    { key: 'attackSpeed', get: (s) => s.attackSpeed, pct: true },
   ];
 
   const line = lineage(p.jobId);
@@ -297,25 +301,25 @@ export function SkillAllocationScreen() {
   // power headline + NEXT LV deltas from the skill's param functions
   const paramLabel = (k: string, s: Skill) =>
     k === 'dmg'
-      ? 'Max damage'
+      ? t('ui.skills.param.maxDmg')
       : k === 'heal'
-        ? 'Healing'
+        ? t('ui.skills.param.healing')
         : k === 'pct'
           ? s.kind === 'dot'
-            ? 'Burn'
-            : 'Effect'
+            ? t('ui.skills.param.burn')
+            : t('ui.skills.param.effect')
           : k === 'dur'
-            ? 'Duration'
+            ? t('ui.skills.param.duration')
             : k === 'tiles'
-              ? 'Tiles'
+              ? t('ui.skills.param.tiles')
               : k === 'hits'
-                ? 'Hits'
+                ? t('ui.skills.param.hits')
                 : k === 'cooldown'
-                  ? 'Cooldown'
+                  ? t('ui.skills.param.cooldown')
                   : k === 'crit'
-                    ? 'Crit rate'
+                    ? t('ui.skills.param.critRate')
                     : k === 'critDmg'
-                      ? 'Crit damage'
+                      ? t('ui.skills.param.critDmg')
                       : k;
   const paramVal = (k: string, s: Skill, lv: number) => {
     const fn = s.params[k as keyof typeof s.params];
@@ -326,27 +330,27 @@ export function SkillAllocationScreen() {
     const unit = k === 'pct' || k === 'crit' || k === 'critDmg' ? '%' : k === 'dur' ? 's' : '';
     return `${Math.round(v)}${unit}`;
   };
-  let powLabel = 'Effect';
-  let powVal = '(no damage)';
+  let powLabel = t('ui.skills.power.effect');
+  let powVal = t('ui.skills.power.noDamage');
   let note = '';
   if (selSkill) {
     if (selSkill.params.dmg) {
       const dmgAt = (lv: number) => `${Math.round(de.minDmg * selSkill.params.dmg!(lv))}–${Math.round(de.maxDmg * selSkill.params.dmg!(lv))}`;
-      powLabel = 'Damage';
+      powLabel = t('ui.skills.power.damage');
       powVal = `${dmgAt(curLv)}${selHoverPreview ? ` > ${dmgAt(curLv + 1)}` : ''}`;
-      note = `${Math.round(cc.phys * 100)}/${Math.round((1 - cc.phys) * 100)} phys/mag mix`;
+      note = t('ui.skills.note.physMix').replace('{phys}', String(Math.round(cc.phys * 100))).replace('{mag}', String(Math.round((1 - cc.phys) * 100)));
     } else if (selSkill.params.heal) {
-      powLabel = 'Healing';
+      powLabel = t('ui.skills.power.healing');
       powVal = `${Math.round(power * selSkill.params.heal(curLv))}${selHoverPreview ? ` > ${Math.round(power * selSkill.params.heal(curLv + 1))}` : ''}`;
-      note = 'restores HP';
+      note = t('ui.skills.note.restoresHp');
     } else if (selSkill.kind === 'dot' && selSkill.params.pct) {
-      powLabel = 'Burn / round';
+      powLabel = t('ui.skills.power.burnPerRound');
       powVal = `${Math.round(selSkill.params.pct(curLv))}%`;
-      note = selSkill.params.dur ? `of max HP for ${Math.round(selSkill.params.dur(curLv))}s` : 'of max HP';
+      note = selSkill.params.dur ? t('ui.skills.note.burnDur').replace('{dur}', String(Math.round(selSkill.params.dur(curLv)))) : t('ui.skills.note.burnFlat');
     } else if (selSkill.params.pct) {
-      powLabel = 'Effect';
+      powLabel = t('ui.skills.power.effect');
       powVal = `${Math.round(selSkill.params.pct(curLv))}%`;
-      note = selSkill.params.dur ? `for ${Math.round(selSkill.params.dur(curLv))}s` : '';
+      note = selSkill.params.dur ? t('ui.skills.note.effectDur').replace('{dur}', String(Math.round(selSkill.params.dur(curLv)))) : '';
     }
   }
   const hasNext = curLv < selCap;
@@ -369,18 +373,18 @@ export function SkillAllocationScreen() {
           <div>
             <div style={{ fontFamily: 'Cinzel, serif', fontSize: 27, color: '#f2e8d2' }}>{p.name}</div>
             <div style={{ fontSize: 14, color: job?.accent ?? '#e0906a', marginTop: 2 }}>
-              {job?.name ?? p.jobId} <span style={{ color: '#7a7360' }}>· {line.join(' → ')}</span>
+              {job ? jobName(job, locale) : p.jobId} <span style={{ color: '#7a7360' }}>· {line.map((id) => (JOBS[id] ? jobName(JOBS[id], locale) : id)).join(' → ')}</span>
             </div>
           </div>
           <div style={{ marginLeft: 24, textAlign: 'center' }}>
             <div className="sa-px" style={{ fontSize: 9, color: '#c2a06a' }}>
-              LEVEL
+              {t('ui.skills.level')}
             </div>
             <div style={{ fontFamily: 'Cinzel, serif', fontSize: 44, color: '#e6c583', lineHeight: 1 }}>{p.level}</div>
           </div>
           <div style={{ width: 220, marginLeft: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#a99a7c' }}>
-              <span>Experience</span>
+              <span>{t('ui.skills.experience')}</span>
               <span className="sa-px" style={{ fontSize: 8, color: '#c2a06a' }}>
                 {Math.round((p.xp / xpToNext(p.level)) * 100)}%
               </span>
@@ -389,7 +393,7 @@ export function SkillAllocationScreen() {
               <div style={{ width: `${Math.min(100, (p.xp / xpToNext(p.level)) * 100)}%`, height: '100%', background: 'linear-gradient(var(--gold-bright), var(--gold-dim))' }} />
             </div>
             <div style={{ fontSize: 11, color: '#8f8674', marginTop: 4 }}>
-              {fmt(p.xp)} / {fmt(xpToNext(p.level))} <span style={{ color: '#5f5a4a' }}>XP to next</span>
+              {fmt(p.xp)} / {fmt(xpToNext(p.level))} <span style={{ color: '#5f5a4a' }}>{t('ui.skills.xpToNext')}</span>
             </div>
           </div>
         </div>
@@ -402,26 +406,28 @@ export function SkillAllocationScreen() {
               <div className="sa-px" style={{ fontSize: 22, color: attrPool > 0 ? '#8fe0a0' : '#6f6753' }}>
                 {attrPool}
               </div>
-              <div style={{ fontSize: 10, color: '#8fa8cc', marginTop: 5, letterSpacing: 0.5 }}>ATTRIBUTE</div>
+              <div style={{ fontSize: 10, color: '#8fa8cc', marginTop: 5, letterSpacing: 0.5 }}>{t('ui.skills.attribute')}</div>
             </div>
             <div style={{ textAlign: 'center', background: '#0c0f14', border: '1px solid #513524', borderRadius: 6, padding: '13px 16px' }}>
               <div className="sa-px" style={{ fontSize: 22, color: skillPool > 0 ? '#e0906a' : '#6f6753' }}>
                 {skillPool}
               </div>
-              <div style={{ fontSize: 10, color: '#e0906a', marginTop: 5, letterSpacing: 0.5 }}>SKILL</div>
+              <div style={{ fontSize: 10, color: '#e0906a', marginTop: 5, letterSpacing: 0.5 }}>{t('ui.skills.skill')}</div>
             </div>
           </div>
-          <div style={{ flex: 1, fontSize: 12, color: '#8f8674', fontStyle: 'italic', lineHeight: 1.4 }}>{pending > 0 ? `Unsaved: ${pending} point${pending > 1 ? 's' : ''} allocated.` : ''}</div>
+          <div style={{ flex: 1, fontSize: 12, color: '#8f8674', fontStyle: 'italic', lineHeight: 1.4 }}>
+            {pending > 0 ? t('ui.skills.unsaved').replace('{n}', String(pending)).replace('{s}', pending > 1 ? 's' : '') : ''}
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div
               className={`sa-btn${pending > 0 ? '' : ' dis'}`}
               onClick={confirm}
               style={{ padding: '8px 22px', fontSize: 14, color: '#12140c', background: 'linear-gradient(#e6c583,#c8a24a)', boxShadow: '0 2px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4)' }}
             >
-              Confirm
+              {t('ui.skills.confirm')}
             </div>
             <div className="sa-btn" onClick={pending > 0 ? reset : () => setScene('dungeon')} style={{ padding: '5px 22px', fontSize: 12, color: '#b3a888', background: '#1a1e26', border: '1px solid #3a4152' }}>
-              {pending > 0 ? 'Reset' : 'Return'}
+              {pending > 0 ? t('ui.skills.reset') : t('ui.skills.return')}
             </div>
           </div>
         </div>
@@ -430,7 +436,7 @@ export function SkillAllocationScreen() {
         <div className="sa-panel" style={{ top: 146, left: 24, width: 452, bottom: 24, padding: '18px 20px' }}>
           <div className="sa-gold" />
           <div className="sa-hd" style={{ fontSize: 14 }}>
-            Attributes ({attrPool} left)
+            {t('ui.skills.attributesLeft').replace('{n}', String(attrPool))}
           </div>
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 9 }}>
             {STAT_META.map((m) => {
@@ -445,8 +451,8 @@ export function SkillAllocationScreen() {
                     {m.abbr}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, color: '#f2e8d2' }}>{m.name}</div>
-                    <div style={{ fontSize: 11, color: '#8f8674' }}>{m.role}</div>
+                    <div style={{ fontSize: 15, color: '#f2e8d2' }}>{t(`stat.${m.key}.name`)}</div>
+                    <div style={{ fontSize: 11, color: '#8f8674' }}>{t(`stat.${m.key}.role`)}</div>
                   </div>
                   <div className={`sa-step${pend > 0 ? '' : ' dis'}`} onClick={() => decStat(m.key)}>
                     −
@@ -476,32 +482,32 @@ export function SkillAllocationScreen() {
           <div style={{ marginTop: 15, background: '#0c0f14', border: '1px solid #2a3140', borderRadius: 6, padding: '10px 12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 12 }}>
               <span style={{ color: '#a99a7c' }}>
-                Damage mix <span style={{ color: '#7a7360' }}>· class innate</span>
+                {t('ui.skills.damageMix')} <span style={{ color: '#7a7360' }}>· {t('ui.skills.classInnate')}</span>
               </span>
               <span className="sa-px" style={{ fontSize: 8, color: '#8f8674' }}>
-                {job?.name ?? p.jobId}
+                {job ? jobName(job, locale) : p.jobId}
               </span>
             </div>
             <div style={{ display: 'flex', height: 12, borderRadius: 3, overflow: 'hidden', marginTop: 7, boxShadow: 'inset 0 1px 2px #000' }}>
               <div style={{ width: `${cc.phys * 100}%`, background: 'linear-gradient(#6f9ad0,#3f6690)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: '#0c0f14', fontFamily: "'Press Start 2P'" }}>
-                {Math.round(cc.phys * 100)}% {cc.phys >= 40 ? 'PHYSICAL' : 'PHYS'}
+                {Math.round(cc.phys * 100)}% {cc.phys >= 40 ? t('ui.skills.physicalLong') : t('ui.skills.physicalShort')}
               </div>
               <div style={{ width: `${(1 - cc.phys) * 100}%`, background: 'linear-gradient(#b78fe0,#6b4e94)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: '#0c0f14', fontFamily: "'Press Start 2P'" }}>
-                {Math.round((1 - cc.phys) * 100)}% MAGIC
+                {Math.round((1 - cc.phys) * 100)}% {t('ui.skills.magic')}
               </div>
             </div>
           </div>
 
           <div style={{ height: 1, background: 'linear-gradient(90deg,transparent,#b8925a44,transparent)', margin: '15px 0 12px' }} />
           <div className="sa-hd" style={{ fontSize: 12, color: '#b89a63' }}>
-            Derived
+            {t('ui.skills.derived')}
           </div>
           <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
             {DERIVED.map((d) => {
               const { cur, next, changed, f } = statNumChange(d.get, d.dec, d.pct);
               return (
-                <div key={d.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: 20, borderBottom: '1px dotted #2f3846', paddingBottom: 6 }}>
-                  <span style={{ fontSize: 13, color: '#a99a7c' }}>{d.label}</span>
+                <div key={d.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: 20, borderBottom: '1px dotted #2f3846', paddingBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: '#a99a7c' }}>{t(`ui.skills.derived.${d.key}`)}</span>
                   {changed ? (
                     <span style={{ whiteSpace: 'nowrap' }}>
                       <span className="sa-px" style={{ fontSize: 10, color: '#8f8674' }}>
@@ -521,16 +527,16 @@ export function SkillAllocationScreen() {
               );
             })}
           </div>
-          <div style={{ marginTop: 14, fontSize: 11.5, color: '#7a7360', fontStyle: 'italic', lineHeight: 1.4 }}>Every stat pays off for any class, but lead to different playstyles.</div>
+          <div style={{ marginTop: 14, fontSize: 11.5, color: '#7a7360', fontStyle: 'italic', lineHeight: 1.4 }}>{t('ui.skills.statsNote')}</div>
         </div>
 
         {/* COLUMN B: SKILLS */}
         <div className="sa-panel" style={{ top: 146, left: 494, width: 742, bottom: 24, padding: '18px 20px' }}>
           <div className="sa-gold" />
           <div className="sa-hd" style={{ fontSize: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            Skills ({skillPool} left)
+            {t('ui.skills.skillsLeft').replace('{n}', String(skillPool))}
             <span className="sa-px" style={{ fontSize: 9, color: '#8fe0a0' }}>
-              {p.skillPoints > 0 ? `${p.skillPoints} PTS TO SPEND` : ''}
+              {p.skillPoints > 0 ? t('ui.skills.ptsToSpend').replace('{n}', String(p.skillPoints)) : ''}
             </span>
           </div>
           <div className="sa-scroll" style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 15, overflow: 'auto', height: 'calc(100% - 44px)', paddingRight: 6 }}>
@@ -539,7 +545,7 @@ export function SkillAllocationScreen() {
               return (
                 <div key={gjob}>
                   <div style={{ fontFamily: 'Cinzel, serif', fontSize: 12, letterSpacing: 1, color: accent, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    {JOBS[gjob]?.name ?? gjob}
+                    {JOBS[gjob] ? jobName(JOBS[gjob], locale) : gjob}
                     <span style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${accent}55, transparent)` }} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -578,13 +584,13 @@ export function SkillAllocationScreen() {
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                              <span style={{ fontSize: 15, color: '#f2e8d2' }}>{sk.name}</span>
+                              <span style={{ fontSize: 15, color: '#f2e8d2' }}>{skillName(sk, locale)}</span>
                               <span className="sa-px" style={{ fontSize: 7, color: ecol }}>
                                 {sk.shapeKind.toUpperCase()}
                               </span>
                               {unlearned && (
                                 <span className="sa-px" style={{ fontSize: 7, color: '#8fa8cc', border: '1px solid #3a4f66', borderRadius: 3, padding: '2px 4px' }}>
-                                  UNLEARNED
+                                  {t('ui.skills.unlearnedBadge')}
                                 </span>
                               )}
                               <span style={{ fontSize: 11, color: '#7a7360', marginLeft: 'auto' }}>
@@ -592,7 +598,7 @@ export function SkillAllocationScreen() {
                               </span>
                             </div>
                             <div style={{ fontSize: 13.5, lineHeight: '19px', color: '#cdc3aa', marginTop: 4 }}>
-                              <SkillDesc skill={sk} curLv={unlearned ? 1 : effSkillLv(i)} previewing={showPreview} atk={power} ecol={ecol} />
+                              <SkillDesc skill={sk} curLv={unlearned ? 1 : effSkillLv(i)} previewing={showPreview} atk={power} ecol={ecol} locale={locale} />
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
                               {Array.from({ length: cap }).map((_, k) => {
@@ -601,7 +607,7 @@ export function SkillAllocationScreen() {
                                 return <span key={k} style={{ width: 18, height: 9, borderRadius: 2, background: filled ? ecol : '#242b36', border: `1px solid ${accentPip ? '#e6c583' : filled ? ecol : '#1a1e26'}` }} />;
                               })}
                               <span style={{ fontSize: 11, color: '#8f8674', marginLeft: 6 }}>
-                                {unlearned && !showPreview ? <span style={{ color: '#8fa8cc' }}>Unlearned</span> : <>Lv {effSkillLv(i)}</>}
+                                {unlearned && !showPreview ? <span style={{ color: '#8fa8cc' }}>{t('ui.skills.unlearned')}</span> : <>{t('ui.skills.lv').replace('{n}', String(effSkillLv(i)))}</>}
                                 {showPreview ? <span style={{ color: '#ffd27a' }}> → {effSkillLv(i) + 1}</span> : unlearned ? null : <span>/{cap}</span>}
                               </span>
                             </div>
@@ -628,7 +634,7 @@ export function SkillAllocationScreen() {
         <div className="sa-panel" style={{ top: 146, left: 1254, right: 24, bottom: 24, padding: 20 }}>
           <div className="sa-gold" />
           <div className="sa-hd" style={{ fontSize: 13, color: '#b89a63', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            Attack Area
+            {t('ui.skills.attackArea')}
           </div>
           {selSkill && (
             <>
@@ -637,9 +643,9 @@ export function SkillAllocationScreen() {
                   <SkillIcon skill={selSkill} size={56} />
                 </div>
                 <div>
-                  <div style={{ fontFamily: 'Cinzel, serif', fontSize: 21, color: '#f2e8d2' }}>{selSkill.name}</div>
+                  <div style={{ fontFamily: 'Cinzel, serif', fontSize: 21, color: '#f2e8d2' }}>{skillName(selSkill, locale)}</div>
                   <div style={{ fontSize: 12.5, color: elem }}>
-                    {selSkill.shapeKind} · {selUnlearned ? 'Unlearned' : `Lv ${effSkillLv(selected)}/${selCap}`}
+                    {selSkill.shapeKind} · {selUnlearned ? t('ui.skills.unlearned') : `${t('ui.skills.lv').replace('{n}', String(effSkillLv(selected)))}/${selCap}`}
                   </div>
                 </div>
               </div>
@@ -683,10 +689,10 @@ export function SkillAllocationScreen() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 22, marginTop: 12, fontSize: 12, color: '#a99a7c' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ width: 14, height: 14, borderRadius: 3, background: '#2a3140', border: '1px solid #e6c583' }} /> You
+                  <span style={{ width: 14, height: 14, borderRadius: 3, background: '#2a3140', border: '1px solid #e6c583' }} /> {t('ui.skills.you')}
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ width: 14, height: 14, borderRadius: 3, background: elem }} /> {selSkill.kind === 'heal' || selSkill.kind === 'buff' ? 'Self' : 'Affected'}
+                  <span style={{ width: 14, height: 14, borderRadius: 3, background: elem }} /> {selSkill.kind === 'heal' || selSkill.kind === 'buff' ? t('ui.skills.self') : t('ui.skills.affected')}
                 </span>
               </div>
 
@@ -705,7 +711,7 @@ export function SkillAllocationScreen() {
 
               {selUnlearned ? null : hasNext ? (
                 <div style={{ marginTop: 16, background: 'linear-gradient(90deg,rgba(111,143,106,.10),transparent)', border: '1px solid #2f3d33', borderRadius: 6, padding: '11px 13px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                  <div style={{ fontSize: 11, letterSpacing: 1, color: '#7fb07a', fontFamily: 'Cinzel', paddingTop: 3, whiteSpace: 'nowrap' }}>NEXT LV ▸</div>
+                  <div style={{ fontSize: 11, letterSpacing: 1, color: '#7fb07a', fontFamily: 'Cinzel', paddingTop: 3, whiteSpace: 'nowrap' }}>{t('ui.skills.nextLv')}</div>
                   <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '9px 24px' }}>
                     {deltas.length ? (
                       deltas.map((d) => (
@@ -721,12 +727,12 @@ export function SkillAllocationScreen() {
                         </div>
                       ))
                     ) : (
-                      <span style={{ fontSize: 12, color: '#7a7360' }}>Raises the skill's effect.</span>
+                      <span style={{ fontSize: 12, color: '#7a7360' }}>{t('ui.skills.raisesEffect')}</span>
                     )}
                   </div>
                 </div>
               ) : (
-                <div style={{ marginTop: 16, fontFamily: 'Cinzel', fontSize: 14, color: '#e6c583', letterSpacing: 1 }}>✦ MASTERED · level {selCap} reached</div>
+                <div style={{ marginTop: 16, fontFamily: 'Cinzel', fontSize: 14, color: '#e6c583', letterSpacing: 1 }}>{t('ui.skills.mastered').replace('{n}', String(selCap))}</div>
               )}
             </>
           )}

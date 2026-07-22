@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Entity, Offset } from '../../types';
 import { JOBS } from '../../data';
-import { getSkill, describeSkill } from '../../data-skills';
+import { getSkill } from '../../data-skills';
+import { skillDescription, skillName, useLocale } from '../../locales/i18n';
 import { MAPS } from '../../data-map';
 import { xpToNext } from '../../config';
 import { shapeFor } from '../../engine/shapes';
@@ -202,6 +203,7 @@ function PartyFrames() {
 
 function Hotbar() {
   const world = useGame((s) => s.world);
+  const locale = useLocale();
   const player = world.entities[world.playerId];
   if (!player) return null;
   // Only LEARNED skills (level >= 1) occupy the bar, in learnedIndexes order.
@@ -220,13 +222,13 @@ function Hotbar() {
         const totalCd = skill.params.cooldown ? Math.round(skill.params.cooldown(rt.level) * 1000) : skill.cooldownMs;
         const elapsedDeg = cooling && totalCd > 0 ? (1 - rt.cooldownLeftMs / totalCd) * 360 : 360; // dark arc shrinks (un-dims) as it cools
         return (
-          <div key={rt.skillId + skillIdx} className={`slot${active ? ' active' : ''}${cooling ? ' cooling' : ''}`} title={`${skill.name} (Lv${rt.level})\n${describeSkill(skill, rt.level, player.stats.maxDmg)}`}>
+          <div key={rt.skillId + skillIdx} className={`slot${active ? ' active' : ''}${cooling ? ' cooling' : ''}`} title={`${skillName(skill, locale)} (Lv${rt.level})\n${skillDescription(skill, rt.level, player.stats.maxDmg, locale)}`}>
             {cooling && <span className="cdmask" style={{ background: `conic-gradient(from 0deg, transparent ${elapsedDeg}deg, rgba(0, 0, 0, 0.72) ${elapsedDeg}deg)` }} />}
             <span className="digit">{i + 1}</span>
             <span className="lvl">L{rt.level}</span>
             {cooling && <span className="cd">{Math.ceil(rt.cooldownLeftMs / 1000)}</span>}
             <ShapeGrid shape={shapeFor(skill, rt.level)} />
-            <span className="lbl">{skill.name}</span>
+            <span className="lbl">{skillName(skill, locale)}</span>
             {rt.usesLeft >= 0 && skill.uses && skill.uses > 1 ? (
               <div className="pips">
                 {Array.from({ length: skill.uses }).map((_, k) => (
