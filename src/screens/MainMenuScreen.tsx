@@ -125,7 +125,6 @@ function HeroPortrait({ jobId }: { jobId: string }) {
 export function MainMenuScreen() {
   const scale = useFitScale();
   const setScene = useGame((s) => s.setScene);
-  const setLocale = useGame((s) => s.setLocale);
   const locale = useLocale();
   const t = (key: string) => translate(key, locale);
   const world = useGame((s) => s.world);
@@ -426,29 +425,6 @@ export function MainMenuScreen() {
         {/* vignettes */}
         <div className="mm-vignette radial" />
         <div className="mm-vignette linear" />
-
-        {/* LANGUAGE TOGGLE */}
-        <div style={{ position: 'absolute', top: 18, right: 24, display: 'flex', gap: 6, zIndex: 6 }}>
-          {(['en', 'ja'] as const).map((lc) => (
-            <button
-              key={lc}
-              onClick={() => setLocale(lc)}
-              style={{
-                fontFamily: 'var(--font-header)',
-                fontSize: 14,
-                padding: '5px 12px',
-                cursor: 'pointer',
-                borderRadius: 4,
-                border: '1px solid #4a4030',
-                background: locale === lc ? 'linear-gradient(#3a3020, #241c12)' : 'rgba(15,13,10,0.7)',
-                color: locale === lc ? '#ffce6b' : '#8a8270',
-                letterSpacing: 1,
-              }}
-            >
-              {lc === 'en' ? 'EN' : '日本語'}
-            </button>
-          ))}
-        </div>
 
         {/* TITLE */}
         <div className="mm-title">
