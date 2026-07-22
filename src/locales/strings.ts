@@ -153,7 +153,7 @@ export const STRINGS: Record<string, Entry> = {
   // --- Main menu (SUOMELA, HELSINKI, Studio Esagames, version = proper nouns, left untranslated) ---
   'ui.mainMenu.eyebrow': { en: 'THE NORTHERN REALM', ja: '北方の領域' },
   'ui.mainMenu.tagline': { en: 'A land of endless forests, frozen fells, and old magic that stirs beneath the snow.', ja: '果てなき森と凍てつく丘、そして雪の下に息づく古の魔法の地。' },
-  'ui.mainMenu.enterRealm': { en: 'Enter the Realm', ja: '領域へ入る' },
+  'ui.mainMenu.enterRealm': { en: 'Enter the Realm', ja: '冒険を始める' },
   'ui.mainMenu.continue': { en: 'Continue', ja: '続きから' },
   'ui.mainMenu.newCharacter': { en: 'New Character', ja: '新規キャラクター' },
   'ui.mainMenu.settings': { en: 'Settings', ja: '設定' },
@@ -246,7 +246,10 @@ export const STRINGS: Record<string, Entry> = {
 
   // --- Stub screens (Shop / Settings / NPC Chat) ---
   'ui.stub.backToGame': { en: '← Back to Game', ja: '← ゲームへ戻る' },
-  'ui.stub.placeholder': { en: 'Placeholder screen — the engine, state store, and design tokens are all in place. Awaiting the Claude Design layout for this screen.', ja: 'プレースホルダー画面――エンジン、状態ストア、デザイントークンはすべて揃っています。この画面のClaude Designレイアウトを待機中です。' },
+  'ui.stub.placeholder': {
+    en: 'Placeholder screen — the engine, state store, and design tokens are all in place. Awaiting the Claude Design layout for this screen.',
+    ja: 'プレースホルダー画面――エンジン、状態ストア、デザイントークンはすべて揃っています。この画面のClaude Designレイアウトを待機中です。',
+  },
   'ui.shop.title': { en: 'Shop', ja: 'ショップ' },
   'ui.settings.title': { en: 'Hotkey Configuration', ja: 'ホットキー設定' },
   'ui.npcChat.title': { en: 'NPC Chat & Quest', ja: 'NPC会話とクエスト' },

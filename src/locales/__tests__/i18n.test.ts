@@ -4,7 +4,7 @@ import { SKILLS, getSkill } from '../../data-skills';
 import { JOBS } from '../../data';
 import { MAPS } from '../../data-map';
 import { TOWN_DIALOGUE, NPC_THEMES } from '../../data-npc';
-import { TOWN_DIALOGUE_JA } from '../dialogue-ja';
+import { TOWN_DIALOGUE_JA } from '../strings-dialogue-ja';
 import { npcLine } from '../i18n';
 
 // The 7 towns whose names + flavor descriptions the ZoneBanner localizes (via

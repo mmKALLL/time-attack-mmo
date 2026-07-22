@@ -4,7 +4,7 @@ import { STRINGS } from './strings';
 import { MAPS } from '../data-map';
 import { describeSkill, describeSkillParts, type DescPart } from '../data-skills';
 import { TOWN_DIALOGUE, NPC_THEMES } from '../data-npc';
-import { TOWN_DIALOGUE_JA } from './dialogue-ja';
+import { TOWN_DIALOGUE_JA } from './strings-dialogue-ja';
 
 // Look up a UI/data string for a locale. Falls back to English when the locale's value
 // is missing/empty, then to the key itself if there's no entry at all. Non-reactive —
