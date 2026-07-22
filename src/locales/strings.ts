@@ -164,4 +164,90 @@ export const STRINGS: Record<string, Entry> = {
   'ui.mainMenu.realmStatus': { en: 'Realm status', ja: '領域の状況' },
   'ui.mainMenu.onlineStatus': { en: '◆ Online · 2,418 adventurers', ja: '◆ オンライン · 2,418人の冒険者' },
   'ui.mainMenu.serversOnline': { en: 'SERVERS ONLINE', ja: 'サーバー稼働中' },
+
+  // --- Towns (DATA strings: en MUST equal MAPS[id].name / .description verbatim; ja = translation).
+  // Town NAMES → katakana of the real Finnish place name. DESCRIPTIONS → natural JP of the flavor line. ---
+  'map.mantyharju.name': { en: 'Mäntyharju', ja: 'マンティハルユ' },
+  'map.mantyharju.desc': { en: "Where the old pines hush and every wanderer's tale first draws breath.", ja: '老いた松がざわめき、あらゆる旅人の物語が最初の息吹をあげる地。' },
+  'map.savonlinna.name': { en: 'Savonlinna', ja: 'サヴォンリンナ' },
+  'map.savonlinna.desc': { en: 'A black-water fortress isle where oaths are sworn in steel and stone.', ja: '黒き水に囲まれた要塞の島、鋼と石にかけて誓いが交わされる場所。' },
+  'map.varkaus.name': { en: 'Varkaus', ja: 'ヴァルカウス' },
+  'map.varkaus.desc': { en: 'A town of shifting locks and whispered bargains, where the current keeps its secrets.', ja: '移ろう水門とささやかれる取引の町、流れが秘密を守り続ける。' },
+  'map.jyvaskyla.name': { en: 'Jyväskylä', ja: 'ユヴァスキュラ' },
+  'map.jyvaskyla.desc': { en: 'A ridge of scholars where the very air crackles with half-spoken spells.', ja: '学者たちの尾根、空気そのものが半ば唱えられた呪文で弾ける。' },
+  'map.kuopio.name': { en: 'Kuopio', ja: 'クオピオ' },
+  'map.kuopio.desc': { en: 'A mirror-lake town beneath a lonely tower, watched by the keenest eyes in the north.', ja: '孤高の塔の下、鏡のような湖の町、北方で最も鋭き目に見守られる。' },
+  'map.kajaani.name': { en: 'Kajaani', ja: 'カヤーニ' },
+  'map.kajaani.desc': { en: 'The last warm hearth before the deep north swallows the road whole.', ja: '深き北が道を丸ごと呑み込む前の、最後の暖かき炉辺。' },
+  'map.lieksa.name': { en: 'Lieksa', ja: 'リエクサ' },
+  'map.lieksa.desc': { en: "A moss-drowned waystation at the deepwood's edge, where the road ends and the old dark begins.", ja: '深き森の縁にある苔に沈んだ宿場、道が尽き、古き闇が始まる場所。' },
+
+  // --- HUD status-effect badge labels (status.<kind>) ---
+  'status.poison': { en: 'Poison', ja: '毒' },
+  'status.bleed': { en: 'Bleed', ja: '出血' },
+  'status.burn': { en: 'Burn', ja: '燃焼' },
+  'status.slow': { en: 'Slow', ja: '鈍足' },
+  'status.stun': { en: 'Stun', ja: 'スタン' },
+  'status.atkUp': { en: 'Attack Up', ja: '攻撃力上昇' },
+  'status.atkDown': { en: 'Attack Down', ja: '攻撃力低下' },
+  'status.defUp': { en: 'Defense Up', ja: '防御力上昇' },
+  'status.defDown': { en: 'Defense Down', ja: '防御力低下' },
+  'status.dodge': { en: 'Dodge Up', ja: '回避上昇' },
+  'status.blind': { en: 'Blind', ja: '盲目' },
+  'status.critUp': { en: 'Crit Up', ja: '会心率上昇' },
+  'status.critDmgUp': { en: 'Crit Damage Up', ja: '会心ダメージ上昇' },
+  'status.statPercent': { en: 'Stat %', ja: 'ステータス%' },
+  'status.statFlat': { en: 'Stat +', ja: 'ステータス+' },
+
+  // --- HUD chrome (ZoneBanner / FocusTarget / status badge suffix) ---
+  'ui.hud.down': { en: ' (down)', ja: '（低下）' },
+  'ui.hud.recommendedLv': { en: 'RECOMMENDED LV', ja: '推奨レベル' },
+  'ui.hud.elite': { en: 'ELITE', ja: 'エリート' },
+  'ui.hud.lv': { en: 'LV', ja: 'Lv' },
+
+  // --- Death overlay ---
+  'ui.death.youDied': { en: 'YOU DIED', ja: '死亡' },
+  'ui.death.respawn': { en: 'Respawn', ja: '復活' },
+
+  // --- Job advancement (AdvancementPanel + OfferPanel chrome) ---
+  'ui.advance.requiresLv': { en: 'Requires Lv {n}', ja: 'Lv {n}が必要' },
+  'ui.advance.advance': { en: 'Advance', ja: '転職' },
+  'ui.advance.decline': { en: 'Decline', ja: '断る' },
+  'ui.advance.close': { en: 'Close', ja: '閉じる' },
+  'ui.advance.accept': { en: 'Accept', ja: '承諾' },
+  'ui.advance.greeting': { en: 'What path will you walk?', ja: 'どの道を歩むのだ？' },
+  'ui.advance.pathOffer': { en: 'I can set you on the path of the {job}.', ja: '{job}の道へと導いてやろう。' },
+  'ui.advance.noPath': { en: 'No path lies open to you here — this is not your road to walk.', ja: 'ここにお前の進む道は開かれていない――これはお前の歩むべき道ではない。' },
+  'ui.advance.confirmHint': { en: 'CLICK TO CONFIRM · ENTER / ESC TO CLOSE', ja: 'クリックで確定 · Enter / Escで閉じる' },
+
+  // --- NPC dialog chrome (dialogue LINES are NOT translated here) ---
+  'ui.npc.ok': { en: 'OK', ja: 'OK' },
+  'ui.npc.close': { en: 'Close', ja: '閉じる' },
+  'ui.npc.continueHint': { en: 'SPACE / ENTER', ja: 'スペース / Enter' },
+
+  // --- Character / save-slot screen ---
+  'ui.chars.title': { en: 'Characters', ja: 'キャラクター' },
+  'ui.chars.intro': { en: 'Each save slot holds one character.', ja: '各セーブスロットには1人のキャラクターが入ります。' },
+  'ui.chars.backToMenu': { en: '← Back to Menu', ja: '← メニューへ戻る' },
+  'ui.chars.slot': { en: 'Slot {n}', ja: 'スロット {n}' },
+  'ui.chars.active': { en: 'ACTIVE', ja: '使用中' },
+  'ui.chars.empty': { en: 'Empty', ja: '空き' },
+  'ui.chars.create': { en: 'Create', ja: '作成' },
+  'ui.chars.play': { en: 'Play', ja: 'プレイ' },
+  'ui.chars.export': { en: 'Export', ja: 'エクスポート' },
+  'ui.chars.import': { en: 'Import', ja: 'インポート' },
+  'ui.chars.delete': { en: 'Delete', ja: '削除' },
+  'ui.chars.createCharacter': { en: 'Create Character', ja: 'キャラクター作成' },
+  'ui.chars.cancel': { en: 'Cancel', ja: 'キャンセル' },
+  'ui.chars.pastePlaceholder': { en: 'Paste exported save JSON here…', ja: 'エクスポートしたセーブJSONをここに貼り付け…' },
+  'ui.chars.namePlaceholder': { en: 'Character name…', ja: 'キャラクター名…' },
+  'ui.chars.loadIntoSlot': { en: 'Load into Slot {n}', ja: 'スロット {n} に読み込む' },
+  'ui.chars.deleteConfirm': { en: 'Delete the save in slot {n}? This cannot be undone.', ja: 'スロット {n} のセーブを削除しますか？この操作は取り消せません。' },
+
+  // --- Stub screens (Shop / Settings / NPC Chat) ---
+  'ui.stub.backToGame': { en: '← Back to Game', ja: '← ゲームへ戻る' },
+  'ui.stub.placeholder': { en: 'Placeholder screen — the engine, state store, and design tokens are all in place. Awaiting the Claude Design layout for this screen.', ja: 'プレースホルダー画面――エンジン、状態ストア、デザイントークンはすべて揃っています。この画面のClaude Designレイアウトを待機中です。' },
+  'ui.shop.title': { en: 'Shop', ja: 'ショップ' },
+  'ui.settings.title': { en: 'Hotkey Configuration', ja: 'ホットキー設定' },
+  'ui.npcChat.title': { en: 'NPC Chat & Quest', ja: 'NPC会話とクエスト' },
 };

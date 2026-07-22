@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useGame } from '../state/store';
 import { MAX_SLOTS } from '../state/persist';
 import { JOBS, randomCharacterName } from '../data';
+import { jobName as i18nJobName, translate, useLocale } from '../locales/i18n';
+import type { Locale } from '../types';
 
 // Save-slot management screen (multi-slot scaffolding; slot 0 is populated by
 // default, the rest are empty until the player exports/imports or starts fresh).
@@ -20,8 +22,9 @@ const panelBtn: React.CSSProperties = {
   fontSize: 13,
 };
 
-function jobName(jobId: string): string {
-  return JOBS[jobId]?.name ?? jobId;
+function jobName(jobId: string, locale: Locale): string {
+  const job = JOBS[jobId];
+  return job ? i18nJobName(job, locale) : jobId;
 }
 
 export function CharacterCreationScreen() {
@@ -33,6 +36,9 @@ export function CharacterCreationScreen() {
   const importSave = useGame((s) => s.importSave);
   const listSlots = useGame((s) => s.listSlots);
   const getActiveSlot = useGame((s) => s.getActiveSlot);
+
+  const locale = useLocale();
+  const t = (key: string) => translate(key, locale);
 
   // Bump a counter to force a re-read of the (localStorage-backed) slot list
   // after any mutating action, since the store selectors are stable functions.
@@ -101,7 +107,7 @@ export function CharacterCreationScreen() {
   };
 
   const onDelete = (slot: number) => {
-    if (!window.confirm(`Delete the save in slot ${slot + 1}? This cannot be undone.`)) return;
+    if (!window.confirm(t('ui.chars.deleteConfirm').replace('{n}', String(slot + 1)))) return;
     deleteSave(slot);
     refresh();
   };
@@ -119,10 +125,10 @@ export function CharacterCreationScreen() {
       }}
     >
       <button onClick={() => setScene('mainMenu')} style={{ ...panelBtn, padding: '6px 14px' }}>
-        ← Back to Menu
+        {t('ui.chars.backToMenu')}
       </button>
-      <h1 style={{ fontFamily: 'var(--font-header)', color: 'var(--gold-bright)', marginTop: 24 }}>Characters</h1>
-      <p style={{ color: 'var(--ink-dim)', maxWidth: 620 }}>Each save slot holds one character. Slot 1 is your active adventure; the rest are spare slots you can import saves into.</p>
+      <h1 style={{ fontFamily: 'var(--font-header)', color: 'var(--gold-bright)', marginTop: 24 }}>{t('ui.chars.title')}</h1>
+      <p style={{ color: 'var(--ink-dim)', maxWidth: 620 }}>{t('ui.chars.intro')}</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 720, marginTop: 24 }}>
         {Array.from({ length: MAX_SLOTS }, (_, slot) => {
@@ -142,33 +148,33 @@ export function CharacterCreationScreen() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'var(--font-header)', color: 'var(--gold-bright)', fontSize: 16 }}>
-                    Slot {slot + 1}
-                    {active && <span style={{ marginLeft: 10, fontSize: 10, color: 'var(--gold)', letterSpacing: 1 }}>ACTIVE</span>}
+                    {t('ui.chars.slot').replace('{n}', String(slot + 1))}
+                    {active && <span style={{ marginLeft: 10, fontSize: 10, color: 'var(--gold)', letterSpacing: 1 }}>{t('ui.chars.active')}</span>}
                   </div>
-                  <div style={{ color: 'var(--ink-dim)', fontSize: 14, marginTop: 4 }}>{meta ? `${meta.name} · LV ${meta.level} · ${jobName(meta.jobId)}` : 'Empty'}</div>
+                  <div style={{ color: 'var(--ink-dim)', fontSize: 14, marginTop: 4 }}>{meta ? `${meta.name} · LV ${meta.level} · ${jobName(meta.jobId, locale)}` : t('ui.chars.empty')}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   {!meta && (
                     <button style={panelBtn} onClick={() => onCreate(slot)}>
-                      Create
+                      {t('ui.chars.create')}
                     </button>
                   )}
                   {meta && (
                     <button style={panelBtn} onClick={() => onPlay(slot)}>
-                      Play
+                      {t('ui.chars.play')}
                     </button>
                   )}
                   {meta && (
                     <button style={panelBtn} onClick={() => void onExport(slot)}>
-                      Export
+                      {t('ui.chars.export')}
                     </button>
                   )}
                   <button style={panelBtn} onClick={() => setImportSlot(importSlot === slot ? null : slot)}>
-                    Import
+                    {t('ui.chars.import')}
                   </button>
                   {meta && (
                     <button style={{ ...panelBtn, color: '#d98a8a' }} onClick={() => onDelete(slot)}>
-                      Delete
+                      {t('ui.chars.delete')}
                     </button>
                   )}
                 </div>
@@ -178,7 +184,7 @@ export function CharacterCreationScreen() {
                   <textarea
                     value={importText}
                     onChange={(e) => setImportText(e.target.value)}
-                    placeholder="Paste exported save JSON here…"
+                    placeholder={t('ui.chars.pastePlaceholder')}
                     style={{
                       width: '100%',
                       minHeight: 90,
@@ -195,7 +201,7 @@ export function CharacterCreationScreen() {
                   />
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                     <button style={panelBtn} onClick={onImportConfirm} disabled={!importText.trim()}>
-                      Load into Slot {slot + 1}
+                      {t('ui.chars.loadIntoSlot').replace('{n}', String(slot + 1))}
                     </button>
                     <button
                       style={{ ...panelBtn, color: 'var(--ink-dim)' }}
@@ -204,7 +210,7 @@ export function CharacterCreationScreen() {
                         setImportText('');
                       }}
                     >
-                      Cancel
+                      {t('ui.chars.cancel')}
                     </button>
                   </div>
                 </div>
@@ -215,7 +221,7 @@ export function CharacterCreationScreen() {
                     value={createName}
                     onChange={(e) => setCreateName(e.target.value)}
                     maxLength={20}
-                    placeholder="Character name…"
+                    placeholder={t('ui.chars.namePlaceholder')}
                     style={{
                       width: '100%',
                       fontFamily: 'var(--font-body)',
@@ -230,10 +236,10 @@ export function CharacterCreationScreen() {
                   />
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                     <button style={panelBtn} onClick={() => onCreateConfirm(slot)} disabled={!createName.trim()}>
-                      Create Character
+                      {t('ui.chars.createCharacter')}
                     </button>
                     <button style={{ ...panelBtn, color: 'var(--ink-dim)' }} onClick={cancelCreate}>
-                      Cancel
+                      {t('ui.chars.cancel')}
                     </button>
                   </div>
                 </div>

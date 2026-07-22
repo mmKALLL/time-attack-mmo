@@ -1,9 +1,12 @@
 import { useGame } from '../../state/store';
+import { translate, useLocale } from '../../locales/i18n';
 
 // Shows when the controlled player is dead; Respawn returns them to Mäntyharju.
 export function DeathOverlay() {
   const world = useGame((s) => s.world);
   const dispatch = useGame((s) => s.dispatch);
+  const locale = useLocale();
+  const t = (key: string) => translate(key, locale);
   const p = world.entities[world.playerId];
   if (p && p.hp > 0) return null;
   return (
@@ -29,7 +32,7 @@ export function DeathOverlay() {
           textShadow: '0 2px 10px #000',
         }}
       >
-        YOU DIED
+        {t('ui.death.youDied')}
       </div>
       <button
         onClick={() => dispatch({ type: 'respawn' })}
@@ -45,7 +48,7 @@ export function DeathOverlay() {
           cursor: 'pointer',
         }}
       >
-        Respawn
+        {t('ui.death.respawn')}
       </button>
     </div>
   );

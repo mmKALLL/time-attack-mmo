@@ -1,6 +1,7 @@
 import type { JobNode, Locale, Skill } from '../types';
 import { useGame } from '../state/store';
 import { STRINGS } from './strings';
+import { MAPS } from '../data-map';
 import { describeSkill, describeSkillParts, type DescPart } from '../data-skills';
 
 // Look up a UI/data string for a locale. Falls back to English when the locale's value
@@ -43,6 +44,17 @@ export function skillName(skill: Skill, locale: Locale): string {
 // Localized class/job name (untranslated 2nd-job classes render their live JOBS[id].name).
 export function jobName(job: JobNode, locale: Locale): string {
   return tData(`job.${job.id}.name`, job.name, locale);
+}
+
+// Localized map/town name (source = MAPS[id].name). Untranslated maps (field maps
+// have no STRINGS entry) render their live English source name.
+export function mapName(mapId: string, locale: Locale): string {
+  return tData(`map.${mapId}.name`, MAPS[mapId]?.name ?? mapId, locale);
+}
+
+// Localized map/town description (source = MAPS[id].description ?? '').
+export function mapDescription(mapId: string, locale: Locale): string {
+  return tData(`map.${mapId}.desc`, MAPS[mapId]?.description ?? '', locale);
 }
 
 // The localized description TEMPLATE (still holding {param} placeholders).

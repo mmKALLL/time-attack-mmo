@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { Entity, Offset } from '../../types';
 import { JOBS } from '../../data';
 import { getSkill } from '../../data-skills';
-import { skillDescription, skillName, useLocale } from '../../locales/i18n';
+import { jobName, mapDescription, mapName, skillDescription, skillName, translate, useLocale } from '../../locales/i18n';
+import type { Locale } from '../../types';
 import { MAPS } from '../../data-map';
 import { xpToNext } from '../../config';
 import { shapeFor } from '../../engine/shapes';
@@ -87,40 +88,25 @@ function heroes(entities: Record<string, Entity>): Entity[] {
   return Object.values(entities).filter((e) => e.faction === 'player' || e.faction === 'ally');
 }
 
-// Display names for the status-badge tooltips.
-const STATUS_LABEL: Record<StatusBadgeGroup['kind'], string> = {
-  poison: 'Poison',
-  bleed: 'Bleed',
-  burn: 'Burn',
-  slow: 'Slow',
-  stun: 'Stun',
-  atkUp: 'Attack Up',
-  atkDown: 'Attack Down',
-  defUp: 'Defense Up',
-  defDown: 'Defense Down',
-  dodge: 'Dodge Up',
-  blind: 'Blind',
-  critUp: 'Crit Up',
-  critDmgUp: 'Crit Damage Up',
-  statPercent: 'Stat %',
-  statFlat: 'Stat +',
-};
-function badgeTitle(g: StatusBadgeGroup): string {
+// Status-badge tooltip label, localized: `status.<kind>` name + optional stat,
+// (down) suffix for lowered stat mods, and a ×N stack count.
+function badgeTitle(g: StatusBadgeGroup, locale: Locale): string {
   const stat = g.stat ? ` ${g.stat.toUpperCase()}` : '';
-  const dir = (g.kind === 'statPercent' || g.kind === 'statFlat') && !g.up ? ' (down)' : '';
+  const dir = (g.kind === 'statPercent' || g.kind === 'statFlat') && !g.up ? translate('ui.hud.down', locale) : '';
   const count = g.count > 1 ? ` ×${g.count}` : '';
-  return `${STATUS_LABEL[g.kind]}${stat}${dir}${count}`;
+  return `${translate(`status.${g.kind}`, locale)}${stat}${dir}${count}`;
 }
 
 // One 32×32 status badge: paints a canvas via the shared drawStatusBadge routine.
 // Redraws whenever the group's appearance changes (kind/stat/count/up).
 function StatusBadge({ group, size = 32 }: { group: StatusBadgeGroup; size?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const locale = useLocale();
   useEffect(() => {
     const ctx = ref.current?.getContext('2d');
     if (ctx) drawStatusBadge(ctx, group, size);
   }, [group.kind, group.stat, group.count, group.up, size]);
-  return <canvas ref={ref} width={size} height={size} className="status-badge" style={{ imageRendering: 'pixelated' }} title={badgeTitle(group)} />;
+  return <canvas ref={ref} width={size} height={size} className="status-badge" style={{ imageRendering: 'pixelated' }} title={badgeTitle(group, locale)} />;
 }
 
 // The row of status badges for a party member, top-right of the portrait card.
@@ -138,16 +124,17 @@ function StatusBadges({ entity }: { entity: Entity }) {
 
 function ZoneBanner() {
   const world = useGame((s) => s.world);
+  const locale = useLocale();
   const def = MAPS[world.mapId];
   if (!def) return null;
   return (
     <div className="panel zone-banner">
-      <div className="title">{def.name}</div>
+      <div className="title">{mapName(world.mapId, locale)}</div>
       {def.description ? (
-        <div className="sub flavor">{def.description}</div>
+        <div className="sub flavor">{mapDescription(world.mapId, locale)}</div>
       ) : (
         <div className="sub">
-          RECOMMENDED LV {def.recommended[0]}–{def.recommended[1]}
+          {translate('ui.hud.recommendedLv', locale)} {def.recommended[0]}–{def.recommended[1]}
         </div>
       )}
     </div>
@@ -156,6 +143,7 @@ function ZoneBanner() {
 
 function FocusTarget() {
   const world = useGame((s) => s.world);
+  const locale = useLocale();
   const group = Object.values(world.groups).find((g) => g.memberIds.includes(world.playerId));
   const target = group && group.memberIds.map((id) => world.entities[id]).find((e) => e?.faction === 'enemy');
   if (!target) return null;
@@ -164,7 +152,8 @@ function FocusTarget() {
       <div className="row">
         <span className="name">{target.name}</span>
         <span>
-          {target.elite && <span className="elite">◆ ELITE </span>}LV {target.level}
+          {target.elite && <span className="elite">◆ {translate('ui.hud.elite', locale)} </span>}
+          {translate('ui.hud.lv', locale)} {target.level}
         </span>
       </div>
       <Bar kind="hp" cur={target.hp} max={target.stats.maxHp} />
@@ -174,6 +163,7 @@ function FocusTarget() {
 
 function PartyFrames() {
   const world = useGame((s) => s.world);
+  const locale = useLocale();
   return (
     <div className="panel party">
       {heroes(world.entities).map((e) => {
@@ -188,7 +178,7 @@ function PartyFrames() {
             <div>
               <div className="name">{e.name}</div>
               <div className="cls" style={{ color: job?.accent ?? '#c2a06a' }}>
-                {job?.name ?? e.jobId}
+                {job ? jobName(job, locale) : e.jobId}
               </div>
               <Bar kind="hp" cur={e.hp} max={e.stats.maxHp} />
               <Bar kind="mp" cur={e.mp} max={e.stats.maxMp} />

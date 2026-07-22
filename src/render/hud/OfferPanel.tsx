@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { translate, useLocale } from '../../locales/i18n';
 
 // A selectable choice in an OfferPanel (e.g. a job to advance into, a quest to take).
 export type OfferOption = {
@@ -37,6 +38,7 @@ export function OfferPanel({
   onAccept: (selectedKey?: string) => void;
   onDecline: () => void;
 }) {
+  const locale = useLocale();
   // Start on the first ENABLED option so Enter accepts something valid by default.
   const firstEnabled = options.findIndex((o) => !o.disabled);
   const [selected, setSelected] = useState(firstEnabled >= 0 ? firstEnabled : 0);
@@ -184,7 +186,7 @@ export function OfferPanel({
             </button>
           )}
         </div>
-        <div style={{ marginTop: 8, fontSize: 10, color: 'var(--ink-dim-2)', textAlign: 'right', letterSpacing: 1 }}>CLICK TO CONFIRM · ENTER / ESC TO CLOSE</div>
+        <div style={{ marginTop: 8, fontSize: 10, color: 'var(--ink-dim-2)', textAlign: 'right', letterSpacing: 1 }}>{translate('ui.advance.confirmHint', locale)}</div>
       </div>
     </div>
   );

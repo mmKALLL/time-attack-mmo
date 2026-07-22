@@ -1,6 +1,7 @@
 import { useGame } from '../../state/store';
 import { canAdvanceTo, advancementLevelReq } from '../../engine/progression';
 import { JOBS } from '../../data';
+import { jobName, translate, useLocale } from '../../locales/i18n';
 import { OfferPanel } from './OfferPanel';
 import type { OfferOption } from './OfferPanel';
 
@@ -21,6 +22,8 @@ export function orList(names: string[]): string {
 export function AdvancementPanel() {
   const world = useGame((s) => s.world);
   const dispatch = useGame((s) => s.dispatch);
+  const locale = useLocale();
+  const t = (key: string) => translate(key, locale);
   const npc = world.pendingNpc ? world.entities[world.pendingNpc] : undefined;
   const player = world.entities[world.playerId];
 
@@ -29,25 +32,27 @@ export function AdvancementPanel() {
   const advanceTo = npc.advanceTo;
   const job = advanceTo ? JOBS[advanceTo] : undefined;
   // The single option this Guildmaster offers (if any). A missing/unknown advanceTo
-  // yields no option -> the empty-state body + "Close" (never crash).
-  const option = advanceTo && job ? { jobId: advanceTo, name: job.name, levelReq: advancementLevelReq(advanceTo), ...canAdvanceTo(player, advanceTo) } : undefined;
+  // yields no option -> the empty-state body + "Close" (never crash). `name` is the
+  // localized class name (jobName falls back to the live source for untranslated classes).
+  const option = advanceTo && job ? { jobId: advanceTo, name: jobName(job, locale), levelReq: advancementLevelReq(advanceTo), ...canAdvanceTo(player, advanceTo) } : undefined;
 
   const options: OfferOption[] = option
     ? [
         {
           key: option.jobId,
           label: option.name,
-          sublabel: `Requires Lv ${option.levelReq}`,
+          sublabel: t('ui.advance.requiresLv').replace('{n}', String(option.levelReq)),
           disabled: !option.ok,
           disabledReason: option.reason,
         },
       ]
     : [];
 
-  const greeting = npc.dialogue?.[0] ?? 'What path will you walk?';
+  // The greeting is a dialogue LINE (owned by a separate pass) — falls back to English.
+  const greeting = npc.dialogue?.[0] ?? t('ui.advance.greeting');
   // Dynamic line naming the single class on offer (or an empty-state line when the
   // Guildmaster has no path for this player — e.g. already this class, or ineligible).
-  const pathLine = option ? `I can set you on the path of the ${option.name}.` : 'No path lies open to you here — this is not your road to walk.';
+  const pathLine = option ? t('ui.advance.pathOffer').replace('{job}', option.name) : t('ui.advance.noPath');
 
   const body = (
     <>
@@ -67,8 +72,8 @@ export function AdvancementPanel() {
       title={npc.name}
       body={body}
       options={options}
-      acceptLabel="Advance"
-      declineLabel={option ? 'Decline' : 'Close'}
+      acceptLabel={t('ui.advance.advance')}
+      declineLabel={option ? t('ui.advance.decline') : t('ui.advance.close')}
       onAccept={accept}
       onDecline={close}
     />

@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react';
 import { useGame } from '../state/store';
+import { translate, useLocale } from '../locales/i18n';
 
 export function StubScreen({ title, children }: { title: string; children?: ReactNode }) {
   const setScene = useGame((s) => s.setScene);
+  const locale = useLocale();
+  const t = (key: string) => translate(key, locale);
   return (
     <div
       style={{
@@ -26,10 +29,10 @@ export function StubScreen({ title, children }: { title: string; children?: Reac
           cursor: 'pointer',
         }}
       >
-        ← Back to Game
+        {t('ui.stub.backToGame')}
       </button>
       <h1 style={{ fontFamily: 'var(--font-header)', color: 'var(--gold-bright)', marginTop: 24 }}>{title}</h1>
-      <p style={{ color: 'var(--ink-dim)', maxWidth: 560 }}>Placeholder screen — the engine, state store, and design tokens are all in place. Awaiting the Claude Design layout for this screen.</p>
+      <p style={{ color: 'var(--ink-dim)', maxWidth: 560 }}>{t('ui.stub.placeholder')}</p>
       {children}
     </div>
   );

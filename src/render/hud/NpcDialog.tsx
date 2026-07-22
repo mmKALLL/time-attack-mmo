@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../state/store';
+import { translate, useLocale } from '../../locales/i18n';
 import type { Direction } from '../../types';
 
 const KEY_TO_DIR: Record<string, Direction> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
@@ -15,6 +16,8 @@ const KEY_TO_DIR: Record<string, Direction> = { ArrowUp: 'up', ArrowDown: 'down'
 export function NpcDialog() {
   const world = useGame((s) => s.world);
   const dispatch = useGame((s) => s.dispatch);
+  const locale = useLocale();
+  const t = (key: string) => translate(key, locale);
   const npc = world.pendingNpc ? world.entities[world.pendingNpc] : undefined;
   // Only the NPC's current line — the engine cycles dialogueIndex on closeNpc.
   const all = npc?.dialogue ?? [];
@@ -142,10 +145,10 @@ export function NpcDialog() {
               cursor: 'pointer',
             }}
           >
-            {line + 1 < lines.length ? 'OK' : 'Close'}
+            {line + 1 < lines.length ? t('ui.npc.ok') : t('ui.npc.close')}
           </button>
         </div>
-        <div style={{ marginTop: 6, fontSize: 10, color: 'var(--ink-dim-2)', textAlign: 'right', letterSpacing: 1 }}>SPACE / ENTER</div>
+        <div style={{ marginTop: 6, fontSize: 10, color: 'var(--ink-dim-2)', textAlign: 'right', letterSpacing: 1 }}>{t('ui.npc.continueHint')}</div>
       </div>
     </div>
   );

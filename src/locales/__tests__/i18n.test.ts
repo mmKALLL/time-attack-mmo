@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { STRINGS } from '../strings';
 import { SKILLS, getSkill } from '../../data-skills';
 import { JOBS } from '../../data';
+import { MAPS } from '../../data-map';
+
+// The 7 towns whose names + flavor descriptions the ZoneBanner localizes (via
+// mapName/mapDescription). Field maps intentionally fall back to their English source.
+const TOWN_IDS = ['mantyharju', 'savonlinna', 'varkaus', 'jyvaskyla', 'kuopio', 'kajaani', 'lieksa'] as const;
 
 // The reachable (1st-tier) jobs whose skills the Skill Allocation screen localizes.
 // 2nd-job skills intentionally fall back to their English source, so they are NOT
@@ -53,6 +58,21 @@ describe('i18n STRINGS coverage + drift guard', () => {
     for (const id of REACHABLE_SKILL_IDS) {
       const entry = STRINGS[`skill.${id}.desc`];
       expect(placeholders(entry.ja), `skill.${id}.desc.ja placeholders differ from en`).toEqual(placeholders(entry.en));
+    }
+  });
+
+  it('records the correct English source for every town name + description (drift guard)', () => {
+    for (const id of TOWN_IDS) {
+      const map = MAPS[id];
+      expect(map, `MAPS[${id}] is missing`).toBeDefined();
+      const nameEntry = STRINGS[`map.${id}.name`];
+      expect(nameEntry, `missing map.${id}.name`).toBeDefined();
+      expect(nameEntry.en, `map.${id}.name.en drifted from MAPS[${id}].name`).toBe(map.name);
+      if (map.description) {
+        const descEntry = STRINGS[`map.${id}.desc`];
+        expect(descEntry, `missing map.${id}.desc`).toBeDefined();
+        expect(descEntry.en, `map.${id}.desc.en drifted from MAPS[${id}].description`).toBe(map.description);
+      }
     }
   });
 });
