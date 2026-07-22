@@ -3,6 +3,8 @@ import { useGame } from '../state/store';
 import { STRINGS } from './strings';
 import { MAPS } from '../data-map';
 import { describeSkill, describeSkillParts, type DescPart } from '../data-skills';
+import { TOWN_DIALOGUE, NPC_THEMES } from '../data-npc';
+import { TOWN_DIALOGUE_JA } from './dialogue-ja';
 
 // Look up a UI/data string for a locale. Falls back to English when the locale's value
 // is missing/empty, then to the key itself if there's no entry at all. Non-reactive —
@@ -70,4 +72,32 @@ export function skillDescription(skill: Skill, level: number, atk: number | unde
 // Same, split into literal/value parts so the UI can style the numbers distinctly.
 export function skillDescriptionParts(skill: Skill, level: number, atk: number | undefined, locale: Locale): DescPart[] {
   return describeSkillParts(skill, level, atk, skillTemplate(skill, locale));
+}
+
+// --- Town NPC dialogue: content-keyed EN→JA lookup, built once at module load ---
+// TOWN_DIALOGUE (data-npc.ts, English source of truth) and TOWN_DIALOGUE_JA
+// (dialogue-ja.ts) are parallel structures — same MapIds, same themes, same
+// index per line. We zip them into a flat map keyed by the English line (which is
+// unique), so localization needs no engine/entity change: npcLine() just looks up
+// the rendered English line. If an English line is edited without re-translating,
+// the ja lookup misses and it falls back to English (and the cross-check test flags it).
+const NPC_LINE_JA = new Map<string, string>();
+for (const [mapId, themes] of Object.entries(TOWN_DIALOGUE)) {
+  for (const theme of NPC_THEMES) {
+    const enLines = themes?.[theme];
+    const jaLines = TOWN_DIALOGUE_JA[mapId]?.[theme];
+    if (!enLines) continue;
+    enLines.forEach((en, i) => {
+      const ja = jaLines?.[i];
+      if (ja) NPC_LINE_JA.set(en, ja);
+    });
+  }
+}
+
+// Localize a town NPC dialogue line at render. 'en' returns the source line as-is;
+// other locales look up the parallel translation, falling back to the English line
+// when no translation exists (so nothing ever renders blank).
+export function npcLine(line: string, locale: Locale): string {
+  if (locale === 'en') return line;
+  return NPC_LINE_JA.get(line) ?? line;
 }

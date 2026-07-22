@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../state/store';
-import { translate, useLocale } from '../../locales/i18n';
+import { translate, useLocale, npcLine } from '../../locales/i18n';
 import type { Direction } from '../../types';
 
 const KEY_TO_DIR: Record<string, Direction> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
@@ -127,7 +127,7 @@ export function NpcDialog() {
             {line + 1}/{lines.length}
           </span>
         </div>
-        <p style={{ margin: 0, fontSize: 16, lineHeight: 1.5, minHeight: 48 }}>{lines[line]}</p>
+        <p style={{ margin: 0, fontSize: 16, lineHeight: 1.5, minHeight: 48 }}>{npcLine(lines[line], locale)}</p>
         <div style={{ marginTop: 12, textAlign: 'right' }}>
           <button
             onClick={(e) => {
