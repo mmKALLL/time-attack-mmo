@@ -1,9 +1,8 @@
 import type { Cell, Compass, MapDef, MapExit, MapFeature, ObstacleSize, TileKind, TileMap } from '../types';
 import { nextRand, randInt } from './rng';
 
-export type GeneratedMap = { tiles: TileMap; features: MapFeature[]; exits: MapExit[]; entry: Cell };
-
-type Rect = { x: number; y: number; w: number; h: number };
+export type Rect = { x: number; y: number; w: number; h: number };
+export type GeneratedMap = { tiles: TileMap; features: MapFeature[]; exits: MapExit[]; entry: Cell; rooms: Rect[] };
 const center = (r: Rect): Cell => ({ x: r.x + Math.floor(r.w / 2), y: r.y + Math.floor(r.h / 2) });
 const OBSTACLE_DIMS: Record<ObstacleSize, [number, number]> = { '1x1': [1, 1], '1x3': [1, 3], '3x1': [3, 1], '3x3': [3, 3] };
 
@@ -140,7 +139,7 @@ export function generateMap(def: MapDef, seed: number): GeneratedMap {
     features.push({ kind: 'torch', cell: wallEdges.splice(randInt(g, 0, wallEdges.length - 1), 1)[0] });
   }
 
-  return { tiles: { width: W, height: H, tiles }, features, exits, entry };
+  return { tiles: { width: W, height: H, tiles }, features, exits, entry, rooms };
 }
 
 function clamp(v: number, lo: number, hi: number): number {

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { Cell, Entity, WorldState } from '../../types';
 import { createDemoWorld } from '../demo';
-import { travelTo, portalsReachable, exitAt } from '../maps';
+import { travelTo, portalsReachable, exitAt, mapSeed } from '../maps';
+import { generateMap } from '../map-generator';
 import { MAPS } from '../../data-map';
 import { key } from '../grid';
 
@@ -51,6 +52,20 @@ describe('town NPC placement never blocks a portal', () => {
     for (const n of allNpcs(s)) {
       expect(exitAt(s, n.cell)).toBeUndefined(); // off portal tiles
       expect(heroCells.has(key(n.cell))).toBe(false); // not on the party
+    }
+  });
+
+  it('places every NPC inside a room (never a narrow corridor or its mouth)', () => {
+    const insideAnyRoom = (rooms: { x: number; y: number; w: number; h: number }[], c: Cell) =>
+      rooms.some((r) => c.x >= r.x && c.x < r.x + r.w && c.y >= r.y && c.y < r.y + r.h);
+    for (const town of townIds) {
+      const s = createDemoWorld();
+      travelTo(s, town, s.mapId);
+      const rooms = generateMap(MAPS[town], mapSeed(town)).rooms; // the same deterministic map spawnNpcs placed onto
+      expect(allNpcs(s).length).toBeGreaterThan(0); // the town still spawns townsfolk
+      for (const n of allNpcs(s)) {
+        expect(insideAnyRoom(rooms, n.cell), `${town}: NPC at ${n.cell.x},${n.cell.y} sits outside every room (corridor/mouth)`).toBe(true);
+      }
     }
   });
 

@@ -6,13 +6,13 @@ import { ENEMY_CLASS_COMBAT, enemyStatMult } from '../config-stats';
 import { makeEntity, makeNpc, makeJobNpc } from './entities';
 import { DIRECTIONS, isWall, inBounds, equals, key } from './grid';
 import { randInt, pick } from './rng';
-import { generateMap } from './map-generator';
+import { generateMap, type Rect } from './map-generator';
 import { DEFAULT_SEED } from '../config';
 import { NPC_NAMES, NPC_THEMES, NPC_TILES_MALE, NPC_TILES_FEMALE, genderOfName, TOWN_DIALOGUE } from '../data-npc';
 
 // Stable geometry seed per map id (derived from the fixed base seed) so a map
 // keeps the same layout across visits; only its enemies re-roll.
-function mapSeed(mapId: MapId): number {
+export function mapSeed(mapId: MapId): number {
   let h = (DEFAULT_SEED ^ 0x9e3779b9) | 0;
   for (let i = 0; i < mapId.length; i++) h = (Math.imul(h, 31) + mapId.charCodeAt(i)) | 0;
   return h;
@@ -165,7 +165,7 @@ export function spawnEnemies(s: WorldState, amount: number): void {
 // one line per interaction. Each NPC gets a random name (seeded) and a tile picked
 // from its name's gender pool — best-effort distinct within the town — at a
 // portal-safe floor cell (reusing the off-portal placement from spawnEnemies).
-export function spawnNpcs(s: WorldState): void {
+export function spawnNpcs(s: WorldState, rooms?: Rect[]): void {
   const townDialogue = TOWN_DIALOGUE[s.mapId] ?? {};
   // Topics this town hosts, in NPC_THEMES order, keeping only non-empty line arrays.
   const themes = NPC_THEMES.filter((theme) => (townDialogue[theme]?.length ?? 0) > 0);
@@ -178,8 +178,14 @@ export function spawnNpcs(s: WorldState): void {
   // obstacle for the reachability check of every later NPC — no NPC may wall off a
   // portal. Obstacle features are folded in by portalsReachable itself.
   const blocked = new Set(Object.values(s.entities).map((e) => key(e.cell)));
-  // Accept a candidate only if, placed there, all portals stay reachable.
-  const keepsPortalsOpen = (c: Cell) => portalsReachable(s, new Set(blocked).add(key(c)));
+  // Townsfolk go strictly INSIDE a room rectangle — never in the narrow corridors (or
+  // their mouths) that thread to the portals, no matter how small the room or where its
+  // obstacles sit. Room rects come from the generator; when called without them (direct
+  // test calls), re-derive from the map's deterministic seed so it stays consistent.
+  const roomRects = rooms ?? generateMap(MAPS[s.mapId], mapSeed(s.mapId)).rooms;
+  const insideRoom = (c: Cell) => roomRects.some((r) => c.x >= r.x && c.x < r.x + r.w && c.y >= r.y && c.y < r.y + r.h);
+  // Accept a candidate only if it's inside a room AND all portals stay reachable.
+  const keepsPortalsOpen = (c: Cell) => insideRoom(c) && portalsReachable(s, new Set(blocked).add(key(c)));
   themes.forEach((theme) => {
     const cell = randomFreeCell(s, occupied, avoid, keepsPortalsOpen);
     if (!cell) return;
@@ -265,7 +271,7 @@ export function travelTo(s: WorldState, toMap: MapId, fromMap?: MapId, arrivalDi
   if (def.biome === 'town') for (const h of heroes) { h.hp = h.stats.maxHp; h.mp = h.stats.maxMp; } // HP + MP fully heal on town entry (walk-in, fast-travel, or respawn); not otherwise
 
   spawnEnemies(s, def.spawns[0]?.maxAmount ?? 0);
-  if (def.biome === 'town') spawnNpcs(s); // townsfolk NPCs (data-driven count)
+  if (def.biome === 'town') spawnNpcs(s, gen.rooms); // townsfolk NPCs (data-driven count)
 }
 
 // Respawn wave: every spawnInterval seconds, top up by spawnAmount (up to the cap).
