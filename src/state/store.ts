@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import type { Input, WorldState } from '../types';
+import type { Input, Locale, WorldState } from '../types';
 import { applyAction, createDemoWorld, tick, travelTo } from '../engine';
-import { deleteSlot, exportSlot, getActiveSlot, hasSave, importJson, listSlots, loadSlotRaw, saveSlot, setActiveSlot, type SaveSlotMeta } from './persist';
+import { deleteSlot, exportSlot, getActiveSlot, getLocale, hasSave, importJson, listSlots, loadSlotRaw, saveLocale, saveSlot, setActiveSlot, type SaveSlotMeta } from './persist';
 
 export type Scene =
   | 'mainMenu'
@@ -21,6 +21,8 @@ type GameStore = {
   world: WorldState;
   inputQueue: Input[];
   highlights: Partial<Record<Scene, boolean>>; // nav buttons flagged to glow until their scene is opened
+  locale: Locale; // UI language (persisted display setting)
+  setLocale: (locale: Locale) => void;
   setScene: (scene: Scene) => void;
   enqueue: (input: Input) => void;
   dispatch: (input: Input) => void; // apply an input now (used off the sim clock)
@@ -74,6 +76,11 @@ export const useGame = create<GameStore>((set) => ({
   world: bootWorld(),
   inputQueue: [],
   highlights: {},
+  locale: getLocale(),
+  setLocale: (locale) => {
+    saveLocale(locale);
+    set({ locale });
+  },
   // Opening a scene clears its highlight (acknowledgement).
   setScene: (scene) => set((st) => ({ scene, highlights: { ...st.highlights, [scene]: false } })),
   enqueue: (input) => set((st) => ({ inputQueue: [...st.inputQueue, input] })),

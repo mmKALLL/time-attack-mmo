@@ -224,26 +224,28 @@ function formatParam(name: ParamName, v: number, atk?: number): string {
 export type DescPart = { t: string } | { name: ParamName; v: string };
 
 // Interpolate a description at a level into parts, so callers can render values distinctly.
-export function describeSkillParts(skill: Skill, level: number, atk?: number): DescPart[] {
+// `template` defaults to the skill's English description, but a localized template
+// (same {param} placeholders) can be passed to render a translated description.
+export function describeSkillParts(skill: Skill, level: number, atk?: number, template: string = skill.description): DescPart[] {
   const parts: DescPart[] = [];
   const re = /\{(\w+)\}/g;
   let last = 0;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(skill.description))) {
-    if (m.index > last) parts.push({ t: skill.description.slice(last, m.index) });
+  while ((m = re.exec(template))) {
+    if (m.index > last) parts.push({ t: template.slice(last, m.index) });
     const name = m[1] as ParamName;
     const fn = skill.params[name];
     if (fn) parts.push({ name, v: formatParam(name, fn(level), atk) });
     else parts.push({ t: `{${name}}` });
     last = m.index + m[0].length;
   }
-  if (last < skill.description.length) parts.push({ t: skill.description.slice(last) });
+  if (last < template.length) parts.push({ t: template.slice(last) });
   return parts;
 }
 
 // Interpolate a description at a level to a plain string (parts joined).
-export function describeSkill(skill: Skill, level: number, atk?: number): string {
-  return describeSkillParts(skill, level, atk)
+export function describeSkill(skill: Skill, level: number, atk?: number, template?: string): string {
+  return describeSkillParts(skill, level, atk, template)
     .map((p) => ('t' in p ? p.t : p.v))
     .join('');
 }

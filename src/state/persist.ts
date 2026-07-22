@@ -1,4 +1,4 @@
-import type { WorldState } from '../types';
+import type { Locale, WorldState } from '../types';
 
 // Pure serialization + localStorage layer. NO engine imports (types only) so the
 // engine stays free of persistence concerns. All localStorage access is wrapped
@@ -137,6 +137,15 @@ export function getActiveSlot(): number {
 
 export function setActiveSlot(slot: number): void {
   writeItem(ACTIVE_KEY, String(slot));
+}
+
+// ---------- UI language (display setting; never part of the saved world) ----------
+const LOCALE_KEY = 'tam:locale';
+export function getLocale(): Locale {
+  return readItem(LOCALE_KEY) === 'ja' ? 'ja' : 'en'; // default English; only 'ja' overrides
+}
+export function saveLocale(locale: Locale): void {
+  writeItem(LOCALE_KEY, locale);
 }
 
 // The full SaveData JSON for a slot (for clipboard/file export), or null if empty.

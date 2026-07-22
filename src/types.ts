@@ -2,6 +2,7 @@
 export type Cell = { x: number; y: number };
 export type Offset = { dx: number; dy: number };
 export type Direction = 'up' | 'down' | 'left' | 'right';
+export type Locale = 'en' | 'ja'; // UI language; a display setting (never saved into the world)
 export type TileKind = 'floor' | 'wall';
 export type TileMap = { width: number; height: number; tiles: TileKind[] };
 
