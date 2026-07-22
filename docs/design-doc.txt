@@ -378,14 +378,19 @@ Hunter - easy aoe damage, lower than mages but covers different areas more easil
 Piercing Shot, 16 mp, 4 tile line, lin(1.4, 0.1) damage
 Arrow Rain, 24 mp, 2x3 offset 1, lin(1,0.08) damage
 Spinning Shot, 18 mp, 3 tiles in all 8 cardinal directions, each direction is separate non-piercing attack, lin(0.8, 0.08) damage 
-Forest's Blessing - 24 mp, gain lin(5,1)% dex for 10s, cooldown 30s
+Forest's Blessing, 24 mp, gain lin(5,1)% dex for 10s, cooldown 30s
 
-
-Sniper - ranged 1v1, very long ranges
-
+Sniper - ranged 1v1, very long ranges at varied speeds
+Snipeshot, 28 mp, 8x1, 0.4x speed, lin(4, 0.5) damage
+Hurricane, 6 mp, 3x1 non-piercing, 3x speed, lin(0.75,0.05) damage
+Pinpoint Rain, 22 mp, 1x1 offset 3, 0.8x speed, lin(4,0.2) hits, lin(0.7,0.02) damage
+Forest's Mark, 24 mp, gain lin(5,2)% critical chance for 10s, cooldown 30s
 
 Ranger - statuses and buffs, hybrid range
-
+Poison Spray, 28 mp, 3 tiles in the three forward cardinal directions, each is a separate non-piercing attack, lin(3, 0.2)% maxhp poison damage per tick
+Snare, 20 mp, 1x1 map tile effect, duration 30s, when stepped on by enemy causes stun, 50% slow, and lin(2.1, 0.15) damage, uses 4, cooldown 30s
+Gash, 14 mp, 1x1, lin(1.6, 0.06) damage and bleed stack for lin(0.7, 0.07) total damage
+Forest's Favor, 24 mp, gain lin(2,1) all stats for lin(100,20)s
 
 
 Magician statuses: burn, stun, long dex up, short int up
@@ -422,7 +427,7 @@ Shadowblade - easy class with improved stab/cleave, blind, temp. physical immuni
 
 Shadow Stab - 20 mp, 2 tile line, 2 hits, lin(0.8,0.04) damage
 Shadow Cleave - 28 mp, 3 tile arc, 2 hits, lin(0.6,0.04) damage
-Vision Slash - stab+cleave range, lin(2.2,0.12), causes lin(0.2,0.04) blindness, cooldown 30s
+Optic Slash - stab+cleave range, 2 hits, lin(1.1,0.06) damage, causes lin(0.2,0.04) blindness, cooldown 30s
 Shadeform - 40 mp, lin(0.5,0.05) physical and lin(0.2,0.02) elemental damage resistance for 10s, cooldown 30s
 
 Reaver - bleed stacking, dex buffs, fog, technical 1v1 specialist
