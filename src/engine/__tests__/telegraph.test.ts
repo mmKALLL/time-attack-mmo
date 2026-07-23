@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { advanceCombat, advanceTelegraphs, castInterval, stick } from '../combat';
+import { advanceCombat, advanceTelegraphs, stick } from '../combat';
 import { tick } from '../world';
 import { makeEntity } from '../entities';
 import { getSkill } from '../../data-skills';
@@ -194,88 +194,10 @@ describe('telegraphed AoE (slice 2)', () => {
   });
 });
 
-// A magician hero wielding arcaneArc (arc, telegraphMs 5000, dmg) facing 'right'.
-// combatClass forced to magician so castInterval matches a real caster.
-const mage = (id: string, cell: Cell, facing: Entity['facing'] = 'right') => {
-  const e = makeEntity({ id, faction: 'player', name: 'Mage', sprite: 'mage', cell, level: 20, jobId: 'beginner', combatClass: 'magician', primaries: { str: 20, dex: 80, int: 80, vit: 60 }, skills: [getSkill('arcaneArc')] });
-  e.facing = facing;
-  return e;
-};
-
-// The absolute cells arcaneArc marks from the caster (its footprint IS the AoE —
-// projected in the caster's facing, no target centering).
-const playerFootprint = (skill: Skill, level: number, caster: Cell, facing: Entity['facing']): Cell[] => shapeFor(skill, level, facing).map((o) => ({ x: caster.x + o.dx, y: caster.y + o.dy }));
-
-describe('player-side AoE telegraph', () => {
-  const arcaneArc = getSkill('arcaneArc');
-
-  it('casting arcaneArc plants a player telegraph over its footprint — no instant damage', () => {
-    const m = mage('p1', { x: 5, y: 5 });
-    const target = foe('e1', { x: 7, y: 5 }, 'enemyStrike', 'fighter');
-    const s = world([m, target]);
-    stick(s, 'p1', 'e1');
-    const hpBefore = s.entities.e1.hp;
-
-    advanceCombat(s, castInterval(m)); // exactly one cast
-    expect(s.telegraphs).toHaveLength(1);
-    const tg = s.telegraphs[0];
-    expect(tg.hitsEnemies).toBe(true);
-    expect(tg.remainingMs).toBe(arcaneArc.telegraphMs);
-    expect(s.entities.e1.hp).toBe(hpBefore); // telegraphed → no damage this tick
-
-    // Tiles equal the skill's footprint projected from the caster (facing 'right').
-    const want = playerFootprint(arcaneArc, s.entities.p1.skills[0].level, { x: 5, y: 5 }, 'right');
-    expect([...tg.tiles].sort((a, b) => a.x - b.x || a.y - b.y)).toEqual(want.sort((a, b) => a.x - b.x || a.y - b.y));
-    // arcaneArc has offset 2, so the arc is projected 3 cells ahead: nearest tile at x=8, with the two tiles in front (x=6,7) left empty.
-    expect(hasCell(tg.tiles, { x: 8, y: 5 })).toBe(true);
-    expect(hasCell(tg.tiles, { x: 6, y: 5 })).toBe(false);
-    expect(hasCell(tg.tiles, { x: 7, y: 5 })).toBe(false);
-  });
-
-  it('resolves after the delay: an enemy on a marked tile is hit; one who stepped off dodges', () => {
-    const m = mage('p1', { x: 5, y: 5 });
-    const s = world([m, foe('e1', { x: 6, y: 5 }, 'enemyStrike', 'fighter')]);
-    stick(s, 'p1', 'e1');
-    advanceCombat(s, castInterval(m)); // plant on the footprint (arc ahead)
-    const tg = s.telegraphs[0];
-    s.entities.e1.cell = { ...tg.tiles[0] }; // stand the enemy on a marked tile
-    const hpBefore = s.entities.e1.hp;
-    advanceTelegraphs(s, tg.remainingMs);
-    expect(s.telegraphs).toHaveLength(0);
-    expect(s.entities.e1.hp).toBeLessThan(hpBefore); // stood on a marked tile → hit
-
-    // Dodge: re-plant, then move the enemy OFF every marked tile before it resolves.
-    const m2 = mage('p1', { x: 5, y: 5 });
-    const s2 = world([m2, foe('e1', { x: 6, y: 5 }, 'enemyStrike', 'fighter')]);
-    stick(s2, 'p1', 'e1');
-    advanceCombat(s2, castInterval(m2));
-    const marked = s2.telegraphs[0].tiles;
-    let safe: Cell | undefined;
-    for (const c of [{ x: 10, y: 10 }, { x: 9, y: 9 }, { x: 2, y: 2 }]) if (!hasCell(marked, c)) { safe = c; break; }
-    s2.entities.e1.cell = safe!;
-    const hp2 = s2.entities.e1.hp;
-    advanceTelegraphs(s2, s2.telegraphs[0].remainingMs);
-    expect(s2.entities.e1.hp).toBe(hp2); // stepped off → no damage
-  });
-
-  it('a player telegraph does NOT damage heroes standing on its tiles', () => {
-    const m = mage('p1', { x: 5, y: 5 });
-    const ally = hero('p2', { x: 6, y: 5 }); // hero standing right where the arc lands
-    const s = world([m, ally, foe('e1', { x: 8, y: 5 }, 'enemyStrike', 'fighter')]);
-    stick(s, 'p1', 'e1');
-    advanceCombat(s, castInterval(m));
-    const marked = s.telegraphs[0].tiles;
-    // Put both heroes onto marked tiles.
-    s.entities.p1.cell = { ...marked[0] };
-    s.entities.p2.cell = { ...marked[Math.min(1, marked.length - 1)] };
-    const hp1 = s.entities.p1.hp;
-    const hp2 = s.entities.p2.hp;
-    advanceTelegraphs(s, s.telegraphs[0].remainingMs);
-    expect(s.entities.p1.hp).toBe(hp1); // player telegraph spares heroes
-    expect(s.entities.p2.hp).toBe(hp2);
-  });
-
-  it('regression: an enemy AoE still plants hitsEnemies:false and damages a hero, not the enemy', () => {
+// Player-side telegraphed AoE was removed (player skills resolve instantly now); only
+// enemy AoEs telegraph. This guards that the enemy path still targets heroes, not enemies.
+describe('enemy AoE telegraph (regression)', () => {
+  it('an enemy AoE still plants hitsEnemies:false and damages a hero, not the enemy', () => {
     const h = hero('p1', { x: 5, y: 5 });
     const e = foe('e1', { x: 7, y: 5 }, 'enemyHex', 'magician'); // mage AoE
     const s = world([h, e]);

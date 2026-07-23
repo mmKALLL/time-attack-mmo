@@ -112,7 +112,7 @@ export const SKILLS: Record<string, Skill[]> = {
   magician: [
     sk({ id: 'magicClaw', name: 'Magic Claw', description: 'Strike closest enemy within {tiles} tiles for {hits} hits with {dmg} damage each.', kind: 'attack', target: 'line', element: 'arcane', shapeKind: 'line', params: { dmg: lin(0.6, 0.06), tiles: flat(3), hits: flat(2) }, mpCost: 12, pierce: false }), // TODO: multi-hit
     sk({ id: 'crossBlast', name: 'Cross Blast', description: 'Blast the diagonal tiles for {dmg} damage (uses: {uses}, cooldown: {cooldown}).', kind: 'attack', target: 'area (cross)', element: 'arcane', shapeKind: 'diagonalCross', params: { dmg: lin(1.4, 0.8) }, mpCost: 16, uses: 4, cooldown: flat(30) }),
-    sk({ id: 'arcaneArc', name: 'Arcane Arc', description: 'Detonate {tiles} tiles for {dmg} damage after a delay.', kind: 'attack', target: 'arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(1.1, 0.05), tiles: lin(5, 0.2) }, mpCost: 22, telegraphMs: 4000, offset: 2 }), // 3 tiles out (two empty tiles in front)
+    sk({ id: 'arcaneArc', name: 'Arcane Arc', description: 'Detonate {tiles} tiles for {dmg} damage after a delay.', kind: 'attack', target: 'arc', element: 'arcane', shapeKind: 'arc', params: { dmg: lin(1, 0.08), tiles: lin(5, 0.2) }, mpCost: 22, offset: 2 }), // 3 tiles out (two empty tiles in front)
     sk({ id: 'shockingGrasp', name: 'Shocking Grasp', description: 'Shock one foe for {dmg}, slowing it {pct}% (uses: {uses}, cooldown: {cooldown}).', kind: 'attack', target: 'melee', element: 'arcane', shapeKind: 'point', params: { dmg: lin(1.3, 0.15), pct: lin(25, 5), uses: flat(2) }, mpCost: 8, cooldown: flat(30), status: { name: 'slow' } }),
   ],
   arcanist: [

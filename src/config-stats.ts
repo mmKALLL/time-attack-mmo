@@ -86,8 +86,8 @@ export function deriveStats(p: Primaries, level: number, cls: CombatClass = 'beg
   const power = (phys * physical + (1 - phys) * magical) * 2;
   const accuracy = p.dex * 2;
   return {
-    maxHp: p.vit * (20 + level) + 50,
-    maxMp: p.int * (8 + level / 4),
+    maxHp: Math.round(p.vit * (20 + level) + 50),
+    maxMp: Math.round(p.int * (8 + level / 4)),
     minDmg: Math.round(power * minDamageRatio),
     maxDmg: Math.round(power),
     def: p.str * 2,

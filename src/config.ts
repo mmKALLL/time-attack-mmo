@@ -79,7 +79,7 @@ export const VIGNETTE: Record<Biome, { edgeAlpha: number; warmAlpha: number; inn
 // ---------- Timing ----------
 export const SIM_TICK_MS = 50; // fixed simulation step (divides STEP_MS evenly)
 export const STEP_MS = 250; // skill trigger rates are authored in these steps
-export const COMBAT_TICK_MS = 2000; // default per-skill trigger interval (6 * STEP_MS)
+export const COMBAT_TICK_MS = 2200; // default per-skill trigger interval (6 * STEP_MS)
 export const KNOCKBACK_STEP_MS = 200; // a knocked-back foe slides one tile per this interval (engine/combat.ts)
 export const ANIM_FRAME_MS = 420; // renderer 2-frame idle cadence
 export const ANIM_FRAMES = 2; // handoff sprites have 2 animation frames
