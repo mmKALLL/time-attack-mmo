@@ -212,7 +212,8 @@ export function getSkill(id: string): Skill {
 // Format one resolved param value. dmg/heal render as a computed number when
 // `atk` is supplied, else as a ×multiplier.
 function formatParam(name: ParamName, v: number, atk?: number): string {
-  if (name === 'dmg' || name === 'heal') return atk != null ? String(Math.round(atk * v)) : `×${v.toFixed(2)}`;
+  if (name === 'dmg') return `${Math.round(v * 100)}%`; // MapleStory-style: % of your attack, level-scaled
+  if (name === 'heal') return atk != null ? String(Math.round(atk * v)) : `×${v.toFixed(2)}`;
   if (name === 'healPercentage') return `${Math.round(v * 100)}%`; // fraction of max HP -> "50%"
   if (name === 'cooldown') return `${+v.toFixed(1)}s`; // seconds -> "18s" / "1.4s"
   if (name === 'crit' || name === 'critDmg') return `${Math.round(v)}%`;
