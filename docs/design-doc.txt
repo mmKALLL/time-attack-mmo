@@ -362,13 +362,24 @@ StatusKind → poison | bleed | burn | slow | stun | atkUp | atkDown | defUp | d
 
 Fighter statuses: stun, long+short atk/def up / down
 
-Knight - aggro, defense, atk/def buffs
-
+Knight - aggro, defense, atk/def buffs, easy to play
+Backhand Bash, 18 mp, 1x3, stuns and deals lin(1, 0.15) damage
+Sisu, 10% current hp, 1x1, deals damage equal to lin(1,0.2) times hp lost
+Earth Aegis, 24 mp, 2x3, lin(0.8,0.1) damage and enemy atk/def down by lin(15,1)%
+Muscle Up, passive +lin(2,2) str, max level 5
+Bulk Up, passive +lin(2,2) vit, max level 5
 
 Paladin - mob statuses (stun + blind), hybrid range (lightning), protection buffs
-
+Lightning Hammer, 12 mp, 1x1, stun and lin(2.1,0.15) damage
+Holy Flash, 16 mp, 3x3 blind for lin(25,5)%, cooldown 30s
+Judgement Bolt, 20 mp, 5x1, stun and lin(1,0.1) damage
+Holy Cross, 40 mp, 3x1 in adj-4 directions, deal lin(0.8,0.08) damage and heal allies (including user) for lin(10,1)% max HP
 
 Duelist - melee 1v1, single target statuses, some ranged options
+Riposte, 12 mp, 1x1, speed 3x, deals lin(2.4, 0.2) damage scaled by amount of time since last received attack (0% damage at 1 second). Guaranteed critical if last received attack was a miss
+Lunge, 14 mp, dash forward up to 3 tiles, deal lin(1.2,0.08) damage +50% per tile dashed
+Fatal Flurry, 22 mp, 1x1, deals lin(0.6,0.05) damage with hits equal to number of enemies in combat
+Stance Change, instant (doesn't use turn/trigger), switch between a passive lin(5,1)% str or dex buff
 
 
 
