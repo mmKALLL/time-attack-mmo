@@ -57,7 +57,7 @@ export type SkillParams = Partial<Record<ParamName, SkillParamFunction>>;
 
 export type SkillKind = 'attack' | 'heal' | 'buff' | 'debuff' | 'dot';
 export type SkillElement = 'physical' | 'light' | 'dark' | 'arcane' | 'fire' | 'ice' | 'air' | 'earth';
-export type ShapeKind = 'self' | 'melee' | 'point' | 'line' | 'arc' | 'area' | 'cross' | 'diagonalCross' | 'party' | 'surround';
+export type ShapeKind = 'self' | 'melee' | 'point' | 'line' | 'vertical' | 'arc' | 'area' | 'cross' | 'diagonalCross' | 'party' | 'surround';
 
 export type Skill = {
   id: SkillId;

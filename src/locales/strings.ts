@@ -136,7 +136,7 @@ export const STRINGS: Record<string, Entry> = {
   'skill.crossBlast.name': { en: 'Cross Blast', ja: 'クロスブラスト' },
   'skill.crossBlast.desc': { en: '16 MP: Blast the diagonal tiles for {dmg} damage (uses: {uses}, cooldown: {cooldown}).', ja: 'MP16: 斜め方向のマスを爆撃し、{dmg}ダメージを与える（使用回数: {uses}、クールダウン: {cooldown}）。' },
   'skill.arcaneArc.name': { en: 'Arcane Arc', ja: 'アーケインアーク' },
-  'skill.arcaneArc.desc': { en: '22 MP: Detonate {tiles} tiles for {dmg} damage after a delay.', ja: 'MP22: 遅延後、{tiles}マスを爆発させ{dmg}ダメージを与える。' },
+  'skill.arcaneArc.desc': { en: '22 MP: Detonate {tiles} tiles for {dmg} damage.', ja: 'MP22: {tiles}マスを爆発させ{dmg}ダメージを与える。' },
   'skill.shockingGrasp.name': { en: 'Shocking Grasp', ja: 'ショッキンググラスプ' },
   'skill.shockingGrasp.desc': { en: '8 MP: Shock one foe for {dmg}, slowing it {pct}% (uses: {uses}, cooldown: {cooldown}).', ja: 'MP8: 敵1体に{dmg}ダメージを与え、{pct}%スロウにする（使用回数: {uses}、クールダウン: {cooldown}）。' },
 

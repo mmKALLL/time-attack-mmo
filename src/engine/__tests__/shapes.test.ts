@@ -87,12 +87,18 @@ describe('offset shape projection', () => {
     expect(nearest).toBe(2); // nearest hitbox tile is 2 out (offset 1 => empty dx=1 row)
     expect(cells.some((c) => c.dx === 1)).toBe(false); // gap directly in front of the caster
   });
-  it("Arcane Arc's nearest tile is 3 out (facing right)", () => {
-    expect(getSkill('arcaneArc').offset).toBe(2); // two empty tiles between caster and hitbox
-    const cells = shapeFor(getSkill('arcaneArc'), 1, 'right');
-    const nearest = Math.min(...cells.map((c) => c.dx));
-    expect(nearest).toBe(3); // nearest hitbox tile is 3 out (offset 2 => empty dx=1,2 rows)
-    expect(cells.some((c) => c.dx === 1 || c.dx === 2)).toBe(false); // two-tile gap in front
+  it('Arcane Arc curls along a circle: nose 3 out, flanks curl back to dx 2 (facing right)', () => {
+    expect(getSkill('arcaneArc').offset).toBe(2); // radius = offset + 2 = 4
+    const cells = shapeFor(getSkill('arcaneArc'), 1, 'right'); // tiles = 5
+    const norm = [...cells].sort((a, b) => a.dy - b.dy || a.dx - b.dx);
+    expect(norm).toEqual([
+      { dx: 2, dy: -2 },
+      { dx: 3, dy: -1 },
+      { dx: 3, dy: 0 },
+      { dx: 3, dy: 1 },
+      { dx: 2, dy: 2 },
+    ]);
+    expect(cells.some((c) => c.dx === 1)).toBe(false); // still a two-tile gap directly in front
   });
 });
 

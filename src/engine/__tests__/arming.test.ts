@@ -26,7 +26,7 @@ function world(entities: Entity[]): WorldState {
   };
 }
 // Beginner kit: slot 0 = Strike (shapeKind 'point', single-target, faced tile),
-// slot 1 = Cleave (shapeKind 'arc', 3 tiles → AoE fan one cell ahead), slot 2 = Recover.
+// slot 1 = Cleave (shapeKind 'vertical', 3 tiles → AoE fan one cell ahead), slot 2 = Recover.
 const hero = (cell: { x: number; y: number }) => makeEntity({ id: 'p1', faction: 'player', name: 'Hero', sprite: 'ranger', cell, level: 20, jobId: 'beginner' });
 const rat = (id: string, cell: { x: number; y: number }) => makeEntity({ id, faction: 'enemy', name: 'Rat', sprite: 'slime', cell, level: 20, jobId: 'beginner' });
 const BIG = 100000; // dt comfortably past any class's cast interval → fires exactly once

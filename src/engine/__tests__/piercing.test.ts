@@ -139,7 +139,7 @@ describe('non-piercing line/arc targeting (pierce:false)', () => {
       // venomSlash is poison-only (no dmg param), so it lands no damage/hit events; the
       // piercing sweep instead applies its poison status to — and engages — every foe it covers.
       expect(getSkill('venomSlash').pierce).toBeUndefined(); // still piercing by default
-      expect(getSkill('venomSlash').shapeKind).toBe('arc'); // still an arc footprint
+      expect(getSkill('venomSlash').shapeKind).toBe('vertical'); // still a vertical-span footprint
       expect(getSkill('venomSlash').params.dmg).toBeUndefined(); // poison-only: no direct damage
       const p = rogueHero({ x: 3, y: 3 });
       p.facing = 'right';

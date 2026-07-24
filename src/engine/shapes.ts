@@ -21,7 +21,8 @@ const DEFAULT_TILES: Record<ShapeKind, number> = {
   melee: 1,
   point: 1,
   line: 3,
-  arc: 3,
+  vertical: 3,
+  arc: 5,
   area: 6,
   cross: 5,
   diagonalCross: 5,
@@ -35,11 +36,26 @@ function line(n: number): Offset[] {
   return out;
 }
 
-// A front-facing arc: a vertical span of `n` tiles one cell ahead.
-function arc(n: number): Offset[] {
+// A front-facing vertical span: `n` tiles stacked laterally, one cell ahead.
+function vertical(n: number): Offset[] {
   const out: Offset[] = [];
   const half = Math.floor(n / 2);
   for (let dy = -half; out.length < n && dy <= half + 1; dy++) out.push({ dx: 1, dy });
+  return out.slice(0, n);
+}
+
+// A curved arc hugging the front edge of a pixel circle of radius offset+2 centered on the
+// caster: the nose (dy 0) sits at dx = offset+1 and the flanks curl back toward the caster
+// (dx = round(sqrt(r² − dy²)) − 1, r = offset+2). The offset is consumed here (front-edge
+// placement), so shapeFor must NOT add it again.
+function arc(n: number, offset: number): Offset[] {
+  const r = offset + 2;
+  const half = Math.floor(n / 2);
+  const out: Offset[] = [];
+  for (let dy = -half; out.length < n && dy <= half + 1; dy++) {
+    const dx = Math.max(1, Math.round(Math.sqrt(Math.max(0, r * r - dy * dy))) - 1);
+    out.push({ dx, dy });
+  }
   return out.slice(0, n);
 }
 
@@ -93,31 +109,33 @@ function surround(): Offset[] {
 // AoE footprints grow with the skill's {tiles} param (design §"shapes scale").
 export function shapeFor(skill: Skill, level: number, facing: Direction = 'right'): Offset[] {
   const tiles = Math.max(1, Math.floor(skill.params.tiles?.(level) ?? DEFAULT_TILES[skill.shapeKind]));
-  const base = baseShape(skill.shapeKind, tiles);
-  const offset = skill.offset ?? 0; // push the whole footprint forward `offset` tiles (empty tiles between caster and hitbox), then rotate to facing
-  return base.map((o) => rotate({ dx: o.dx + offset, dy: o.dy }, facing));
+  const offset = skill.offset ?? 0; // empty tiles between caster and hitbox (forward projection)
+  return baseShape(skill.shapeKind, tiles, offset).map((o) => rotate(o, facing));
 }
 
-function baseShape(shapeKind: ShapeKind, tiles: number): Offset[] {
+function baseShape(shapeKind: ShapeKind, tiles: number, offset: number): Offset[] {
+  const fwd = (cells: Offset[]) => cells.map((o) => ({ dx: o.dx + offset, dy: o.dy })); // push the footprint forward `offset` tiles
   switch (shapeKind) {
     case 'self':
-      return [{ dx: 0, dy: 0 }];
+      return fwd([{ dx: 0, dy: 0 }]);
     case 'party':
-      return party();
+      return fwd(party());
     case 'surround':
-      return surround();
+      return fwd(surround());
     case 'melee':
     case 'point':
-      return [{ dx: 1, dy: 0 }]; // the single tile the caster faces
+      return fwd([{ dx: 1, dy: 0 }]); // the single tile the caster faces
+    case 'vertical':
+      return fwd(vertical(tiles));
     case 'line':
-      return line(tiles);
-    case 'arc':
-      return arc(tiles);
+      return fwd(line(tiles));
     case 'area':
-      return area(tiles);
+      return fwd(area(tiles));
     case 'cross':
-      return cross(tiles);
+      return fwd(cross(tiles));
     case 'diagonalCross':
-      return diagonalCross(tiles);
+      return fwd(diagonalCross(tiles));
+    case 'arc':
+      return arc(tiles, offset); // curved: consumes offset (radius + front placement)
   }
 }
