@@ -328,31 +328,31 @@ Rogue - physical / dark / ice
 
 Fighter 1st job skills:
 
-Power Strike - 1x1, uses: 3, cooldown: 15s, dmg: lin(1.5, 0.25)
-Power Stab - 6 mp, 2x1, dmg: lin(0.8, 0.12)
-Spin Slash - 14 mp, 8 adjacent tiles, dmg: lin(1.1, 0.15)
-Bracing Guard - block physical damage components for 5s, cooldown: lin(20, -1)
+Power Strike - 1x1, 6 mp, lin(1.3, 0.15) damage
+Power Stab - 2x1, uses: lin(2, 0.2), cooldown: 30s, lin(1.2, 0.12) damage
+Spin Slash - 14 mp, surround (lin(4, 0.4) adjacent tiles), lin(0.9, 0.05) damage
+Bracing Guard - reduce damage taken by lin(40, 4)% for 10s, cooldown: 30s
 
 Archer 1st job skills:
 
-Piercing Shot - 4x1, 10 mp, dmg: lin(0.8, 0.15)
-Scatter Shot - 1x3 two tiles away, 16 mp, dmg(1.2, 0.2)
-Power Knockback - 1x1, pushes enemy up to 3 tiles back, uses: 2, cooldown: lin(30, -1), dmg: lin(1.4, 0.2)
-Improved Critical - passive, improves crit chance by lin(5,2) and crit damage by lin(10,4)
+Arrow Blow - 4x1 (non-piercing, hits closest), 6 mp, lin(1.1, 0.12) damage
+Scatter Shot - 3-tile arc (offset 1), 16 mp, lin(1.0, 0.08) damage
+Power Knockback - 1x1, knock back 3 tiles, uses: lin(2, 0.2), cooldown: 30s, lin(1.4, 0.12) damage
+Improved Critical - passive, 45 mp, +lin(5, 2)% crit chance and +lin(10, 4)% crit damage for lin(100, 20)s
 
 Magician 1st job skills:
 
-Magic Claw - 3x1 (non-piercing), 12 mp, 2 hits, dmg: lin(0.6, 0.08)
-Cross Blast - hits player's diagonals, 16 mp, uses: 4, cooldown: lin(20, -1), dmg: lin(1, 0.15)
-Arcane Arc - 5-tile arc 3 tiles away, 22 mp, AoE (5s delay), dmg: lin(1.6, 0.2)
-Shocking Grasp - 1x1, 8 mp, slow: lin(0.25, 0.05), duration: lin(4, 0.4), cooldown: lin(30, -1), dmg: lin(1.4, 0.2)
+Magic Claw - 3x1 (non-piercing), 12 mp, 2 hits, lin(0.6, 0.06) damage
+Cross Blast - diagonal cross, 16 mp, uses: 4, cooldown: 30s, lin(1.4, 0.8) damage
+Arcane Arc - lin(5, 0.2)-tile arc (offset 2), 22 mp, lin(1, 0.08) damage
+Shocking Grasp - 1x1, 8 mp, slow lin(25, 5)%, uses: 2, cooldown: 30s, lin(1.3, 0.15) damage
 
 Rogue 1st job skills:
 
-Double Strike - 1x1, 6 mp, 2 hits, 1000ms trigger, dmg: lin(0.6, 0.04)
-Venom Slash - 1x3, 10 mp, 1000ms trigger, poison chance: 75%, uses: 2, cooldown: lin(30, -1), dmg: lin(1, 0.08)
-Hamstring - 3x1 (non-piercing), 16 mp, slow: lin(0.4, 0.02), duration: lin(4, 0.02), dmg: lin(0.8, 0.1)
-Life and Death - the player deals and receives +50% damage for lin(4, 0.04)s, cooldown: (20, -0.04)
+Double Strike - 1x1, 6 mp, 2 hits, 1s trigger, lin(0.6, 0.04) damage
+Venom Slash - 1x3 arc, poison lin(4, 0.4)% max HP every 2s over 10s, uses: 2, cooldown: 30s
+Hamstring - 3x1 (non-piercing), 16 mp, slow lin(20, 3)%, lin(0.6, 0.06) damage
+Life and Death - deal and take +lin(50, 5)% damage for 10s, cooldown: 30s
 
 ----
 
@@ -396,7 +396,7 @@ Forest's Favor, 24 mp, gain lin(2,1) all stats for lin(100,20)s
 Magician statuses: burn, stun, long dex up, short int up
 
 Arcanist - tricky but powerful attacks and statuses; benefits from dex
-Arcane Cataclysm, 44 mp, AoE (2.5s delay) that hits the 2 diagonals in front and the 3 tiles that can be moved straight forward to by chess knights from those diagonal tiles, lin(1.6, 0.1)
+Arcane Cataclysm, 44 mp, hits the 2 diagonals in front and the 3 tiles that can be moved straight forward to by chess knights from those diagonal tiles, lin(1.6, 0.1) dmg, speed 0.8x
 Great Cross, 34 mp, 5 tile cross (splits from 3rd tile) which is straight every 2nd cast and diagonal every other cast, dmg lin(2.2, 0.1), uses: 4, cooldown: 30s
 Chronostasis, 24 mp, deal lin(1.4, 0.08) damage and stun enemies in lin(3, 0.5) adjacent tiles, uses: lin(2,0.2), cooldown: 30s
 Cat's Grace, 60 mp, gain +lin(10,2)% dex for lin(80,10)s
@@ -409,7 +409,7 @@ Mana Burn, 60 mp, gain +lin(10,2)% int for 10s, cooldown: 30s
 
 Druid - crowd control and damage blocking; benefits from vit
 Cone of Cold, 32 mp, 1/3/5 tile cone (range 3), slow 30%, lin(0.8,0.1) dmg, uses: lin(2,0.2), cooldown: 30s
-Eruption, 88 mp, 5x5 aoe (6s) around caster, lin(0.8, 0.08) damage
+Eruption, 88 mp, 5x5 centered on caster, lin(0.8, 0.1) damage, 0.6x speed
 Raven Slash, 24 mp, diagonal 5-tile cross 2 tiles away, lin(1.2,0.1) damage
 Natural Armor, 60 mp, gives the party temporary armor that blocks damage equal to lin(50, 10)% of user's max HP, cooldown lin(120, -6)
 
